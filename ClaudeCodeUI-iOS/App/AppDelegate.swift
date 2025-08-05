@@ -11,10 +11,18 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
         
-        // Set up appearance
+        // Setup logging
+        Logger.shared.minimumLogLevel = .debug
+        Logger.shared.isFileLoggingEnabled = true
+        
+        // Setup error handling
+        ErrorHandlingService.shared.setupCrashReporting()
+        
+        // Configure appearance
         setupAppearance()
+        
+        logInfo("Claude Code UI launched", category: "App")
         
         return true
     }
@@ -36,35 +44,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // MARK: - Private Methods
     
     private func setupAppearance() {
-        // Force dark mode
-        if #available(iOS 13.0, *) {
-            UIWindow.appearance().overrideUserInterfaceStyle = .dark
-        }
-        
-        // Navigation bar appearance
+        // Configure navigation bar appearance
         let navBarAppearance = UINavigationBarAppearance()
         navBarAppearance.configureWithOpaqueBackground()
-        navBarAppearance.backgroundColor = UIColor(red: 10/255, green: 10/255, blue: 15/255, alpha: 1.0) // #0A0A0F
+        navBarAppearance.backgroundColor = CyberpunkTheme.background
         navBarAppearance.titleTextAttributes = [
-            .foregroundColor: UIColor(red: 0/255, green: 217/255, blue: 255/255, alpha: 1.0) // #00D9FF
+            .foregroundColor: CyberpunkTheme.textPrimary,
+            .font: UIFont.systemFont(ofSize: 18, weight: .bold)
         ]
         navBarAppearance.largeTitleTextAttributes = [
-            .foregroundColor: UIColor(red: 0/255, green: 217/255, blue: 255/255, alpha: 1.0) // #00D9FF
+            .foregroundColor: CyberpunkTheme.textPrimary,
+            .font: UIFont.systemFont(ofSize: 34, weight: .bold)
         ]
         
         UINavigationBar.appearance().standardAppearance = navBarAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
         UINavigationBar.appearance().compactAppearance = navBarAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
+        UINavigationBar.appearance().tintColor = CyberpunkTheme.primaryCyan
         
-        // Tab bar appearance
+        // Configure tab bar appearance
         let tabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithOpaqueBackground()
-        tabBarAppearance.backgroundColor = UIColor(red: 10/255, green: 10/255, blue: 15/255, alpha: 1.0) // #0A0A0F
+        tabBarAppearance.backgroundColor = CyberpunkTheme.background
         
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        UITabBar.appearance().tintColor = CyberpunkTheme.primaryCyan
+        UITabBar.appearance().unselectedItemTintColor = CyberpunkTheme.textTertiary
         
-        // Set tint color
-        UITabBar.appearance().tintColor = UIColor(red: 0/255, green: 217/255, blue: 255/255, alpha: 1.0) // #00D9FF
+        // Configure other UI elements
+        UITextField.appearance().tintColor = CyberpunkTheme.primaryCyan
+        UITextView.appearance().tintColor = CyberpunkTheme.primaryCyan
+        UISwitch.appearance().onTintColor = CyberpunkTheme.primaryCyan
+        UISlider.appearance().tintColor = CyberpunkTheme.primaryCyan
+        UIProgressView.appearance().tintColor = CyberpunkTheme.primaryCyan
+        
+        // Configure window tint
+        UIWindow.appearance().tintColor = CyberpunkTheme.primaryCyan
     }
 }
