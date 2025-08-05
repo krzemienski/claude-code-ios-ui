@@ -18,6 +18,23 @@ final class DIContainer {
     private var services: [String: Any] = [:]
     private var factories: [String: () -> Any] = [:]
     
+    // MARK: - Convenience Properties
+    var apiClient: APIClient {
+        resolve(APIClient.self) ?? APIClient()
+    }
+    
+    var webSocketManager: WebSocketManager {
+        resolve(WebSocketManager.self) ?? WebSocketManager(endpoint: "/ws")
+    }
+    
+    var dataContainer: SwiftDataContainer {
+        resolve(SwiftDataContainer.self) ?? SwiftDataContainer.shared
+    }
+    
+    var errorHandler: ErrorHandlingService {
+        resolve(ErrorHandlingService.self) ?? ErrorHandlingService()
+    }
+    
     // MARK: - Initialization
     private init() {
         registerDefaultServices()
@@ -67,16 +84,24 @@ final class DIContainer {
     // MARK: - Private Methods
     private func registerDefaultServices() {
         // Register core services
+        registerSingleton(APIClient.self) {
+            APIClient()
+        }
+        
         registerSingleton(APIClientProtocol.self) {
             APIClient()
         }
         
         registerSingleton(WebSocketManager.self) {
-            WebSocketManager(endpoint: "/ws/chat")
+            WebSocketManager(endpoint: "/ws")
         }
         
         registerSingleton(SwiftDataContainer.self) {
             SwiftDataContainer.shared
+        }
+        
+        registerSingleton(ErrorHandlingService.self) {
+            ErrorHandlingService()
         }
         
         // Register view models (factories for new instances)

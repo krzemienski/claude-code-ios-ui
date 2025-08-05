@@ -38,12 +38,19 @@ class AppCoordinator: Coordinator {
     
     // MARK: - Navigation
     private func checkAuthentication() {
-        // For now, always show launch screen first
-        showLaunchScreen()
+        // Skip authentication and go directly to main interface
+        showMainInterface()
+    }
+    
+    private func checkOnboardingStatus() async -> Bool {
+        guard let dataContainer = try? SwiftDataContainer() else { return false }
         
-        // Simulate auth check delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            self?.showMainInterface()
+        do {
+            let settings = try await dataContainer.fetchSettings()
+            return settings?.hasCompletedOnboarding ?? false
+        } catch {
+            Logger.shared.error("Failed to fetch settings: \(error)")
+            return false
         }
     }
     

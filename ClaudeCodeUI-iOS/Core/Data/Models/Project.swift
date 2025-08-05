@@ -32,13 +32,18 @@ final class Project {
         sessions?.max(by: { $0.lastActiveAt < $1.lastActiveAt })?.lastActiveAt
     }
     
-    init(id: String = UUID().uuidString, name: String, path: String, displayName: String? = nil) {
+    init(id: String = UUID().uuidString, 
+         name: String, 
+         path: String, 
+         displayName: String? = nil,
+         createdAt: Date = Date(),
+         updatedAt: Date = Date()) {
         self.id = id
         self.name = name
         self.path = path
         self.displayName = displayName
-        self.createdAt = Date()
-        self.updatedAt = Date()
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
         self.sessions = []
     }
 }

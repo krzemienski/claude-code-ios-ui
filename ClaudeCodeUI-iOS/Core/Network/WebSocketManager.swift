@@ -64,7 +64,7 @@ class WebSocketManager: NSObject {
     }
     
     // MARK: - Initialization
-    init(baseURL: String = "ws://localhost:3001", endpoint: String) {
+    init(baseURL: String = AppConfig.websocketURL.replacingOccurrences(of: "/ws", with: ""), endpoint: String) {
         self.baseURL = baseURL
         self.endpoint = endpoint
         super.init()

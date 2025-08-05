@@ -23,7 +23,7 @@ actor APIClient: APIClientProtocol {
     private var authToken: String?
     
     // MARK: - Initialization
-    init(baseURL: String = "http://localhost:3001", session: URLSession = .shared) {
+    init(baseURL: String = AppConfig.backendURL, session: URLSession = .shared) {
         self.baseURL = baseURL
         self.session = session
     }
@@ -31,6 +31,21 @@ actor APIClient: APIClientProtocol {
     // MARK: - Authentication
     func setAuthToken(_ token: String?) {
         self.authToken = token
+    }
+    
+    // MARK: - Convenience Methods
+    func fetchProjects() async throws -> [Project] {
+        let response: ProjectsResponse = try await request(.getProjects())
+        return response.projects.map { dto in
+            Project(
+                id: dto.id,
+                name: dto.name,
+                path: dto.path,
+                displayName: dto.displayName,
+                createdAt: dto.createdAt,
+                updatedAt: dto.updatedAt
+            )
+        }
     }
     
     // MARK: - Request Methods

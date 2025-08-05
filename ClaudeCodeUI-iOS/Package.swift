@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.7
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "ClaudeCodeUI",
     platforms: [
-        .iOS(.v17)
+        .iOS(.v16)  // iOS 16 is supported by Swift 5.7
     ],
     products: [
         .library(
@@ -20,9 +20,24 @@ let package = Package(
         .target(
             name: "ClaudeCodeUI",
             dependencies: [],
-            path: "Sources",
-            resources: [
-                .process("Resources")
+            path: ".",
+            exclude: [
+                "Info.plist",
+                "ClaudeCodeUI.xcodeproj",
+                "Documentation",
+                "Assets.xcassets",
+                "Base.lproj",
+                "Preview Content",
+                "Dockerfile",
+                "build-linux.sh",
+                "compile-check.sh",
+                "Sources"  // Exclude the duplicate Sources folder
+            ],
+            sources: [
+                "Core",
+                "Features",
+                "Design",
+                "UI"
             ]
         ),
         .testTarget(
