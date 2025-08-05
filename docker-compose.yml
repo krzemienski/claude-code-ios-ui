@@ -3,7 +3,7 @@ version: '3.8'
 services:
   macos:
     image: dockurr/macos:latest
-    container_name: claudecode-macos
+    container_name: claude-code-ui-ios-dev
     privileged: true
     devices:
       - /dev/kvm
@@ -16,10 +16,9 @@ services:
       - DISK_SIZE=128G
       - GENERATE_UNIQUE=true
       - DEVICE_MODEL=iMacPro1,1
-      - SERIAL=random
-      - BOARD_SERIAL=random
-      - UUID=random
-      - MAC_ADDRESS=random
+      # Remove SERIAL and BOARD_SERIAL - let system generate them
+      - GENERATE_SPECIFIC=true
+      # MAC_ADDRESS will be auto-generated
       - WIDTH=1920
       - HEIGHT=1080
       - DISPLAY=web
