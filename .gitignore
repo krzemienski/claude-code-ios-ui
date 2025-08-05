@@ -102,4 +102,4 @@ docker-compose.override.yml
 # Screenshots (keep some for documentation)
 screenshots/**/*.png
 !screenshots/**/README.md
-!documentation/screenshots/**/*.png
+!documentation/screenshots/**/*.pngclaudecodeui-reference/
