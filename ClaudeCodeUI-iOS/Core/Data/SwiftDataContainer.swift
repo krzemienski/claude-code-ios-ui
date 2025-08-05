@@ -17,7 +17,8 @@ class SwiftDataContainer {
         let schema = Schema([
             Project.self,
             Session.self,
-            Message.self
+            Message.self,
+            Settings.self
         ])
         
         let modelConfiguration = ModelConfiguration(
@@ -120,6 +121,28 @@ class SwiftDataContainer {
         
         try save()
         return message
+    }
+    
+    // MARK: - Settings Operations
+    
+    func fetchSettings() throws -> Settings {
+        let descriptor = FetchDescriptor<Settings>(
+            predicate: #Predicate { $0.id == "default" }
+        )
+        
+        if let settings = try container.mainContext.fetch(descriptor).first {
+            return settings
+        } else {
+            // Create default settings if none exist
+            let settings = Settings()
+            container.mainContext.insert(settings)
+            try save()
+            return settings
+        }
+    }
+    
+    func updateSettings(_ settings: Settings) throws {
+        try save()
     }
     
     // MARK: - Sync Operations

@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
 @Model
 final class Project {

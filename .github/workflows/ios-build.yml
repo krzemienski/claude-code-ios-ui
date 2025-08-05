@@ -1,0 +1,71 @@
+name: iOS Build and Test
+
+on:
+  push:
+    branches: [ feature/ios-claude-code-ui ]
+  pull_request:
+    branches: [ main, feature/ios-claude-code-ui ]
+
+jobs:
+  build:
+    name: Build iOS App
+    runs-on: macos-14  # Latest macOS runner with Xcode 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_15.3.app/Contents/Developer
+      
+    - name: Install CocoaPods (if needed)
+      run: |
+        if [ -f "ClaudeCodeUI-iOS/Podfile" ]; then
+          gem install cocoapods
+          cd ClaudeCodeUI-iOS && pod install
+        fi
+        
+    - name: Build iOS App
+      run: |
+        cd ClaudeCodeUI-iOS
+        xcodebuild -project ClaudeCodeUI-iOS.xcodeproj \
+          -scheme ClaudeCodeUI-iOS \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max' \
+          -configuration Debug \
+          build
+          
+    - name: Run Tests
+      run: |
+        cd ClaudeCodeUI-iOS
+        xcodebuild test \
+          -project ClaudeCodeUI-iOS.xcodeproj \
+          -scheme ClaudeCodeUI-iOS \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max' \
+          -configuration Debug \
+          | xcpretty --test --color
+          
+    - name: Archive Build Artifacts
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-artifacts
+        path: |
+          ClaudeCodeUI-iOS/build/Debug-iphonesimulator/
+          
+    - name: Generate Build Report
+      if: always()
+      run: |
+        echo "## Build Summary" > build-report.md
+        echo "- Branch: ${{ github.ref_name }}" >> build-report.md
+        echo "- Commit: ${{ github.sha }}" >> build-report.md
+        echo "- Runner: ${{ runner.os }} ${{ runner.arch }}" >> build-report.md
+        echo "- Xcode Version: $(xcodebuild -version | head -n 1)" >> build-report.md
+        
+    - name: Upload Build Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-report
+        path: build-report.md

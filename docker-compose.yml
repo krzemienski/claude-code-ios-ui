@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  macos:
+    image: dockurr/macos:latest
+    container_name: claudecode-macos
+    privileged: true
+    devices:
+      - /dev/kvm
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - VERSION=15  # macOS Sequoia
+      - RAM_SIZE=8G
+      - CPU_CORES=4
+      - DISK_SIZE=128G
+      - GENERATE_UNIQUE=true
+      - DEVICE_MODEL=iMacPro1,1
+      - SERIAL=random
+      - BOARD_SERIAL=random
+      - UUID=random
+      - MAC_ADDRESS=random
+      - WIDTH=1920
+      - HEIGHT=1080
+      - DISPLAY=web
+      - BOOT_MODE=auto
+    volumes:
+      - ./macos-storage:/storage
+      - ./ClaudeCodeUI-iOS:/workspace
+    ports:
+      - "8006:8006"  # Web interface
+      - "5900:5900"  # VNC
+    networks:
+      - claudecode-network
+    restart: unless-stopped
+
+networks:
+  claudecode-network:
+    driver: bridge
