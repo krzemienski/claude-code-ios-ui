@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  swift-validator:
+    image: swift:5.9
+    container_name: ios-swift-validator
+    volumes:
+      - ./ClaudeCodeUI-iOS:/workspace
+    working_dir: /workspace
+    command: /bin/bash -c "tail -f /dev/null"
+    networks:
+      - ios-build-network
+
+networks:
+  ios-build-network:
+    driver: bridge
