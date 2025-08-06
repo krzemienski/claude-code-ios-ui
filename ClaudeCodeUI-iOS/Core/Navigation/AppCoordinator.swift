@@ -69,53 +69,12 @@ class AppCoordinator: Coordinator {
     }
     
     private func showMainInterface() {
-        let tabBarController = createMainTabBarController()
+        let tabBarController = MainTabBarController()
         
         // Animate transition
         UIView.transition(with: window, duration: 0.5, options: .transitionCrossDissolve, animations: {
             self.window.rootViewController = tabBarController
         })
-    }
-    
-    private func createMainTabBarController() -> UITabBarController {
-        let tabBarController = UITabBarController()
-        
-        // Projects Tab
-        let projectsNav = UINavigationController()
-        let projectsCoordinator = ProjectsCoordinator(navigationController: projectsNav)
-        childCoordinators.append(projectsCoordinator)
-        projectsCoordinator.start()
-        projectsNav.tabBarItem = UITabBarItem(
-            title: "Projects",
-            image: UIImage(systemName: "folder"),
-            selectedImage: UIImage(systemName: "folder.fill")
-        )
-        
-        // Terminal Tab
-        let terminalNav = UINavigationController()
-        let terminalCoordinator = TerminalCoordinator(navigationController: terminalNav)
-        childCoordinators.append(terminalCoordinator)
-        terminalCoordinator.start()
-        terminalNav.tabBarItem = UITabBarItem(
-            title: "Terminal",
-            image: UIImage(systemName: "terminal"),
-            selectedImage: UIImage(systemName: "terminal.fill")
-        )
-        
-        // Settings Tab
-        let settingsNav = UINavigationController()
-        let settingsCoordinator = SettingsCoordinator(navigationController: settingsNav)
-        childCoordinators.append(settingsCoordinator)
-        settingsCoordinator.start()
-        settingsNav.tabBarItem = UITabBarItem(
-            title: "Settings",
-            image: UIImage(systemName: "gearshape"),
-            selectedImage: UIImage(systemName: "gearshape.fill")
-        )
-        
-        tabBarController.viewControllers = [projectsNav, terminalNav, settingsNav]
-        
-        return tabBarController
     }
     
     // MARK: - Child Coordinator Management
@@ -137,7 +96,7 @@ extension AppCoordinator: AuthenticationCoordinatorDelegate {
     }
 }
 
-// MARK: - Placeholder Coordinators
+// MARK: - Authentication Coordinator
 class AuthenticationCoordinator: Coordinator {
     weak var delegate: AuthenticationCoordinatorDelegate?
     var childCoordinators: [Coordinator] = []
@@ -148,77 +107,11 @@ class AuthenticationCoordinator: Coordinator {
     }
     
     func start() {
-        // TODO: Implement authentication flow
+        let authVC = AuthenticationViewController()
+        navigationController.pushViewController(authVC, animated: false)
     }
 }
 
 protocol AuthenticationCoordinatorDelegate: AnyObject {
     func authenticationCoordinatorDidComplete(_ coordinator: AuthenticationCoordinator)
-}
-
-class ProjectsCoordinator: Coordinator {
-    var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController
-    
-    init(navigationController: UINavigationController) {
-        self.navigationController = navigationController
-    }
-    
-    func start() {
-        let projectsVC = ProjectsViewController()
-        navigationController.pushViewController(projectsVC, animated: false)
-    }
-}
-
-class TerminalCoordinator: Coordinator {
-    var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController
-    
-    init(navigationController: UINavigationController) {
-        self.navigationController = navigationController
-    }
-    
-    func start() {
-        let terminalVC = TerminalViewController()
-        navigationController.pushViewController(terminalVC, animated: false)
-    }
-}
-
-class SettingsCoordinator: Coordinator {
-    var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController
-    
-    init(navigationController: UINavigationController) {
-        self.navigationController = navigationController
-    }
-    
-    func start() {
-        let settingsVC = SettingsViewController()
-        navigationController.pushViewController(settingsVC, animated: false)
-    }
-}
-
-// MARK: - Placeholder View Controllers
-class ProjectsViewController: BaseCollectionViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "Projects"
-        navigationItem.largeTitleDisplayMode = .always
-    }
-}
-
-class TerminalViewController: BaseViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "Terminal"
-        navigationItem.largeTitleDisplayMode = .always
-    }
-}
-
-class SettingsViewController: BaseTableViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "Settings"
-        navigationItem.largeTitleDisplayMode = .always
-    }
 }

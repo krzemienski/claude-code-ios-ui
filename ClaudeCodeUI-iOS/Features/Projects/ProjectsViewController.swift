@@ -80,6 +80,11 @@ class ProjectsViewController: BaseViewController {
     private let dataContainer: SwiftDataContainer?
     private let apiClient: APIClient
     private let errorHandler: ErrorHandlingService
+    private let refreshControl = UIRefreshControl()
+    private var isLoading = false
+    
+    // Callback for project selection
+    var onProjectSelected: ((Project) -> Void)?
     
     // MARK: - Initialization
     
@@ -114,6 +119,15 @@ class ProjectsViewController: BaseViewController {
     
     private func setupUI() {
         view.backgroundColor = CyberpunkTheme.background
+        
+        // Setup refresh control
+        refreshControl.tintColor = CyberpunkTheme.primaryCyan
+        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        collectionView.refreshControl = refreshControl
+        
+        // Add long press gesture for deletion
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        collectionView.addGestureRecognizer(longPressGesture)
         
         view.addSubview(collectionView)
         view.addSubview(emptyStateView)
@@ -185,38 +199,70 @@ class ProjectsViewController: BaseViewController {
     // MARK: - Data Loading
     
     private func loadProjects() {
+        guard !isLoading else { return }
+        isLoading = true
+        
         Task {
             do {
-                if let dataContainer = dataContainer {
-                    let localProjects = try await dataContainer.fetchProjects()
-                    await MainActor.run {
-                        self.projects = localProjects
-                        self.updateUI()
-                    }
+                // Try API first
+                let remoteProjects = try await apiClient.fetchProjects()
+                await MainActor.run {
+                    self.projects = remoteProjects
+                    self.updateUI()
+                    self.isLoading = false
                 }
             } catch {
-                await errorHandler.handle(error)
+                // Fall back to local data if available
+                if let dataContainer = dataContainer {
+                    do {
+                        let localProjects = try await dataContainer.fetchProjects()
+                        await MainActor.run {
+                            self.projects = localProjects
+                            self.updateUI()
+                            self.isLoading = false
+                        }
+                    } catch {
+                        await MainActor.run {
+                            self.isLoading = false
+                            self.showError("Failed to load projects: \(error.localizedDescription)")
+                        }
+                    }
+                } else {
+                    await MainActor.run {
+                        self.isLoading = false
+                        self.showError("Failed to load projects: \(error.localizedDescription)")
+                    }
+                }
             }
         }
     }
     
     private func refreshProjects() {
+        guard !isLoading else { return }
+        
         Task {
             do {
                 // Fetch from API
                 let remoteProjects = try await apiClient.fetchProjects()
                 
-                // Update local cache
-                if let dataContainer = dataContainer {
-                    // TODO: Sync remote projects with local cache
+                await MainActor.run {
+                    self.projects = remoteProjects
+                    self.updateUI()
+                    self.refreshControl.endRefreshing()
                 }
                 
-                await MainActor.run {
-                    self.updateUI()
+                // Update local cache in background
+                if let dataContainer = dataContainer {
+                    for project in remoteProjects {
+                        try? await dataContainer.saveProject(project)
+                    }
                 }
             } catch {
-                // Fall back to local data if API fails
-                loadProjects()
+                await MainActor.run {
+                    self.refreshControl.endRefreshing()
+                    // Don't show error on refresh, just keep existing data
+                    Logger.shared.error("Failed to refresh projects: \(error)")
+                }
             }
         }
     }
@@ -232,6 +278,52 @@ class ProjectsViewController: BaseViewController {
         let settingsVC = SettingsViewController()
         let navController = UINavigationController(rootViewController: settingsVC)
         present(navController, animated: true)
+    }
+    
+    @objc private func handleRefresh() {
+        refreshProjects()
+    }
+    
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began else { return }
+        
+        let point = gesture.location(in: collectionView)
+        guard let indexPath = collectionView.indexPathForItem(at: point) else { return }
+        
+        // Don't delete the "Add" button
+        guard indexPath.item < projects.count else { return }
+        
+        let project = projects[indexPath.item]
+        
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        // Show delete confirmation
+        let alert = UIAlertController(
+            title: "Delete Project?",
+            message: "Are you sure you want to delete '\(project.displayName)'?",
+            preferredStyle: .alert
+        )
+        
+        let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+            self?.deleteProject(project)
+        }
+        
+        alert.addAction(deleteAction)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func showError(_ message: String) {
+        let alert = UIAlertController(
+            title: "Error",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
     
     private func createNewProject() {
@@ -273,23 +365,70 @@ class ProjectsViewController: BaseViewController {
     private func createProject(name: String, path: String) {
         Task {
             do {
+                // Create via API
+                let project = try await apiClient.createProject(name: name, path: path)
+                
+                await MainActor.run {
+                    self.projects.append(project)
+                    self.updateUI()
+                    
+                    // Show success feedback
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                }
+                
+                // Save to local cache if available
                 if let dataContainer = dataContainer {
-                    let project = try await dataContainer.createProject(name: name, path: path)
-                    await MainActor.run {
-                        self.projects.append(project)
-                        self.updateUI()
-                    }
+                    try? await dataContainer.saveProject(project)
                 }
             } catch {
-                await errorHandler.handle(error)
+                await MainActor.run {
+                    self.showError("Failed to create project: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
+    private func deleteProject(_ project: Project) {
+        Task {
+            do {
+                // Delete from backend
+                try await apiClient.deleteProject(id: project.id)
+                
+                // Remove from local array
+                await MainActor.run {
+                    if let index = self.projects.firstIndex(where: { $0.id == project.id }) {
+                        self.projects.remove(at: index)
+                        self.updateUI()
+                        
+                        // Show success feedback
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                }
+                
+                // Delete from local cache if available
+                if let dataContainer = dataContainer {
+                    try? await dataContainer.deleteProject(project)
+                }
+            } catch {
+                await MainActor.run {
+                    self.showError("Failed to delete project: \(error.localizedDescription)")
+                }
             }
         }
     }
     
     private func openProject(_ project: Project) {
-        // Navigate to chat interface
-        let chatVC = ChatViewController(project: project)
-        navigationController?.pushViewController(chatVC, animated: true)
+        // Use callback if available (for tab-based navigation)
+        // Otherwise push directly (for standalone usage)
+        if let onProjectSelected = onProjectSelected {
+            onProjectSelected(project)
+        } else {
+            // Fallback: Navigate to chat interface directly
+            let chatVC = ChatViewController(project: project)
+            navigationController?.pushViewController(chatVC, animated: true)
+        }
     }
 }
 

@@ -41,11 +41,27 @@ actor APIClient: APIClientProtocol {
                 id: dto.id,
                 name: dto.name,
                 path: dto.path,
-                displayName: dto.displayName,
+                displayName: dto.displayName ?? dto.name,
                 createdAt: dto.createdAt,
                 updatedAt: dto.updatedAt
             )
         }
+    }
+    
+    func createProject(name: String, path: String) async throws -> Project {
+        let dto: ProjectDTO = try await request(.createProject(name: name, path: path))
+        return Project(
+            id: dto.id,
+            name: dto.name,
+            path: dto.path,
+            displayName: dto.displayName ?? dto.name,
+            createdAt: dto.createdAt,
+            updatedAt: dto.updatedAt
+        )
+    }
+    
+    func deleteProject(id: String) async throws {
+        try await request(.deleteProject(id: id))
     }
     
     // MARK: - Request Methods

@@ -13,7 +13,7 @@ struct AppConfig {
     // MARK: - Network Configuration
     
     /// Backend server URL
-    /// For local development: "http://192.168.0.36:3001"
+    /// For local development: "http://192.168.0.36:3004"
     /// For production: Update to your server URL
     static var backendURL: String {
         // Check if there's a saved URL in UserDefaults
@@ -23,10 +23,10 @@ struct AppConfig {
         
         // Default to localhost for simulator
         #if targetEnvironment(simulator)
-        return "http://localhost:3001"
+        return "http://localhost:3004"  // Test backend server port
         #else
         // For device, use the machine's IP address
-        return "http://192.168.0.36:3001"
+        return "http://192.168.0.36:3004"  // Test backend server port
         #endif
     }
     

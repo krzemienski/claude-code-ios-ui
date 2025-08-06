@@ -102,4 +102,38 @@ docker-compose.override.yml
 # Screenshots (keep some for documentation)
 screenshots/**/*.png
 !screenshots/**/README.md
-!documentation/screenshots/**/*.pngclaudecodeui-reference/
+!documentation/screenshots/**/*.png
+
+# Node.js / Backend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.local
+.env.production
+backend/data/*.sqlite
+backend/data/*.db
+backend/uploads/*
+backend/logs/*
+!backend/uploads/.gitkeep
+!backend/logs/.gitkeep
+!backend/data/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+coverage/
+*.lcov
+
+# Temporary
+*.tmp
+*.log
+tmp/
+temp/
+
+claudecodeui-reference/
