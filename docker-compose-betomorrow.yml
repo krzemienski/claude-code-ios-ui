@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  macos-ci:
+    image: betomorrow/ci-macos-image:sonoma-xcode-15.4-v2
+    container_name: ios-macos-builder
+    platform: linux/amd64
+    volumes:
+      - ./ClaudeCodeUI-iOS:/workspace/ClaudeCodeUI-iOS:ro
+      - ./build-output:/workspace/build-output
+      - ./screenshots:/workspace/screenshots
+    environment:
+      - XCODE_VERSION=15.4
+      - SIMULATOR_DEVICE="iPhone 15 Pro"
+      - SIMULATOR_OS="iOS 17.5"
+      - PROJECT_NAME=ClaudeCodeUI
+      - SCHEME_NAME=ClaudeCodeUI
+    working_dir: /workspace
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      echo '🔧 Checking environment...' &&
+      which xcodebuild || echo 'xcodebuild not found' &&
+      which xcrun || echo 'xcrun not found' &&
+      which swift || echo 'swift not found' &&
+      swift --version || echo 'Swift not available' &&
+      echo '📱 Attempting to list simulators...' &&
+      xcrun simctl list devices || echo 'Simulator tools not available' &&
+      echo '🏗️ Attempting build...' &&
+      cd ClaudeCodeUI-iOS &&
+      if command -v xcodebuild &> /dev/null; then
+        xcodebuild -project ClaudeCodeUI.xcodeproj \
+          -scheme ClaudeCodeUI \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+          -configuration Debug \
+          clean build \
+          ONLY_ACTIVE_ARCH=NO \
+          CODE_SIGN_IDENTITY='' \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          COMPILER_INDEX_STORE_ENABLE=NO \
+          -derivedDataPath ../build-output || echo 'Build failed';
+        
+        echo '📸 Attempting screenshots...' &&
+        xcrun simctl boot 'iPhone 15 Pro' || echo 'Could not boot simulator' &&
+        xcrun simctl io booted screenshot ../screenshots/launch.png || echo 'Screenshot failed';
+      else
+        echo '❌ Xcode tools not available in this image';
+        echo '🔍 Listing available tools:';
+        ls -la /Applications/ 2>/dev/null || echo 'No Applications directory';
+        ls -la /usr/bin/ | grep -E '(swift|xcode)' || echo 'No Swift/Xcode in /usr/bin';
+      fi
+      "
+    stdin_open: true
+    tty: true

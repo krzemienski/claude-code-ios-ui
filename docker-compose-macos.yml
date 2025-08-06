@@ -1,0 +1,138 @@
+# macOS Docker Options for iOS Development
+# WARNING: None of these work on Linux for actual iOS compilation
+
+version: '3.8'
+
+services:
+  # Option 1: Docker-OSX (Full macOS Virtualization - NOT a container)
+  # Requires: KVM support, 50GB+ disk, 8GB+ RAM
+  # Legal: Violates Apple EULA on non-Apple hardware
+  docker-osx:
+    image: sickcodes/docker-osx:sonoma
+    container_name: macos-vm
+    devices:
+      - /dev/kvm
+      - /dev/snd
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - "DISPLAY=${DISPLAY:-:0.0}"
+      - GENERATE_UNIQUE=true
+      - CPU='Haswell-noTSX'
+      - CPUID_FLAGS='kvm=on,vendor=GenuineIntel,+invtsc,vmware-cpuid-freq=on'
+      - MASTER_PLIST_URL='https://raw.githubusercontent.com/sickcodes/osx-serial-generator/master/config-custom.plist'
+      # Increase RAM and disk for Xcode
+      - RAM=8
+      - INTERNAL_SSH_PORT=10022
+      - SCREEN_SHARE_PORT=5900
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./macos-storage:/home/arch/OSX-KVM/mac_hdd_ng.img
+    ports:
+      - "50922:10022"  # SSH
+      - "5999:5900"    # VNC
+    profiles:
+      - virtualization
+
+  # Option 2: dockurr/macos (Alternative virtualization)
+  # Similar to Docker-OSX but with web interface
+  dockurr-macos:
+    image: dockurr/macos
+    container_name: macos-dockurr
+    environment:
+      VERSION: "13"  # macOS Ventura
+      RAM_SIZE: "8G"
+      CPU_CORES: "4"
+      DISK_SIZE: "128G"
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "8006:8006"    # Web interface
+      - "5900:5900/tcp" # VNC
+      - "5900:5900/udp"
+    volumes:
+      - ./macos-storage:/storage
+    restart: unless-stopped
+    stop_grace_period: 2m
+    profiles:
+      - virtualization
+
+  # Option 3: Swift-only validation (THIS ACTUALLY WORKS ON LINUX)
+  # Only validates Swift syntax, not iOS APIs
+  swift-validator:
+    image: swift:5.9-jammy
+    container_name: swift-syntax-check
+    volumes:
+      - ./ClaudeCodeUI-iOS:/workspace:ro
+      - ./validation-results:/results
+    working_dir: /workspace
+    command: |
+      bash -c "
+      echo '🔍 Swift Syntax Validation (Linux)' | tee /results/validation.log
+      echo '=================================' | tee -a /results/validation.log
+      echo 'NOTE: This only checks Swift syntax, not iOS APIs!' | tee -a /results/validation.log
+      echo '' | tee -a /results/validation.log
+      
+      # Count files
+      total=\$(find . -name '*.swift' -type f | wc -l)
+      echo \"Found \$total Swift files to validate\" | tee -a /results/validation.log
+      echo '' | tee -a /results/validation.log
+      
+      # Validate each file
+      passed=0
+      failed=0
+      
+      find . -name '*.swift' -type f | sort | while read file; do
+        relative_path=\${file#./}
+        printf '%-60s' \"\$relative_path\" | tee -a /results/validation.log
+        
+        if swiftc -parse -suppress-warnings \"\$file\" 2>/dev/null; then
+          echo '✅ PASS' | tee -a /results/validation.log
+          ((passed++))
+        else
+          echo '❌ FAIL' | tee -a /results/validation.log
+          ((failed++))
+          # Capture error details
+          echo \"  Error details:\" | tee -a /results/validation.log
+          swiftc -parse \"\$file\" 2>&1 | head -5 | sed 's/^/    /' | tee -a /results/validation.log
+        fi
+      done
+      
+      echo '' | tee -a /results/validation.log
+      echo '=================================' | tee -a /results/validation.log
+      echo \"Results: \$passed passed, \$failed failed out of \$total files\" | tee -a /results/validation.log
+      
+      # Note about iOS-specific errors
+      echo '' | tee -a /results/validation.log
+      echo '⚠️  EXPECTED FAILURES:' | tee -a /results/validation.log
+      echo '- UIKit imports will fail (iOS-only framework)' | tee -a /results/validation.log
+      echo '- SwiftUI imports will fail (not available on Linux)' | tee -a /results/validation.log
+      echo '- iOS-specific APIs will show as undefined' | tee -a /results/validation.log
+      echo '' | tee -a /results/validation.log
+      echo 'For full iOS compilation, use:' | tee -a /results/validation.log
+      echo '1. GitHub Actions (recommended)' | tee -a /results/validation.log
+      echo '2. Real Mac hardware' | tee -a /results/validation.log
+      echo '3. Cloud Mac services' | tee -a /results/validation.log
+      "
+    profiles:
+      - validation
+
+# To use:
+# 1. Swift validation only (WORKS ON LINUX):
+#    docker-compose -f docker-compose-macos.yml --profile validation up
+#
+# 2. Full macOS virtualization (REQUIRES KVM, VIOLATES EULA):
+#    docker-compose -f docker-compose-macos.yml --profile virtualization up docker-osx
+#
+# 3. Alternative macOS virtualization:
+#    docker-compose -f docker-compose-macos.yml --profile virtualization up dockurr-macos
+
+# IMPORTANT NOTES:
+# - Only the swift-validator service works for actual code validation on Linux
+# - The virtualization options require KVM and violate Apple's EULA on non-Apple hardware
+# - For production iOS builds, use GitHub Actions or cloud Mac services
+# - This file is for documentation and testing purposes only
