@@ -285,4 +285,24 @@ enum WebSocketError: LocalizedError {
             return "WebSocket authentication failed"
         }
     }
+    
+    var recoverySuggestion: String? {
+        switch self {
+        case .invalidURL:
+            return "Please check the WebSocket URL configuration."
+        case .connectionFailed:
+            return "Please check your internet connection and try again."
+        case .authenticationFailed:
+            return "Please check your authentication credentials."
+        }
+    }
+    
+    var isRetryable: Bool {
+        switch self {
+        case .invalidURL:
+            return false
+        case .connectionFailed, .authenticationFailed:
+            return true
+        }
+    }
 }

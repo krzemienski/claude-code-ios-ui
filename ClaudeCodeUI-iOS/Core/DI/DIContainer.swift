@@ -8,7 +8,6 @@
 import Foundation
 
 // MARK: - Dependency Injection Container
-@MainActor
 final class DIContainer {
     
     // MARK: - Singleton
@@ -32,7 +31,7 @@ final class DIContainer {
     }
     
     var errorHandler: ErrorHandlingService {
-        resolve(ErrorHandlingService.self) ?? ErrorHandlingService()
+        resolve(ErrorHandlingService.self) ?? ErrorHandlingService.shared
     }
     
     // MARK: - Initialization
@@ -101,7 +100,7 @@ final class DIContainer {
         }
         
         registerSingleton(ErrorHandlingService.self) {
-            ErrorHandlingService()
+            ErrorHandlingService.shared
         }
         
         // Register view models (factories for new instances)
@@ -149,7 +148,7 @@ struct Injected<T> {
     init() {}
     
     var wrappedValue: T {
-        get {
+        mutating get {
             if let value = value {
                 return value
             }
@@ -175,7 +174,7 @@ struct OptionalInjected<T> {
     init() {}
     
     var wrappedValue: T? {
-        get {
+        mutating get {
             if let value = value {
                 return value
             }

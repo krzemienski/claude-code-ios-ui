@@ -203,10 +203,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
+- [ClaudeCodeUI](https://github.com/siteboon/claudecodeui) - The backend server is based on this excellent project
 - Claude AI for development assistance
 - The Swift community for excellent libraries
 - Cyberpunk 2077 for design inspiration
 - All contributors and testers
+
+### Backend Attribution
+
+The backend server (`backend/server.js`) is adapted from the [ClaudeCodeUI](https://github.com/siteboon/claudecodeui) project, which provides a comprehensive Node.js/Express backend for Claude Code integration. We've extended it with iOS-specific compatibility while maintaining all the original features including:
+- Real file system operations (no mocks)
+- WebSocket support for real-time updates
+- SQLite database for data persistence
+- Terminal command execution
+- Claude CLI integration
+- Project management from ~/.claude/projects
 
 ## 📞 Support
 

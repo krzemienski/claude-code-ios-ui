@@ -23,8 +23,8 @@ class SwiftDataContainer {
         
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false,
-            groupContainer: .identifier("group.com.claudecodeui.ios")
+            isStoredInMemoryOnly: false
+            // groupContainer: .identifier("group.com.claudecodeui.ios") // Disabled for testing
         )
         
         do {
@@ -74,8 +74,11 @@ class SwiftDataContainer {
     // MARK: - Session Operations
     
     func fetchSessions(for project: Project, limit: Int = 5, offset: Int = 0) throws -> [Session] {
+        let projectId = project.id
         let descriptor = FetchDescriptor<Session>(
-            predicate: #Predicate { $0.projectId == project.id },
+            predicate: #Predicate { session in
+                session.projectId == projectId
+            },
             sortBy: [SortDescriptor(\.lastActiveAt, order: .reverse)]
         )
         
@@ -102,9 +105,10 @@ class SwiftDataContainer {
     // MARK: - Message Operations
     
     func fetchMessages(for session: Session) throws -> [Message] {
+        let sessionId = session.id
         let descriptor = FetchDescriptor<Message>(
             predicate: #Predicate { message in
-                message.session?.id == session.id
+                message.session?.id == sessionId
             },
             sortBy: [SortDescriptor(\.timestamp)]
         )

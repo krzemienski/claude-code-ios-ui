@@ -17,8 +17,8 @@ class LaunchViewController: UIViewController {
     private let gridBackgroundView = GridBackgroundView()
     
     // MARK: - Gradient Blocks
-    private let topLeftGradient = GradientBlock()
-    private let bottomRightGradient = GradientBlock()
+    private let topLeftGradient = GradientBlock(type: .blue)
+    private let bottomRightGradient = GradientBlock(type: .purple)
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -65,12 +65,6 @@ class LaunchViewController: UIViewController {
         // Configure gradient blocks
         topLeftGradient.translatesAutoresizingMaskIntoConstraints = false
         bottomRightGradient.translatesAutoresizingMaskIntoConstraints = false
-        
-        topLeftGradient.primaryColor = CyberpunkTheme.primaryCyan
-        topLeftGradient.secondaryColor = CyberpunkTheme.accentPink
-        
-        bottomRightGradient.primaryColor = CyberpunkTheme.accentPink
-        bottomRightGradient.secondaryColor = CyberpunkTheme.primaryCyan
         
         // Add subviews
         view.addSubview(topLeftGradient)

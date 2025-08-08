@@ -85,10 +85,36 @@ class AuthenticationViewController: BaseViewController {
         return view
     }()
     
+    private lazy var serverURLTextField: UITextField = {
+        let textField = UITextField()
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.placeholder = "Server URL (e.g., http://localhost:3004)"
+        textField.font = CyberpunkTheme.codeFont
+        textField.textColor = CyberpunkTheme.primaryText
+        textField.tintColor = CyberpunkTheme.primaryCyan
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.keyboardType = .URL
+        textField.text = AppConfig.backendURL
+        textField.returnKeyType = .next
+        textField.delegate = self
+        
+        // Style placeholder
+        textField.attributedPlaceholder = NSAttributedString(
+            string: "Server URL (e.g., http://localhost:3004)",
+            attributes: [
+                .foregroundColor: CyberpunkTheme.secondaryText,
+                .font: CyberpunkTheme.codeFont
+            ]
+        )
+        
+        return textField
+    }()
+    
     private lazy var apiKeyTextField: UITextField = {
         let textField = UITextField()
         textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.placeholder = "Enter your Claude API key"
+        textField.placeholder = "Enter your Claude API key (optional)"
         textField.font = CyberpunkTheme.codeFont
         textField.textColor = CyberpunkTheme.primaryText
         textField.tintColor = CyberpunkTheme.primaryCyan
@@ -100,7 +126,7 @@ class AuthenticationViewController: BaseViewController {
         
         // Style placeholder
         textField.attributedPlaceholder = NSAttributedString(
-            string: "Enter your Claude API key",
+            string: "Enter your Claude API key (optional)",
             attributes: [
                 .foregroundColor: CyberpunkTheme.secondaryText,
                 .font: CyberpunkTheme.codeFont
@@ -167,6 +193,7 @@ class AuthenticationViewController: BaseViewController {
         view.addSubview(apiKeyContainerView)
         
         // Add API key input components
+        apiKeyContainerView.addSubview(serverURLTextField)
         apiKeyContainerView.addSubview(apiKeyTextField)
         apiKeyContainerView.addSubview(saveKeyButton)
         
@@ -210,8 +237,14 @@ class AuthenticationViewController: BaseViewController {
             apiKeyContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
             apiKeyContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32),
             
+            // Server URL text field
+            serverURLTextField.topAnchor.constraint(equalTo: apiKeyContainerView.topAnchor, constant: 16),
+            serverURLTextField.leadingAnchor.constraint(equalTo: apiKeyContainerView.leadingAnchor, constant: 16),
+            serverURLTextField.trailingAnchor.constraint(equalTo: apiKeyContainerView.trailingAnchor, constant: -16),
+            serverURLTextField.heightAnchor.constraint(equalToConstant: 44),
+            
             // API key text field
-            apiKeyTextField.topAnchor.constraint(equalTo: apiKeyContainerView.topAnchor, constant: 16),
+            apiKeyTextField.topAnchor.constraint(equalTo: serverURLTextField.bottomAnchor, constant: 12),
             apiKeyTextField.leadingAnchor.constraint(equalTo: apiKeyContainerView.leadingAnchor, constant: 16),
             apiKeyTextField.trailingAnchor.constraint(equalTo: apiKeyContainerView.trailingAnchor, constant: -16),
             apiKeyTextField.heightAnchor.constraint(equalToConstant: 44),
@@ -285,18 +318,23 @@ class AuthenticationViewController: BaseViewController {
     }
     
     @objc private func saveAPIKey() {
-        guard let apiKey = apiKeyTextField.text, !apiKey.isEmpty else {
-            errorHandler.handle(ValidationError(message: "Please enter a valid API key"))
+        guard let serverURL = serverURLTextField.text, !serverURL.isEmpty else {
+            errorHandler.handle(ValidationError(message: "Please enter a valid server URL"))
             return
         }
         
+        // API key is optional
+        let apiKey = apiKeyTextField.text
+        
         Task {
             do {
-                // Save API key to settings
+                // Save server URL and API key to settings
                 if let dataContainer = dataContainer {
                     var settings = try await dataContainer.fetchSettings() ?? Settings()
-                    settings.apiKey = apiKey
-                    settings.hasCompletedOnboarding = true
+                    settings.apiBaseURL = serverURL
+                    settings.webSocketURL = serverURL.replacingOccurrences(of: "http://", with: "ws://")
+                                                     .replacingOccurrences(of: "https://", with: "wss://")
+                    settings.authToken = apiKey
                     try await dataContainer.updateSettings(settings)
                 }
                 
@@ -327,7 +365,9 @@ class AuthenticationViewController: BaseViewController {
 
 extension AuthenticationViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        if textField == apiKeyTextField {
+        if textField == serverURLTextField {
+            apiKeyTextField.becomeFirstResponder()
+        } else if textField == apiKeyTextField {
             saveAPIKey()
         }
         return true

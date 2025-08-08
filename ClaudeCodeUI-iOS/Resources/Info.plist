@@ -64,6 +64,8 @@
     <string>Claude Code uses Face ID to secure your sessions</string>
     <key>NSAppTransportSecurity</key>
     <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
         <key>NSAllowsLocalNetworking</key>
         <true/>
     </dict>

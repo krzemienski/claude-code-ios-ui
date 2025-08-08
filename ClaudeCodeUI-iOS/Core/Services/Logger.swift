@@ -212,7 +212,7 @@ final class Logger {
             }
             info("Cleared all log files", category: "Logger")
         } catch {
-            error(error, category: "Logger")
+            self.error(error, category: "Logger")
         }
     }
     
@@ -229,7 +229,7 @@ final class Logger {
                 return date1 > date2
             }
         } catch {
-            error(error, category: "Logger")
+            self.error(error, category: "Logger")
             return []
         }
     }

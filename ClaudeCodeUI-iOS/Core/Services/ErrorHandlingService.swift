@@ -285,7 +285,6 @@ enum SystemError: LocalizedError {
 }
 
 // MARK: - Error Handling Service
-@MainActor
 final class ErrorHandlingService {
     
     // MARK: - Singleton
@@ -322,7 +321,7 @@ final class ErrorHandlingService {
     }
     
     // MARK: - Private Methods
-    private func mapToAppError(_ error: Error) -> AppError {
+    func mapToAppError(_ error: Error) -> AppError {
         if let appError = error as? AppError {
             return appError
         }

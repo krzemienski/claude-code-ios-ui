@@ -78,7 +78,7 @@ class ProjectsViewController: BaseViewController {
     
     private var projects: [Project] = []
     private let dataContainer: SwiftDataContainer?
-    private let apiClient: APIClient
+    private var apiClient: APIClient
     private let errorHandler: ErrorHandlingService
     private let refreshControl = UIRefreshControl()
     private var isLoading = false
@@ -202,26 +202,60 @@ class ProjectsViewController: BaseViewController {
         guard !isLoading else { return }
         isLoading = true
         
+        // Show loading indicator
+        showError("Loading projects...")
+        
         Task {
             do {
+                // First, configure APIClient with saved server URL
+                if let dataContainer = dataContainer {
+                    if let settings = try? await dataContainer.fetchSettings() {
+                        self.apiClient = APIClient(baseURL: settings.apiBaseURL)
+                        print("🔧 Configured APIClient with URL: \(settings.apiBaseURL)")
+                    } else {
+                        // No saved settings, use default URL from AppConfig
+                        self.apiClient = APIClient(baseURL: AppConfig.backendURL)
+                        print("🔧 Using default server URL: \(AppConfig.backendURL)")
+                    }
+                } else {
+                    // No data container, use default URL from AppConfig
+                    self.apiClient = APIClient(baseURL: AppConfig.backendURL)
+                    print("🔧 Using default server URL (no data container): \(AppConfig.backendURL)")
+                }
+                
+                print("📱 Attempting to fetch projects from API...")
+                
                 // Try API first
                 let remoteProjects = try await apiClient.fetchProjects()
+                print("✅ Successfully fetched \(remoteProjects.count) projects from API")
+                
                 await MainActor.run {
                     self.projects = remoteProjects
                     self.updateUI()
                     self.isLoading = false
+                    print("🎨 UI updated with \(self.projects.count) projects")
+                    
+                    // Show success message
+                    if !remoteProjects.isEmpty {
+                        self.showError("Loaded \(remoteProjects.count) projects")
+                    }
                 }
             } catch {
+                print("❌ Failed to fetch from API: \(error)")
+                print("❌ Error details: \(String(describing: error))")
+                
                 // Fall back to local data if available
                 if let dataContainer = dataContainer {
                     do {
                         let localProjects = try await dataContainer.fetchProjects()
+                        print("📦 Loaded \(localProjects.count) projects from local storage")
                         await MainActor.run {
                             self.projects = localProjects
                             self.updateUI()
                             self.isLoading = false
                         }
                     } catch {
+                        print("❌ Failed to load from local storage: \(error)")
                         await MainActor.run {
                             self.isLoading = false
                             self.showError("Failed to load projects: \(error.localizedDescription)")
@@ -242,6 +276,14 @@ class ProjectsViewController: BaseViewController {
         
         Task {
             do {
+                // First, configure APIClient with saved server URL
+                if let dataContainer = dataContainer {
+                    if let settings = try? await dataContainer.fetchSettings() {
+                        self.apiClient = APIClient(baseURL: settings.apiBaseURL)
+                        print("🔧 Configured APIClient with URL: \(settings.apiBaseURL)")
+                    }
+                }
+                
                 // Fetch from API
                 let remoteProjects = try await apiClient.fetchProjects()
                 

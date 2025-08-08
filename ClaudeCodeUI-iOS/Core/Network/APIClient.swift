@@ -11,7 +11,7 @@ import Foundation
 protocol APIClientProtocol {
     func request<T: Decodable>(_ endpoint: APIEndpoint) async throws -> T
     func request(_ endpoint: APIEndpoint) async throws -> Data
-    func request(_ endpoint: APIEndpoint) async throws
+    func requestVoid(_ endpoint: APIEndpoint) async throws
 }
 
 // MARK: - API Client
@@ -35,8 +35,8 @@ actor APIClient: APIClientProtocol {
     
     // MARK: - Convenience Methods
     func fetchProjects() async throws -> [Project] {
-        let response: ProjectsResponse = try await request(.getProjects())
-        return response.projects.map { dto in
+        let dtos: [ProjectDTO] = try await request(.getProjects())
+        return dtos.map { dto in
             Project(
                 id: dto.id,
                 name: dto.name,
@@ -61,23 +61,50 @@ actor APIClient: APIClientProtocol {
     }
     
     func deleteProject(id: String) async throws {
-        try await request(.deleteProject(id: id))
+        try await requestVoid(.deleteProject(id: id))
     }
     
     // MARK: - Request Methods
     func request<T: Decodable>(_ endpoint: APIEndpoint) async throws -> T {
         let data = try await request(endpoint)
-        return try JSONDecoder().decode(T.self, from: data)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            
+            // Try ISO8601 format first
+            let isoFormatter = ISO8601DateFormatter()
+            if let date = isoFormatter.date(from: dateString) {
+                return date
+            }
+            
+            // Try custom format from backend: "YYYY-MM-DD HH:mm:ss"
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            formatter.timeZone = TimeZone(secondsFromGMT: 0)
+            if let date = formatter.date(from: dateString) {
+                return date
+            }
+            
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
+        }
+        return try decoder.decode(T.self, from: data)
     }
     
     func request(_ endpoint: APIEndpoint) async throws -> Data {
-        let request = try createRequest(for: endpoint)
+        let urlRequest = try createRequest(for: endpoint)
         
-        let (data, response) = try await session.data(for: request)
+        print("🌐 Making request to: \(urlRequest.url?.absoluteString ?? "nil")")
+        
+        let (data, response) = try await session.data(for: urlRequest)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
+        
+        print("📦 Response status: \(httpResponse.statusCode)")
+        print("📦 Response data: \(String(data: data, encoding: .utf8) ?? "nil")")
         
         guard (200...299).contains(httpResponse.statusCode) else {
             throw APIError.httpError(statusCode: httpResponse.statusCode, data: data)
@@ -86,7 +113,7 @@ actor APIClient: APIClientProtocol {
         return data
     }
     
-    func request(_ endpoint: APIEndpoint) async throws {
+    func requestVoid(_ endpoint: APIEndpoint) async throws {
         _ = try await request(endpoint) as Data
     }
     

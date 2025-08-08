@@ -11,6 +11,8 @@ struct CyberpunkTheme {
     // MARK: - Primary Colors (from design system)
     static let background = UIColor(hex: "#0A0A0F")! // Near black
     static let surface = UIColor(hex: "#1A1A2E")! // Dark blue-gray
+    static let surfacePrimary = UIColor(hex: "#1A1A2E")! // Primary surface color
+    static let surfaceSecondary = UIColor(hex: "#252540")! // Secondary surface color
     static let primaryCyan = UIColor(hex: "#00D9FF")! // Bright cyan (main brand color)
     static let accentPink = UIColor(hex: "#FF006E")! // Hot pink accent
     static let gradientBlue = UIColor(hex: "#0066FF")! // Gradient start
@@ -22,6 +24,19 @@ struct CyberpunkTheme {
     static let textTertiary = UIColor(hex: "#A0A0A0")! // Medium gray for captions
     static let textCyan = UIColor(hex: "#00D9FF")! // Cyan for interactive text
     
+    // MARK: - Semantic Colors
+    static let warning = UIColor(hex: "#FFB800")! // Amber/yellow for warnings
+    static let success = UIColor(hex: "#00FF88")! // Green for success
+    static let error = UIColor(hex: "#FF3366")! // Red for errors
+    static let info = UIColor(hex: "#00B8FF")! // Blue for info
+    
+    // MARK: - Additional UI Colors
+    static let primaryText = textPrimary // Alias for consistency
+    static let secondaryText = textSecondary // Alias for consistency
+    static let border = UIColor(hex: "#2A2A40")! // Border color
+    static let primaryColor = primaryCyan // Alias for primary brand color
+    static let secondaryColor = accentPink // Alias for secondary brand color
+    
     // MARK: - Icon Colors
     static let iconCyan = UIColor(hex: "#00D9FF")! // Primary icon color
     static let iconPink = UIColor(hex: "#FF006E")! // Accent icon color
@@ -32,6 +47,14 @@ struct CyberpunkTheme {
     static let borderRadius: CGFloat = 16.0
     static let glowIntensity: CGFloat = 0.8
     static let animationDuration: TimeInterval = 0.3
+    
+    // MARK: - Typography
+    static let titleFont = UIFont.systemFont(ofSize: 28, weight: .bold)
+    static let headlineFont = UIFont.systemFont(ofSize: 22, weight: .semibold)
+    static let bodyFont = UIFont.systemFont(ofSize: 17, weight: .regular)
+    static let captionFont = UIFont.systemFont(ofSize: 14, weight: .regular)
+    static let codeFont = UIFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+    static let smallFont = UIFont.systemFont(ofSize: 12, weight: .regular)
 }
 
 // MARK: - Typography System
@@ -90,7 +113,7 @@ struct IconSystem {
         case folder = "folder"
         case wifi = "wifi"
         case wifiMedium = "wifi.medium"
-        case wifiFull = "wifi"
+        case wifiFull = "wifi.circle.fill"
         case volume = "speaker.wave.3"
         case key = "key"
         case lockOpen = "lock.open"
