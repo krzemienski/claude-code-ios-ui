@@ -417,21 +417,27 @@ extension ChatViewController: UITextViewDelegate {
 // MARK: - WebSocketManagerDelegate
 
 extension ChatViewController: WebSocketManagerDelegate {
-    func webSocketDidConnect() {
+    func webSocketDidConnect(_ manager: WebSocketManager) {
         Logger.shared.info("WebSocket connected for project: \(project.id)")
     }
     
-    func webSocketDidDisconnect(error: Error?) {
+    func webSocketDidDisconnect(_ manager: WebSocketManager, error: Error?) {
         if let error = error {
             Logger.shared.error("WebSocket disconnected with error: \(error)")
         }
+        // Attempt reconnection after delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            self?.connectWebSocket()
+        }
     }
     
-    func webSocketDidReceiveMessage(_ message: String) {
+    func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage) {
         // Parse and handle incoming message
+        guard let content = message.payload?["content"] as? String else { return }
+        
         let assistantMessage = ChatMessage(
             id: UUID().uuidString,
-            content: message,
+            content: content,
             isUser: false,
             timestamp: Date(),
             status: .sent
@@ -445,7 +451,7 @@ extension ChatViewController: WebSocketManagerDelegate {
         }
     }
     
-    func webSocketDidReceiveData(_ data: Data) {
+    func webSocket(_ manager: WebSocketManager, didReceiveData data: Data) {
         // Handle binary data if needed
     }
 }

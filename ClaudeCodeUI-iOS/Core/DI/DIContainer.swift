@@ -23,7 +23,7 @@ final class DIContainer {
     }
     
     var webSocketManager: WebSocketManager {
-        resolve(WebSocketManager.self) ?? WebSocketManager(endpoint: "/ws")
+        resolve(WebSocketManager.self) ?? WebSocketManager()
     }
     
     var dataContainer: SwiftDataContainer {
@@ -92,7 +92,7 @@ final class DIContainer {
         }
         
         registerSingleton(WebSocketManager.self) {
-            WebSocketManager(endpoint: "/ws")
+            WebSocketManager()
         }
         
         registerSingleton(SwiftDataContainer.self) {

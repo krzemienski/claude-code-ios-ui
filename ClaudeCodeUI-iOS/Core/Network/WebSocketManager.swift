@@ -6,6 +6,16 @@
 //
 
 import Foundation
+import UIKit
+
+// MARK: - WebSocket Connection State
+enum WebSocketConnectionState {
+    case disconnected
+    case connecting
+    case connected
+    case reconnecting
+    case failed
+}
 
 // MARK: - WebSocket Message Types
 enum WebSocketMessageType: String, Codable {
@@ -30,6 +40,9 @@ enum WebSocketMessageType: String, Codable {
     // Client to server
     case claudeCommand = "claude-command"
     case abortSession = "abort-session"
+    case message = "message"
+    case typing = "typing"
+    case status = "status"
     
     // Shell WebSocket
     case shellInit = "init"
@@ -41,98 +54,174 @@ enum WebSocketMessageType: String, Codable {
 
 // MARK: - WebSocket Manager Protocol
 protocol WebSocketManagerDelegate: AnyObject {
-    func webSocketDidConnect(_ manager: WebSocketManager)
-    func webSocketDidDisconnect(_ manager: WebSocketManager, error: Error?)
-    func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage)
-    func webSocket(_ manager: WebSocketManager, didReceiveData data: Data)
+    func webSocketDidConnect()
+    func webSocketDidDisconnect(error: Error?)
+    func webSocket(didReceiveMessage message: WebSocketMessage)
+    func webSocket(didReceiveData data: Data)
+    func webSocketConnectionStateChanged(_ state: WebSocketConnectionState)
 }
 
-class WebSocketManager: NSObject {
+// MARK: - WebSocket Manager
+final class WebSocketManager {
     
     // MARK: - Properties
     weak var delegate: WebSocketManagerDelegate?
     private var webSocketTask: URLSessionWebSocketTask?
     private let session = URLSession(configuration: .default)
     private var pingTimer: Timer?
+    private var reconnectTimer: Timer?
     
-    private let baseURL: String
-    private let endpoint: String
-    private var authToken: String?
+    // Connection properties
+    private var url: URL?
+    private(set) var connectionState: WebSocketConnectionState = .disconnected {
+        didSet {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.delegate?.webSocketConnectionStateChanged(self.connectionState)
+            }
+        }
+    }
+    
+    // Reconnection settings
+    private var enableAutoReconnect = true
+    private var reconnectDelay: TimeInterval = 1.0
+    private var maxReconnectAttempts = 10
+    private var reconnectAttempts = 0
+    private let maxReconnectDelay: TimeInterval = 30.0
+    
+    // Message queue for offline support
+    private var messageQueue: [WebSocketMessage] = []
+    private let messageQueueLimit = 100
     
     var isConnected: Bool {
-        return webSocketTask?.state == .running
+        return connectionState == .connected
     }
     
     // MARK: - Initialization
-    init(baseURL: String = AppConfig.websocketURL.replacingOccurrences(of: "/ws", with: ""), endpoint: String) {
-        self.baseURL = baseURL
-        self.endpoint = endpoint
-        super.init()
+    init() {
+        setupNotifications()
+    }
+    
+    deinit {
+        disconnect()
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    // MARK: - Configuration
+    
+    func configure(enableAutoReconnect: Bool, reconnectDelay: TimeInterval, maxReconnectAttempts: Int) {
+        self.enableAutoReconnect = enableAutoReconnect
+        self.reconnectDelay = reconnectDelay
+        self.maxReconnectAttempts = maxReconnectAttempts
     }
     
     // MARK: - Connection Management
-    func connect(authToken: String? = nil) {
-        self.authToken = authToken
-        
-        var urlString = "\(baseURL)\(endpoint)"
-        if let token = authToken {
-            urlString += "?token=\(token)"
-        }
-        
+    
+    func connect(to urlString: String) {
         guard let url = URL(string: urlString) else {
-            delegate?.webSocketDidDisconnect(self, error: WebSocketError.invalidURL)
+            logError("Invalid WebSocket URL: \(urlString)", category: "WebSocket")
+            connectionState = .failed
             return
         }
+        
+        disconnect() // Ensure clean state
+        
+        self.url = url
+        connectionState = .connecting
         
         let request = URLRequest(url: url)
         webSocketTask = session.webSocketTask(with: request)
         webSocketTask?.resume()
-        
-        delegate?.webSocketDidConnect(self)
         
         // Start receiving messages
         receiveMessage()
         
         // Start ping timer
         startPingTimer()
+        
+        // Update state after a small delay to ensure connection is established
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+            if self.webSocketTask?.state == .running {
+                self.connectionState = .connected
+                self.reconnectAttempts = 0
+                self.delegate?.webSocketDidConnect()
+                self.flushMessageQueue()
+                logInfo("WebSocket connected to: \(urlString)", category: "WebSocket")
+            }
+        }
     }
     
     func disconnect() {
         stopPingTimer()
+        stopReconnectTimer()
+        
         webSocketTask?.cancel(with: .goingAway, reason: nil)
         webSocketTask = nil
+        
+        if connectionState != .disconnected {
+            connectionState = .disconnected
+            delegate?.webSocketDidDisconnect(error: nil)
+        }
     }
     
     // MARK: - Message Handling
+    
+    func send(_ message: Message) async throws {
+        let wsMessage = WebSocketMessage(
+            type: .message,
+            payload: [
+                "id": message.id,
+                "content": message.content,
+                "role": message.role.rawValue,
+                "timestamp": ISO8601DateFormatter.shared.string(from: message.timestamp)
+            ]
+        )
+        
+        send(wsMessage)
+    }
+    
     func send(_ message: WebSocketMessage) {
+        guard isConnected else {
+            // Queue message if not connected
+            if messageQueue.count < messageQueueLimit {
+                messageQueue.append(message)
+            }
+            
+            // Attempt reconnection if enabled
+            if enableAutoReconnect && connectionState != .reconnecting {
+                attemptReconnection()
+            }
+            return
+        }
+        
         guard let webSocketTask = webSocketTask else { return }
         
         do {
-            let data = try JSONEncoder().encode(message)
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(message)
             let string = String(data: data, encoding: .utf8)!
-            let message = URLSessionWebSocketTask.Message.string(string)
+            let wsMessage = URLSessionWebSocketTask.Message.string(string)
             
-            webSocketTask.send(message) { [weak self] error in
+            webSocketTask.send(wsMessage) { [weak self] error in
                 if let error = error {
-                    print("WebSocket send error: \(error)")
+                    logError("WebSocket send error: \(error)", category: "WebSocket")
                     self?.handleError(error)
                 }
             }
         } catch {
-            print("Failed to encode message: \(error)")
+            logError("Failed to encode message: \(error)", category: "WebSocket")
         }
     }
     
-    func sendData(_ data: Data) {
-        guard let webSocketTask = webSocketTask else { return }
-        
-        let message = URLSessionWebSocketTask.Message.data(data)
-        webSocketTask.send(message) { [weak self] error in
-            if let error = error {
-                print("WebSocket send data error: \(error)")
-                self?.handleError(error)
-            }
-        }
+    func sendTypingIndicator(for sessionId: String) {
+        let message = WebSocketMessage(
+            type: .typing,
+            payload: ["sessionId": sessionId],
+            sessionId: sessionId
+        )
+        send(message)
     }
     
     private func receiveMessage() {
@@ -145,7 +234,7 @@ class WebSocketManager: NSObject {
                 case .string(let text):
                     self.handleTextMessage(text)
                 case .data(let data):
-                    self.delegate?.webSocket(self, didReceiveData: data)
+                    self.delegate?.webSocket(didReceiveData: data)
                 @unknown default:
                     break
                 }
@@ -154,7 +243,7 @@ class WebSocketManager: NSObject {
                 self.receiveMessage()
                 
             case .failure(let error):
-                print("WebSocket receive error: \(error)")
+                logError("WebSocket receive error: \(error)", category: "WebSocket")
                 self.handleError(error)
             }
         }
@@ -164,26 +253,31 @@ class WebSocketManager: NSObject {
         guard let data = text.data(using: .utf8) else { return }
         
         do {
-            let message = try JSONDecoder().decode(WebSocketMessage.self, from: data)
-            delegate?.webSocket(self, didReceiveMessage: message)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let message = try decoder.decode(WebSocketMessage.self, from: data)
+            
+            DispatchQueue.main.async { [weak self] in
+                self?.delegate?.webSocket(didReceiveMessage: message)
+            }
         } catch {
-            // If it's not a standard message, try to parse it as streaming JSON
+            // Try to parse as streaming JSON
             if let streamingResponse = parseStreamingJSON(text) {
                 let message = WebSocketMessage(
-                    type: .claudeOutput,
-                    payload: streamingResponse,
-                    timestamp: Date()
+                    type: .streamingResponse,
+                    payload: streamingResponse
                 )
-                delegate?.webSocket(self, didReceiveMessage: message)
+                
+                DispatchQueue.main.async { [weak self] in
+                    self?.delegate?.webSocket(didReceiveMessage: message)
+                }
             } else {
-                print("Failed to decode WebSocket message: \(error)")
+                logError("Failed to decode WebSocket message: \(error)", category: "WebSocket")
             }
         }
     }
     
     private func parseStreamingJSON(_ text: String) -> [String: Any]? {
-        // Handle streaming JSON responses from Claude
-        // This is a simplified version - in production, you'd want more robust parsing
         guard let data = text.data(using: .utf8) else { return nil }
         
         do {
@@ -194,7 +288,49 @@ class WebSocketManager: NSObject {
         }
     }
     
+    // MARK: - Reconnection Logic
+    
+    private func attemptReconnection() {
+        guard enableAutoReconnect,
+              reconnectAttempts < maxReconnectAttempts,
+              let url = url else {
+            connectionState = .failed
+            return
+        }
+        
+        connectionState = .reconnecting
+        reconnectAttempts += 1
+        
+        // Calculate delay with exponential backoff
+        let delay = min(reconnectDelay * pow(2.0, Double(reconnectAttempts - 1)), maxReconnectDelay)
+        
+        logInfo("Attempting reconnection #\(reconnectAttempts) in \(delay)s", category: "WebSocket")
+        
+        stopReconnectTimer()
+        reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            self.connect(to: url.absoluteString)
+        }
+    }
+    
+    private func stopReconnectTimer() {
+        reconnectTimer?.invalidate()
+        reconnectTimer = nil
+    }
+    
+    // MARK: - Message Queue
+    
+    private func flushMessageQueue() {
+        let messages = messageQueue
+        messageQueue.removeAll()
+        
+        for message in messages {
+            send(message)
+        }
+    }
+    
     // MARK: - Ping/Pong
+    
     private func startPingTimer() {
         stopPingTimer()
         pingTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
@@ -210,16 +346,56 @@ class WebSocketManager: NSObject {
     private func sendPing() {
         webSocketTask?.sendPing { [weak self] error in
             if let error = error {
-                print("WebSocket ping error: \(error)")
+                logError("WebSocket ping error: \(error)", category: "WebSocket")
                 self?.handleError(error)
             }
         }
     }
     
     // MARK: - Error Handling
+    
     private func handleError(_ error: Error) {
         stopPingTimer()
-        delegate?.webSocketDidDisconnect(self, error: error)
+        
+        let wasConnected = isConnected
+        connectionState = .disconnected
+        
+        delegate?.webSocketDidDisconnect(error: error)
+        
+        // Attempt reconnection if it was previously connected
+        if wasConnected && enableAutoReconnect {
+            attemptReconnection()
+        }
+    }
+    
+    // MARK: - App Lifecycle
+    
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func appDidEnterBackground() {
+        // Disconnect when app goes to background
+        disconnect()
+    }
+    
+    @objc private func appWillEnterForeground() {
+        // Reconnect when app returns to foreground
+        if let url = url {
+            connect(to: url.absoluteString)
+        }
     }
 }
 
@@ -248,9 +424,9 @@ struct WebSocketMessage: Codable {
         timestamp = try container.decodeIfPresent(Date.self, forKey: .timestamp) ?? Date()
         sessionId = try container.decodeIfPresent(String.self, forKey: .sessionId)
         
-        // Decode payload as generic dictionary
-        if let payloadData = try? container.decode(Data.self, forKey: .payload) {
-            payload = try? JSONSerialization.jsonObject(with: payloadData, options: []) as? [String: Any]
+        // Decode payload as AnyCodable dictionary
+        if let anyPayload = try? container.decode([String: AnyCodable].self, forKey: .payload) {
+            payload = anyPayload.mapValues { $0.value }
         } else {
             payload = nil
         }
@@ -263,8 +439,8 @@ struct WebSocketMessage: Codable {
         try container.encodeIfPresent(sessionId, forKey: .sessionId)
         
         if let payload = payload {
-            let data = try JSONSerialization.data(withJSONObject: payload, options: [])
-            try container.encode(data, forKey: .payload)
+            let anyPayload = payload.mapValues { AnyCodable($0) }
+            try container.encode(anyPayload, forKey: .payload)
         }
     }
 }
@@ -274,6 +450,8 @@ enum WebSocketError: LocalizedError {
     case invalidURL
     case connectionFailed
     case authenticationFailed
+    case messageEncodingFailed
+    case messageDecodingFailed
     
     var errorDescription: String? {
         switch self {
@@ -283,6 +461,10 @@ enum WebSocketError: LocalizedError {
             return "Failed to connect to WebSocket"
         case .authenticationFailed:
             return "WebSocket authentication failed"
+        case .messageEncodingFailed:
+            return "Failed to encode message"
+        case .messageDecodingFailed:
+            return "Failed to decode message"
         }
     }
     
@@ -294,15 +476,80 @@ enum WebSocketError: LocalizedError {
             return "Please check your internet connection and try again."
         case .authenticationFailed:
             return "Please check your authentication credentials."
+        case .messageEncodingFailed, .messageDecodingFailed:
+            return "Please check the message format."
         }
     }
     
     var isRetryable: Bool {
         switch self {
-        case .invalidURL:
+        case .invalidURL, .messageEncodingFailed, .messageDecodingFailed:
             return false
         case .connectionFailed, .authenticationFailed:
             return true
         }
     }
+}
+
+// MARK: - AnyCodable Helper
+struct AnyCodable: Codable {
+    let value: Any
+    
+    init(_ value: Any) {
+        self.value = value
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        if let intValue = try? container.decode(Int.self) {
+            value = intValue
+        } else if let doubleValue = try? container.decode(Double.self) {
+            value = doubleValue
+        } else if let boolValue = try? container.decode(Bool.self) {
+            value = boolValue
+        } else if let stringValue = try? container.decode(String.self) {
+            value = stringValue
+        } else if let arrayValue = try? container.decode([AnyCodable].self) {
+            value = arrayValue.map { $0.value }
+        } else if let dictValue = try? container.decode([String: AnyCodable].self) {
+            value = dictValue.mapValues { $0.value }
+        } else if container.decodeNil() {
+            value = NSNull()
+        } else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unable to decode AnyCodable")
+        }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        
+        switch value {
+        case let intValue as Int:
+            try container.encode(intValue)
+        case let doubleValue as Double:
+            try container.encode(doubleValue)
+        case let boolValue as Bool:
+            try container.encode(boolValue)
+        case let stringValue as String:
+            try container.encode(stringValue)
+        case is NSNull:
+            try container.encodeNil()
+        case let arrayValue as [Any]:
+            try container.encode(arrayValue.map { AnyCodable($0) })
+        case let dictValue as [String: Any]:
+            try container.encode(dictValue.mapValues { AnyCodable($0) })
+        default:
+            throw EncodingError.invalidValue(value, EncodingError.Context(codingPath: [], debugDescription: "Unable to encode AnyCodable"))
+        }
+    }
+}
+
+// MARK: - ISO8601DateFormatter Extension
+extension ISO8601DateFormatter {
+    static let shared: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
 }

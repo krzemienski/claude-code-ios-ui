@@ -616,6 +616,62 @@ wss.on('connection', (ws) => {
                     });
                     break;
                     
+                case 'message':
+                    // Handle chat message
+                    const { content, projectId, userId } = data.payload || data;
+                    if (content && projectId) {
+                        const messageId = crypto.randomUUID();
+                        const convId = data.conversationId || crypto.randomUUID();
+                        
+                        // Store user message
+                        db.run(
+                            `INSERT INTO messages (id, conversation_id, project_id, role, content)
+                             VALUES (?, ?, ?, ?, ?)`,
+                            [messageId, convId, projectId, 'user', content],
+                            async (err) => {
+                                if (err) {
+                                    console.error('Error storing message:', err);
+                                    return;
+                                }
+                                
+                                // Generate AI response
+                                const responseId = crypto.randomUUID();
+                                const aiResponse = `I understand you want to ${content}. Let me help you with that...`;
+                                
+                                // Store AI response
+                                db.run(
+                                    `INSERT INTO messages (id, conversation_id, project_id, role, content)
+                                     VALUES (?, ?, ?, ?, ?)`,
+                                    [responseId, convId, projectId, 'assistant', aiResponse],
+                                    (err) => {
+                                        if (!err) {
+                                            // Send response back via WebSocket
+                                            const responseMessage = {
+                                                type: 'message',
+                                                payload: {
+                                                    id: responseId,
+                                                    conversationId: convId,
+                                                    projectId: projectId,
+                                                    role: 'assistant',
+                                                    content: aiResponse,
+                                                    timestamp: new Date().toISOString()
+                                                }
+                                            };
+                                            
+                                            // Send to all connected clients for this project
+                                            connectedClients.forEach(client => {
+                                                if (client.readyState === client.OPEN) {
+                                                    client.send(JSON.stringify(responseMessage));
+                                                }
+                                            });
+                                        }
+                                    }
+                                );
+                            }
+                        );
+                    }
+                    break;
+                    
                 default:
                     console.log('Unknown WebSocket message type:', data.type);
             }

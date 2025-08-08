@@ -34,7 +34,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Restart any paused WebSocket connections
         if let webSocketManager = DIContainer.shared.resolve(WebSocketManager.self) {
             if !webSocketManager.isConnected {
-                webSocketManager.connect()
+                webSocketManager.connect(to: AppConfig.websocketURL)
             }
         }
     }

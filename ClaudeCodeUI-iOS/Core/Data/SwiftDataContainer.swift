@@ -79,7 +79,7 @@ class SwiftDataContainer {
             predicate: #Predicate { session in
                 session.projectId == projectId
             },
-            sortBy: [SortDescriptor(\.lastActiveAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
         
         var fetchDescriptor = descriptor
@@ -105,14 +105,8 @@ class SwiftDataContainer {
     // MARK: - Message Operations
     
     func fetchMessages(for session: Session) throws -> [Message] {
-        let sessionId = session.id
-        let descriptor = FetchDescriptor<Message>(
-            predicate: #Predicate { message in
-                message.session?.id == sessionId
-            },
-            sortBy: [SortDescriptor(\.timestamp)]
-        )
-        return try container.mainContext.fetch(descriptor)
+        // Messages are related directly to the session
+        return session.messages ?? []
     }
     
     func createMessage(for session: Session, role: MessageRole, content: String) throws -> Message {
@@ -120,8 +114,14 @@ class SwiftDataContainer {
         message.session = session
         container.mainContext.insert(message)
         
-        // Update session last active time
+        // Update session activity time
         session.lastActiveAt = Date()
+        
+        // Add message to session's messages
+        if session.messages == nil {
+            session.messages = []
+        }
+        session.messages?.append(message)
         
         try save()
         return message
@@ -167,5 +167,29 @@ class SwiftDataContainer {
                 _ = try createProject(name: name, path: path)
             }
         }
+    }
+    
+    // MARK: - Async Operations (for use from async contexts)
+    
+    func fetchProjects() async throws -> [Project] {
+        return try await Task { @MainActor in
+            try fetchProjects()
+        }.value
+    }
+    
+    func fetchSettings() async throws -> Settings {
+        return try await Task { @MainActor in
+            try fetchSettings()
+        }.value
+    }
+    
+    func saveProject(_ project: Project) async throws {
+        container.mainContext.insert(project)
+        try save()
+    }
+    
+    func deleteProject(_ project: Project) async throws {
+        container.mainContext.delete(project)
+        try save()
     }
 }

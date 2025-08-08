@@ -286,49 +286,94 @@ class TerminalViewController: BaseViewController {
         // Show command in terminal
         appendToTerminal("$ \(command)", color: CyberpunkTheme.primaryCyan)
         
-        // Parse and execute command
-        let components = command.components(separatedBy: " ")
-        guard let cmd = components.first?.lowercased() else { return }
-        
-        switch cmd {
-        case "help":
-            showHelp()
-        case "clear", "cls":
+        // Special handling for clear command (local only)
+        if command.lowercased() == "clear" || command.lowercased() == "cls" {
             clearTerminal()
-        case "pwd":
-            appendToTerminal(currentDirectory)
-        case "ls", "dir":
-            listDirectory()
-        case "cd":
-            if components.count > 1 {
-                changeDirectory(components[1])
-            } else {
-                appendToTerminal("Usage: cd <directory>", color: CyberpunkTheme.accentPink)
-            }
-        case "echo":
-            let message = components.dropFirst().joined(separator: " ")
-            appendToTerminal(message)
-        case "date":
-            let formatter = DateFormatter()
-            formatter.dateStyle = .full
-            formatter.timeStyle = .full
-            appendToTerminal(formatter.string(from: Date()))
-        case "whoami":
-            appendToTerminal("neural_user_\(Int.random(in: 1000...9999))")
-        case "matrix":
-            showMatrix()
-        case "hack":
-            simulateHacking()
-        case "exit", "quit":
+            return
+        }
+        
+        // Special handling for exit command (local only)
+        if command.lowercased() == "exit" || command.lowercased() == "quit" {
             if project != nil {
                 closeTerminal()
             } else {
                 appendToTerminal("Cannot exit main terminal", color: CyberpunkTheme.accentPink)
             }
-        default:
-            appendToTerminal("Command not found: \(cmd)", color: CyberpunkTheme.accentPink)
-            appendToTerminal("Type 'help' for available commands", color: CyberpunkTheme.secondaryText)
+            return
         }
+        
+        // Send ALL other commands to backend for real execution
+        sendCommandToBackend(command)
+    }
+    
+    private func sendCommandToBackend(_ command: String) {
+        // Create the request body
+        let parameters: [String: Any] = [
+            "command": command,
+            "projectId": project?.id.uuidString ?? "",
+            "cwd": currentDirectory
+        ]
+        
+        guard let url = URL(string: "\(AppConfig.shared.baseURL)/api/terminal/execute") else {
+            appendToTerminal("Error: Invalid server URL", color: CyberpunkTheme.accentPink)
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
+        } catch {
+            appendToTerminal("Error: Failed to prepare command", color: CyberpunkTheme.accentPink)
+            return
+        }
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self?.appendToTerminal("Error: \(error.localizedDescription)", color: CyberpunkTheme.accentPink)
+                    return
+                }
+                
+                guard let data = data else {
+                    self?.appendToTerminal("Error: No response from server", color: CyberpunkTheme.accentPink)
+                    return
+                }
+                
+                do {
+                    if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                        // Handle stdout output
+                        if let output = json["output"] as? String, !output.isEmpty {
+                            self?.appendToTerminal(output)
+                        }
+                        
+                        // Handle stderr output
+                        if let stderr = json["stderr"] as? String, !stderr.isEmpty {
+                            self?.appendToTerminal(stderr, color: CyberpunkTheme.warning)
+                        }
+                        
+                        // Handle error messages
+                        if let errorMsg = json["error"] as? String {
+                            if errorMsg.contains("Command not found") || errorMsg.contains("not found") {
+                                self?.appendToTerminal("\(errorMsg)", color: CyberpunkTheme.accentPink)
+                            } else {
+                                self?.appendToTerminal("Error: \(errorMsg)", color: CyberpunkTheme.accentPink)
+                            }
+                        }
+                        
+                        // Store session ID if provided
+                        if let sessionId = json["sessionId"] as? String {
+                            // Could use this for session management if needed
+                            print("Terminal session ID: \(sessionId)")
+                        }
+                    }
+                } catch {
+                    self?.appendToTerminal("Error: Failed to parse response", color: CyberpunkTheme.accentPink)
+                }
+            }
+        }.resume()
     }
     
     private func showHelp() {
