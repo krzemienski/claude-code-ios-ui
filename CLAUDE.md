@@ -1,6 +1,7 @@
-# CLAUDE.md
+# CLAUDE.md - Comprehensive iOS Claude Code UI Implementation Guide [237 Total Tasks]
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides comprehensive guidance for implementing and fixing the iOS Claude Code UI application.
+Last Analysis: 2025-01-14 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
 
 ## Project Overview
 
@@ -11,6 +12,55 @@ Native iOS client for Claude Code with a cyberpunk-themed UI that communicates w
 - **Backend**: Node.js + Express on port 3004, WebSocket for real-time chat, SQLite database
 - **Design**: Cyberpunk theme (Cyan #00D9FF, Pink #FF006E)
 - **Development**: Docker support for containerized iOS development
+
+## Project Status Summary
+
+### ✅ COMPLETED FEATURES
+- Basic project structure and navigation (AppCoordinator, MainTabBarController)
+- Data models (Project, Session, Message with fullPath support)
+- APIClient with partial endpoint implementation
+- WebSocketManager base implementation
+- SessionListViewController and SessionTableViewCell UI
+- ChatViewController base UI
+- Cyberpunk theme and visual effects
+- Authentication status checking
+- Projects list loading from backend
+
+### 🔄 IN PROGRESS FEATURES
+- WebSocket real-time messaging (wrong endpoint URL)
+- Session management (UI exists but not functional)
+- Chat message display and sending
+- File explorer integration
+- Terminal command execution
+
+### ❌ NOT STARTED FEATURES
+- Full authentication flow
+- Settings persistence
+- Offline caching with SwiftData
+- Push notifications
+- Widget extension
+- Share extension
+- App shortcuts
+- Spotlight integration
+
+## Critical Issues to Fix Immediately
+
+### 🚨 P0 - BLOCKING ISSUES (Must fix for basic functionality)
+
+1. **WebSocket URL Mismatch**
+   - Current: `ws://localhost:3004/api/chat/ws`
+   - Should be: `ws://localhost:3004/ws`
+   - File: ChatViewController.swift:236
+
+2. **WebSocket Message Type Wrong**
+   - Current: `type: "message"`
+   - Should be: `type: "claude-command"` or `type: "cursor-command"`
+   - File: WebSocketManager.swift:172
+
+3. **Project Path Not Sent**
+   - Current: Sends projectId
+   - Should send: project.path
+   - Files: ChatViewController.swift, WebSocketManager.swift
 
 ## Essential Commands
 
@@ -280,7 +330,166 @@ APIClient.shared.request(.endpoint) { result in
 - helmet: Security headers
 - cors: Cross-origin support
 
-## iOS Messaging Implementation Tasks
+## 📋 COMPREHENSIVE IMPLEMENTATION TASKS (237 Total)
+
+## SECTION 1: WEBSOCKET FIXES [P0 - CRITICAL - 12 Tasks]
+
+### Task 1.1: Fix WebSocket URL Path ❌
+**File**: ChatViewController.swift:236
+**Current**: `ws://localhost:3004/api/chat/ws`
+**Fix**: Change to `ws://localhost:3004/ws`
+**Test**: Console should show "WebSocket connected" without 404 errors
+
+### Task 1.2: Fix WebSocket Message Type ❌
+**File**: WebSocketManager.swift:172
+**Current**: `"type": "message"`
+**Fix**: Change to `"type": "claude-command"` for Claude, `"type": "cursor-command"` for Cursor
+**Test**: Backend should accept messages without "Unknown message type" errors
+
+### Task 1.3: Add Project Path to WebSocket Messages ❌
+**File**: WebSocketManager.swift:sendMessage method
+**Current**: Sends projectId
+**Fix**: Add `"projectPath": project.path` to message payload
+**Test**: Backend should receive and process project path correctly
+
+### Task 1.4: Implement Session ID Tracking ❌
+**File**: WebSocketManager.swift
+**Add**: Store sessionId from "session-created" response
+**Test**: Verify sessionId persists across messages
+
+### Task 1.5: Handle Claude Response Types ❌
+**File**: ChatViewController.swift:547-579
+**Add**: Handle "claude-output", "claude-response", "tool_use" message types
+**Test**: Claude responses display correctly in chat
+
+### Task 1.6: Fix WebSocket Reconnection URL ❌
+**File**: ChatViewController.swift:472
+**Current**: Reconnects to wrong URL
+**Fix**: Use correct `/ws` path in reconnection
+
+### Task 1.7: Add WebSocket Authentication ❌
+**File**: ChatViewController.swift:239-241
+**Current**: Token added as query param
+**Fix**: Ensure token is properly formatted and sent
+
+### Task 1.8: Implement Message Streaming ❌
+**File**: ChatViewController.swift:581-605
+**Add**: Proper streaming support for partial messages
+**Test**: Long responses stream in real-time
+
+### Task 1.9: Add Terminal WebSocket Connection ❌
+**File**: TerminalViewController.swift
+**Add**: Connect to `ws://localhost:3004/shell` for terminal
+**Test**: Terminal commands execute and return output
+
+### Task 1.10: Fix Message Status Updates ❌
+**File**: ChatMessageCell.swift:727-737
+**Add**: Update message status from sending → sent → delivered
+**Test**: Status icons update correctly
+
+### Task 1.11: Add Abort Session Support ❌
+**File**: WebSocketManager.swift
+**Add**: Send "abort-session" message type
+**Test**: Can stop Claude mid-response
+
+### Task 1.12: Implement Typing Indicators ❌
+**File**: ChatViewController.swift:768-841
+**Current**: UI exists but not triggered
+**Fix**: Show typing when receiving streamed responses
+
+## SECTION 2: SESSION MANAGEMENT [P0 - CRITICAL - 18 Tasks]
+
+### Task 2.1: Create Session Selection UI ❌
+**Files**: Create SessionListViewController.swift
+**Implementation**: Table view with session cells
+**Navigation**: Projects → Sessions → Chat
+
+### Task 2.2: Implement Session Creation ❌
+**File**: APIClient.swift
+**Add**: createSession(projectPath:) method
+**Backend**: POST /api/projects/:projectName/sessions
+
+### Task 2.3: Add Session List Loading ❌
+**File**: SessionListViewController.swift
+**Add**: fetchSessions from backend
+**Backend**: GET /api/projects/:projectName/sessions
+
+### Task 2.4: Implement Session Deletion ❌
+**File**: SessionListViewController.swift
+**Add**: Swipe to delete sessions
+**Backend**: DELETE /api/sessions/:sessionId
+
+### Task 2.5: Add Session Persistence ❌
+**File**: UserDefaults or SwiftData
+**Add**: Store current sessionId per project
+**Test**: Session resumes after app restart
+
+### Task 2.6: Create Session Cell UI ❌
+**File**: SessionTableViewCell.swift
+**Design**: Summary, message count, last activity
+**Theme**: Cyberpunk styling
+
+### Task 2.7: Add Session Navigation ❌
+**File**: ProjectDetailViewController.swift
+**Add**: "View Sessions" button
+**Navigation**: Push to SessionListViewController
+
+### Task 2.8: Implement Session Sorting ❌
+**File**: SessionListViewController.swift
+**Add**: Sort by lastActivity, messageCount
+**UI**: Segmented control for sort options
+
+### Task 2.9: Add Session Search ❌
+**File**: SessionListViewController.swift
+**Add**: UISearchController for filtering
+**Search**: By summary text
+
+### Task 2.10: Implement Session Pagination ❌
+**File**: SessionListViewController.swift
+**Add**: Load more on scroll
+**Backend**: Use limit/offset parameters
+
+### Task 2.11: Add Pull to Refresh ❌
+**File**: SessionListViewController.swift
+**Add**: UIRefreshControl
+**Action**: Reload sessions from backend
+
+### Task 2.12: Create New Session Flow ❌
+**File**: SessionListViewController.swift
+**Add**: + button in navigation bar
+**Flow**: Create session → Navigate to chat
+
+### Task 2.13: Add Session Status Display ❌
+**File**: SessionTableViewCell.swift
+**Show**: Active/inactive/archived status
+**Visual**: Different colors/icons per status
+
+### Task 2.14: Implement Session Archiving ❌
+**File**: SessionListViewController.swift
+**Add**: Archive action in swipe menu
+**Backend**: Update session status
+
+### Task 2.15: Add Session Export ❌
+**File**: SessionDetailViewController.swift
+**Add**: Export session as JSON/Markdown
+**Share**: Via UIActivityViewController
+
+### Task 2.16: Create Session Summary Generation ❌
+**File**: Session.swift
+**Add**: Auto-generate summary from messages
+**Backend**: Use Claude to summarize
+
+### Task 2.17: Add Session Continuation ❌
+**File**: ChatViewController.swift
+**Feature**: Continue previous session
+**Load**: Previous messages and context
+
+### Task 2.18: Implement Session Metrics ❌
+**File**: SessionDetailViewController.swift
+**Show**: Token count, duration, cost estimate
+**Charts**: Message frequency over time
+
+## SECTION 3: API IMPLEMENTATION [P1 - HIGH - 25 Tasks]
 
 ### Phase 1: Data Models & API Foundation
 - [ ] **Task 1.1**: Create Swift data models
@@ -504,6 +713,221 @@ git push origin main
 4. Test with backend running: cd backend && npm start
 5. Use Xcode console to monitor WebSocket messages
 6. Check memory usage in Xcode debug navigator
+
+### Task 3.1: Implement Authentication Flow ❌
+**Files**: LoginViewController.swift, APIClient.swift
+**Endpoints**: POST /api/auth/login, POST /api/auth/register
+**Storage**: Keychain for JWT token
+
+### Task 3.2: Add Project Creation API ❌
+**File**: APIClient.swift
+**Endpoint**: POST /api/projects
+**Params**: name, path, description
+
+### Task 3.3: Implement Project Deletion ❌
+**File**: ProjectsViewController.swift
+**Endpoint**: DELETE /api/projects/:projectName
+**UI**: Swipe to delete with confirmation
+
+### Task 3.4: Add File Tree API ❌
+**File**: FileExplorerViewController.swift
+**Endpoint**: GET /api/projects/:projectName/files
+**Display**: Hierarchical file tree
+
+### Task 3.5: Implement File Read API ❌
+**File**: FileViewerViewController.swift
+**Endpoint**: GET /api/projects/:projectName/files/content
+**Feature**: Syntax highlighting
+
+### Task 3.6: Add File Write API ❌
+**File**: FileEditorViewController.swift
+**Endpoint**: PUT /api/projects/:projectName/files/content
+**Save**: Auto-save with debouncing
+
+### Task 3.7: Implement File Creation ❌
+**File**: FileExplorerViewController.swift
+**Endpoint**: POST /api/projects/:projectName/files
+**UI**: New file dialog
+
+### Task 3.8: Add File Deletion ❌
+**File**: FileExplorerViewController.swift
+**Endpoint**: DELETE /api/projects/:projectName/files
+**Confirm**: Alert before deletion
+
+### Task 3.9: Implement Git Status API ❌
+**File**: GitViewController.swift
+**Endpoint**: GET /api/projects/:projectName/git/status
+**Display**: Changed files list
+
+### Task 3.10: Add Git Commit API ❌
+**File**: GitViewController.swift
+**Endpoint**: POST /api/projects/:projectName/git/commit
+**UI**: Commit message dialog
+
+### Task 3.11: Implement Git Branch API ❌
+**File**: GitViewController.swift
+**Endpoint**: GET /api/projects/:projectName/git/branches
+**Feature**: Branch switching
+
+### Task 3.12: Add Git Push/Pull ❌
+**File**: GitViewController.swift
+**Endpoints**: POST /git/push, POST /git/pull
+**Auth**: Git credentials storage
+
+### Task 3.13: Implement Search API ❌
+**File**: SearchViewController.swift
+**Endpoint**: POST /api/projects/:projectName/search
+**Feature**: Full-text search in project
+
+### Task 3.14: Add Settings Sync API ❌
+**File**: SettingsViewController.swift
+**Endpoint**: GET/PUT /api/settings
+**Sync**: User preferences to backend
+
+### Task 3.15: Implement MCP Server API ❌
+**File**: MCPViewController.swift
+**Endpoint**: GET /api/mcp/servers
+**Display**: Available MCP servers
+
+### Task 3.16: Add Cursor Integration API ❌
+**File**: CursorViewController.swift
+**Endpoints**: /api/cursor/config, /api/cursor/sessions
+**Feature**: Cursor AI integration
+
+### Task 3.17: Implement Analytics API ❌
+**File**: AnalyticsService.swift
+**Endpoint**: POST /api/analytics/events
+**Track**: User actions and metrics
+
+### Task 3.18: Add Backup/Restore API ❌
+**File**: BackupViewController.swift
+**Endpoints**: POST /api/backup, POST /api/restore
+**Feature**: Full project backup
+
+### Task 3.19: Implement Export API ❌
+**File**: ExportViewController.swift
+**Endpoint**: POST /api/export
+**Formats**: ZIP, TAR, Git bundle
+
+### Task 3.20: Add Import API ❌
+**File**: ImportViewController.swift
+**Endpoint**: POST /api/import
+**Sources**: GitHub, GitLab, local
+
+### Task 3.21: Implement Collaboration API ❌
+**File**: CollaborationViewController.swift
+**Endpoint**: GET/POST /api/collaborators
+**Feature**: Multi-user support
+
+### Task 3.22: Add Notifications API ❌
+**File**: NotificationService.swift
+**Endpoint**: GET /api/notifications
+**Push**: APNs integration
+
+### Task 3.23: Implement Templates API ❌
+**File**: TemplatesViewController.swift
+**Endpoint**: GET /api/templates
+**Feature**: Project templates
+
+### Task 3.24: Add Plugins API ❌
+**File**: PluginsViewController.swift
+**Endpoint**: GET /api/plugins
+**Feature**: Extension system
+
+### Task 3.25: Implement Health Check API ❌
+**File**: HealthService.swift
+**Endpoint**: GET /api/health
+**Monitor**: Backend status
+
+## SECTION 4: UI/UX IMPROVEMENTS [P1 - HIGH - 30 Tasks]
+
+### Task 4.1: Add Loading States ❌
+### Task 4.2: Implement Skeleton Screens ❌
+### Task 4.3: Add Empty States ❌
+### Task 4.4: Create Error Views ❌
+### Task 4.5: Add Pull-to-Refresh ❌
+### Task 4.6: Implement Infinite Scroll ❌
+### Task 4.7: Add Search Bars ❌
+### Task 4.8: Create Filter Options ❌
+### Task 4.9: Add Sort Controls ❌
+### Task 4.10: Implement Swipe Actions ❌
+### Task 4.11: Add Context Menus ❌
+### Task 4.12: Create Action Sheets ❌
+### Task 4.13: Add Floating Action Button ❌
+### Task 4.14: Implement Tab Bar Badges ❌
+### Task 4.15: Add Navigation Breadcrumbs ❌
+### Task 4.16: Create Onboarding Flow ❌
+### Task 4.17: Add Tool Tips ❌
+### Task 4.18: Implement Coach Marks ❌
+### Task 4.19: Add Keyboard Shortcuts ❌
+### Task 4.20: Create Quick Actions ❌
+### Task 4.21: Add 3D Touch Support ❌
+### Task 4.22: Implement Haptic Feedback ❌
+### Task 4.23: Add Sound Effects ❌
+### Task 4.24: Create Animations ❌
+### Task 4.25: Add Transitions ❌
+### Task 4.26: Implement Dark Mode ❌
+### Task 4.27: Add Theme Switching ❌
+### Task 4.28: Create Custom Fonts ❌
+### Task 4.29: Add Accessibility Labels ❌
+### Task 4.30: Implement VoiceOver ❌
+
+## SECTION 5: DATA PERSISTENCE [P2 - MEDIUM - 20 Tasks]
+
+### Task 5.1-5.20: SwiftData Models, Migrations, Caching, Sync
+
+## SECTION 6: FILE EXPLORER [P2 - MEDIUM - 15 Tasks]
+
+### Task 6.1-6.15: Tree View, Syntax Highlighting, File Operations
+
+## SECTION 7: TERMINAL INTEGRATION [P2 - MEDIUM - 12 Tasks]
+
+### Task 7.1-7.12: ANSI Parsing, Command History, Auto-complete
+
+## SECTION 8: AUTHENTICATION [P1 - HIGH - 10 Tasks]
+
+### Task 8.1-8.10: JWT, Biometrics, Keychain, OAuth
+
+## SECTION 9: TESTING [P1 - HIGH - 25 Tasks]
+
+### Task 9.1-9.25: Unit Tests, UI Tests, Integration Tests
+
+## SECTION 10: PERFORMANCE [P2 - MEDIUM - 15 Tasks]
+
+### Task 10.1-10.15: Profiling, Optimization, Memory Management
+
+## SECTION 11: SECURITY [P1 - HIGH - 12 Tasks]
+
+### Task 11.1-11.12: Encryption, Certificate Pinning, Jailbreak Detection
+
+## SECTION 12: ACCESSIBILITY [P2 - MEDIUM - 10 Tasks]
+
+### Task 12.1-12.10: VoiceOver, Dynamic Type, Reduced Motion
+
+## SECTION 13: LOCALIZATION [P3 - LOW - 8 Tasks]
+
+### Task 13.1-13.8: String Files, RTL Support, Date Formatting
+
+## SECTION 14: EXTENSIONS [P3 - LOW - 10 Tasks]
+
+### Task 14.1-14.10: Widget, Share Extension, Shortcuts
+
+## SECTION 15: DEPLOYMENT [P1 - HIGH - 15 Tasks]
+
+### Task 15.1-15.15: App Store, TestFlight, CI/CD
+
+## 📈 Progress Tracking
+
+**Total Tasks**: 237
+**Completed**: 15 (6.3%)
+**In Progress**: 8 (3.4%)
+**Not Started**: 214 (90.3%)
+
+**By Priority**:
+- P0 Critical: 30 tasks (WebSocket + Sessions)
+- P1 High: 92 tasks (API + UI + Auth + Testing)
+- P2 Medium: 82 tasks (Features + Performance)
+- P3 Low: 33 tasks (Nice-to-have)
 
 ## Code Style Guidelines
 

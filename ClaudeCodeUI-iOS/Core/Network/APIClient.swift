@@ -163,7 +163,17 @@ actor APIClient: APIClientProtocol {
             let container = try decoder.singleValueContainer()
             let dateString = try container.decode(String.self)
             
-            // Try ISO8601 format first
+            // Try ISO8601 format with fractional seconds first (e.g., "2025-08-13T04:23:58.130Z")
+            let isoFormatterWithMillis = ISO8601DateFormatter()
+            isoFormatterWithMillis.formatOptions = [
+                .withInternetDateTime,
+                .withFractionalSeconds
+            ]
+            if let date = isoFormatterWithMillis.date(from: dateString) {
+                return date
+            }
+            
+            // Try basic ISO8601 format without fractional seconds
             let isoFormatter = ISO8601DateFormatter()
             if let date = isoFormatter.date(from: dateString) {
                 return date
