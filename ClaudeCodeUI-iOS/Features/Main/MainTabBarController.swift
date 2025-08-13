@@ -7,7 +7,7 @@
 
 import UIKit
 
-class MainTabBarController: UITabBarController {
+public class MainTabBarController: UITabBarController {
     
     // MARK: - Properties
     private let projectsVC = ProjectsViewController()
@@ -15,7 +15,7 @@ class MainTabBarController: UITabBarController {
     private var currentProject: Project?
     
     // MARK: - Lifecycle
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         setupTabBar()
         setupViewControllers()
@@ -186,7 +186,7 @@ class MainTabBarController: UITabBarController {
 
 // MARK: - UITabBarControllerDelegate
 extension MainTabBarController: UITabBarControllerDelegate {
-    override func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
+    public override func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
         // Add haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()

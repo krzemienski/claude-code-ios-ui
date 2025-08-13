@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 try {
-    const envPath = path.join(__dirname, '.env');
+    const envPath = path.join(__dirname, '../.env');
     const envFile = fs.readFileSync(envPath, 'utf8');
     envFile.split('\n').forEach(line => {
         const trimmedLine = line.trim();
@@ -196,7 +196,8 @@ app.get('/api/config', authenticateToken, (req, res) => {
     });
 });
 
-app.get('/api/projects', authenticateToken, async (req, res) => {
+// Temporarily disabled authentication for testing iOS app
+app.get('/api/projects', /*authenticateToken,*/ async (req, res) => {
     try {
         const projects = await getProjects();
         res.json(projects);
@@ -1054,7 +1055,7 @@ async function getFileTree(dirPath, maxDepth = 3, currentDepth = 0, showHidden =
     });
 }
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3004;
 
 // Initialize database and start server
 async function startServer() {

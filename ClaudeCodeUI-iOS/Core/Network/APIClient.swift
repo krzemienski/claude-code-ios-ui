@@ -38,12 +38,12 @@ actor APIClient: APIClientProtocol {
         let dtos: [ProjectDTO] = try await request(.getProjects())
         return dtos.map { dto in
             Project(
-                id: dto.id,
+                id: dto.name, // Use name as ID since backend doesn't provide ID
                 name: dto.name,
                 path: dto.path,
                 displayName: dto.displayName ?? dto.name,
-                createdAt: dto.createdAt,
-                updatedAt: dto.updatedAt
+                createdAt: Date(), // Default to current date since backend doesn't provide
+                updatedAt: Date()  // Default to current date since backend doesn't provide
             )
         }
     }
@@ -51,17 +51,41 @@ actor APIClient: APIClientProtocol {
     func createProject(name: String, path: String) async throws -> Project {
         let dto: ProjectDTO = try await request(.createProject(name: name, path: path))
         return Project(
-            id: dto.id,
+            id: dto.name, // Use name as ID since backend doesn't provide ID
             name: dto.name,
             path: dto.path,
             displayName: dto.displayName ?? dto.name,
-            createdAt: dto.createdAt,
-            updatedAt: dto.updatedAt
+            createdAt: Date(), // Default to current date since backend doesn't provide
+            updatedAt: Date()  // Default to current date since backend doesn't provide
         )
     }
     
     func deleteProject(id: String) async throws {
         try await requestVoid(.deleteProject(id: id))
+    }
+    
+    func fetchSessions(projectId: String, limit: Int = 5, offset: Int = 0) async throws -> [Session] {
+        let response: SessionsResponse = try await request(.getSessions(projectId: projectId, limit: limit, offset: offset))
+        return response.sessions.map { dto in
+            let session = Session(id: dto.id, projectId: projectId)
+            session.startedAt = dto.startedAt
+            session.lastActiveAt = dto.lastActiveAt
+            session.status = SessionStatus(rawValue: dto.status) ?? .active
+            return session
+        }
+    }
+    
+    func fetchMessages(projectId: String, sessionId: String) async throws -> [Message] {
+        let messages: [MessageDTO] = try await request(.getMessages(projectId: projectId, sessionId: sessionId))
+        return messages.map { dto in
+            let message = Message(
+                id: dto.id ?? UUID().uuidString,
+                role: MessageRole(rawValue: dto.role) ?? .user,
+                content: dto.content
+            )
+            message.timestamp = dto.timestamp ?? Date()
+            return message
+        }
     }
     
     // MARK: - Request Methods
@@ -212,8 +236,8 @@ enum APIError: LocalizedError {
 // MARK: - API Endpoints Extension
 extension APIEndpoint {
     // Auth endpoints
-    static func login(email: String, password: String) -> APIEndpoint {
-        let body = try? JSONEncoder().encode(["email": email, "password": password])
+    static func login(username: String, password: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["username": username, "password": password])
         return APIEndpoint(path: "/api/auth/login", method: .post, body: body)
     }
     
@@ -222,7 +246,12 @@ extension APIEndpoint {
     }
     
     static func checkAuth() -> APIEndpoint {
-        return APIEndpoint(path: "/api/auth/check", method: .get)
+        return APIEndpoint(path: "/api/auth/status", method: .get)
+    }
+    
+    static func register(username: String, password: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["username": username, "password": password])
+        return APIEndpoint(path: "/api/auth/register", method: .post, body: body)
     }
     
     // Project endpoints
@@ -250,6 +279,10 @@ extension APIEndpoint {
     
     static func deleteSession(projectId: String, sessionId: String) -> APIEndpoint {
         return APIEndpoint(path: "/api/projects/\(projectId)/sessions/\(sessionId)", method: .delete)
+    }
+    
+    static func getMessages(projectId: String, sessionId: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/projects/\(projectId)/sessions/\(sessionId)/messages", method: .get)
     }
     
     // File endpoints
@@ -282,9 +315,8 @@ struct AuthResponse: Codable {
 }
 
 struct User: Codable {
-    let id: String
-    let email: String
-    let name: String?
+    let id: Int
+    let username: String
 }
 
 struct ProjectsResponse: Codable {
@@ -292,12 +324,18 @@ struct ProjectsResponse: Codable {
 }
 
 struct ProjectDTO: Codable {
-    let id: String
     let name: String
     let path: String
     let displayName: String?
-    let createdAt: Date
-    let updatedAt: Date
+    let fullPath: String?
+    let isCustomName: Bool?
+    let sessions: [SessionDTO]?
+    let sessionMeta: SessionMeta?
+}
+
+struct SessionMeta: Codable {
+    let hasMore: Bool?
+    let total: Int?
 }
 
 struct SessionsResponse: Codable {
@@ -312,6 +350,15 @@ struct SessionDTO: Codable {
     let lastActiveAt: Date
     let status: String
 }
+
+struct MessageDTO: Codable {
+    let id: String?
+    let role: String
+    let content: String
+    let timestamp: Date?
+}
+
+// File tree response structure moved to FileExplorerViewController.swift
 
 struct FilesResponse: Codable {
     let files: [FileDTO]

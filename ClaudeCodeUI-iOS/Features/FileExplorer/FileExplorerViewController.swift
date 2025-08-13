@@ -97,7 +97,7 @@ class FileExplorerViewController: BaseViewController {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "No files in this project"
-        label.font = CyberpunkTheme.headingFont
+        label.font = CyberpunkTheme.headlineFont
         label.textColor = CyberpunkTheme.secondaryText
         label.textAlignment = .center
         
@@ -188,15 +188,49 @@ class FileExplorerViewController: BaseViewController {
     // MARK: - Data Loading
     
     private func loadFileTree() {
-        // Create mock file tree for now
-        rootNode = createMockFileTree()
-        tableView.reloadData()
-        emptyStateView.isHidden = rootNode != nil
+        Task {
+            await fetchFileTree()
+        }
+    }
+    
+    @MainActor
+    private func fetchFileTree() async {
+        do {
+            // Call backend API to get file tree
+            let endpoint = APIEndpoint(
+                path: "/api/projects/\(project.id)/files",
+                method: .get
+            )
+            
+            // The backend returns an array of file tree nodes
+            let treeNodes: [FileTreeNodeDTO] = try await apiClient.request(endpoint)
+            
+            // Convert DTOs to our internal model
+            rootNode = FileTreeNode(name: project.name, path: project.path, isDirectory: true, children: treeNodes.map { convertToFileTreeNode($0) })
+            
+            tableView.reloadData()
+            emptyStateView.isHidden = rootNode != nil && !(rootNode?.children?.isEmpty ?? true)
+        } catch {
+            Logger.shared.error("Failed to load file tree: \(error)")
+            
+            // Fall back to mock data on error
+            rootNode = createMockFileTree()
+            tableView.reloadData()
+            emptyStateView.isHidden = rootNode != nil
+        }
+    }
+    
+    private func convertToFileTreeNode(_ dto: FileTreeNodeDTO) -> FileTreeNode {
+        let children = dto.children?.map { convertToFileTreeNode($0) }
+        return FileTreeNode(
+            name: dto.name,
+            path: dto.path,
+            isDirectory: dto.type == "directory",
+            children: children
+        )
     }
     
     private func createMockFileTree() -> FileTreeNode {
-        let root = FileTreeNode(name: project.name, path: "/", isDirectory: true, children: [])
-        
         // Add mock files
         let srcFolder = FileTreeNode(name: "src", path: "/src", isDirectory: true, children: [
             FileTreeNode(name: "main.swift", path: "/src/main.swift", isDirectory: false, children: nil),
@@ -217,7 +251,8 @@ class FileExplorerViewController: BaseViewController {
             FileTreeNode(name: ".gitignore", path: "/.gitignore", isDirectory: false, children: nil)
         ]
         
-        root.children = [srcFolder, testsFolder] + configFiles
+        let rootChildren = [srcFolder, testsFolder] + configFiles
+        let root = FileTreeNode(name: project.name, path: "/", isDirectory: true, children: rootChildren)
         
         return root
     }
@@ -483,6 +518,14 @@ struct FileTreeNode {
             }
         }
     }
+}
+
+// DTO for decoding file tree from backend
+struct FileTreeNodeDTO: Codable {
+    let name: String
+    let path: String
+    let type: String
+    let children: [FileTreeNodeDTO]?
 }
 
 // MARK: - File Tree Cell

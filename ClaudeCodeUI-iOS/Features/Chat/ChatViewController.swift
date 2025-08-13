@@ -232,7 +232,16 @@ class ChatViewController: BaseViewController {
     
     private func connectWebSocket() {
         webSocketManager.delegate = self
-        webSocketManager.connect()
+        // Fix: Use correct WebSocket path that backend expects
+        var wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/ws"
+        
+        // Add authentication token as query parameter
+        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+            wsURL += "?token=\(authToken)"
+        }
+        
+        webSocketManager.connect(to: wsURL)
+        print("🔌 Connecting to WebSocket at: \(wsURL)")
     }
     
     // MARK: - Data Loading
@@ -321,7 +330,7 @@ class ChatViewController: BaseViewController {
     
     // MARK: - Keyboard Handling
     
-    @objc private func keyboardWillShow(_ notification: Notification) {
+    @objc override func keyboardWillShow(_ notification: Notification) {
         guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
               let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval else { return }
         
@@ -339,7 +348,7 @@ class ChatViewController: BaseViewController {
         }
     }
     
-    @objc private func keyboardWillHide(_ notification: Notification) {
+    @objc override func keyboardWillHide(_ notification: Notification) {
         guard let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval else { return }
         
         keyboardHeight = 0
@@ -432,35 +441,154 @@ extension ChatViewController: WebSocketManagerDelegate {
     }
     
     func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage) {
-        // Parse and handle incoming message
-        guard let content = message.payload?["content"] as? String else { return }
-        
-        let assistantMessage = ChatMessage(
-            id: UUID().uuidString,
-            content: content,
-            isUser: false,
-            timestamp: Date(),
-            status: .sent
-        )
-        
-        DispatchQueue.main.async {
-            self.messages.append(assistantMessage)
-            let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
-            self.tableView.insertRows(at: [indexPath], with: .automatic)
-            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+        // Handle different message types from backend
+        switch message.type {
+        case .sessionCreated:
+            if let sessionId = message.payload?["sessionId"] as? String {
+                print("📝 Session created: \(sessionId)")
+                // Store session ID for future use
+                UserDefaults.standard.set(sessionId, forKey: "currentSessionId_\(project.id)")
+            }
+            
+        case .claudeResponse:
+            // Handle streaming Claude response
+            if let data = message.payload?["data"] as? [String: Any] {
+                handleClaudeResponse(data)
+            }
+            
+        case .claudeOutput:
+            // Handle raw Claude output
+            if let content = message.payload?["data"] as? String {
+                appendToLastMessage(content)
+            }
+            
+        case .error:
+            if let error = message.payload?["error"] as? String {
+                showError(error)
+            }
+            
+        default:
+            // Handle generic message for backward compatibility
+            if let content = message.payload?["content"] as? String {
+                let assistantMessage = ChatMessage(
+                    id: UUID().uuidString,
+                    content: content,
+                    isUser: false,
+                    timestamp: Date(),
+                    status: .sent
+                )
+                
+                DispatchQueue.main.async {
+                    self.messages.append(assistantMessage)
+                    let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                    self.tableView.insertRows(at: [indexPath], with: .automatic)
+                    self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+                }
+            }
         }
     }
     
     func webSocket(_ manager: WebSocketManager, didReceiveData data: Data) {
         // Handle binary data if needed
     }
+    
+    func webSocketConnectionStateChanged(_ state: WebSocketConnectionState) {
+        DispatchQueue.main.async {
+            switch state {
+            case .connected:
+                print("✅ WebSocket connected")
+            case .disconnected:
+                print("❌ WebSocket disconnected")
+            case .connecting:
+                print("⏳ WebSocket connecting...")
+            case .reconnecting:
+                print("🔄 WebSocket reconnecting...")
+            case .failed:
+                print("❌ WebSocket connection failed")
+            }
+        }
+    }
+    
+    // MARK: - Claude Response Handling
+    
+    private func handleClaudeResponse(_ data: [String: Any]) {
+        // Handle different Claude response types
+        if let type = data["type"] as? String {
+            switch type {
+            case "text":
+                if let content = data["content"] as? String {
+                    let message = ChatMessage(
+                        id: UUID().uuidString,
+                        content: content,
+                        isUser: false,
+                        timestamp: Date(),
+                        status: .sent
+                    )
+                    
+                    DispatchQueue.main.async {
+                        self.messages.append(message)
+                        let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                        self.tableView.insertRows(at: [indexPath], with: .automatic)
+                        self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+                    }
+                }
+                
+            case "tool_use":
+                // Handle tool usage events
+                if let toolName = data["name"] as? String {
+                    print("🔧 Claude is using tool: \(toolName)")
+                }
+                
+            default:
+                print("📦 Unhandled Claude response type: \(type)")
+            }
+        }
+    }
+    
+    private func appendToLastMessage(_ content: String) {
+        DispatchQueue.main.async {
+            if let lastMessage = self.messages.last, !lastMessage.isUser {
+                // Append to existing message
+                lastMessage.content += content
+                if let lastIndex = self.messages.indices.last {
+                    let indexPath = IndexPath(row: lastIndex, section: 0)
+                    self.tableView.reloadRows(at: [indexPath], with: .none)
+                }
+            } else {
+                // Create new message
+                let message = ChatMessage(
+                    id: UUID().uuidString,
+                    content: content,
+                    isUser: false,
+                    timestamp: Date(),
+                    status: .sent
+                )
+                self.messages.append(message)
+                let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                self.tableView.insertRows(at: [indexPath], with: .automatic)
+                self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+            }
+        }
+    }
+    
+    private func showError(_ error: String) {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(
+                title: "Error",
+                message: error,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            self.present(alert, animated: true)
+        }
+    }
 }
 
 // MARK: - Chat Message Model
 
-struct ChatMessage {
+class ChatMessage {
     let id: String
-    let content: String
+    var content: String
     let isUser: Bool
     let timestamp: Date
     var status: MessageStatus
@@ -469,6 +597,14 @@ struct ChatMessage {
         case sending
         case sent
         case failed
+    }
+    
+    init(id: String, content: String, isUser: Bool, timestamp: Date, status: MessageStatus) {
+        self.id = id
+        self.content = content
+        self.isUser = isUser
+        self.timestamp = timestamp
+        self.status = status
     }
 }
 

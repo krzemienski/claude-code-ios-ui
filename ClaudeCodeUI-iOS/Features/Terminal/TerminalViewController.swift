@@ -310,11 +310,11 @@ class TerminalViewController: BaseViewController {
         // Create the request body
         let parameters: [String: Any] = [
             "command": command,
-            "projectId": project?.id.uuidString ?? "",
+            "projectId": project?.id ?? "",
             "cwd": currentDirectory
         ]
         
-        guard let url = URL(string: "\(AppConfig.shared.baseURL)/api/terminal/execute") else {
+        guard let url = URL(string: "http://\(AppConfig.backendHost):\(AppConfig.backendPort)/api/terminal/execute") else {
             appendToTerminal("Error: Invalid server URL", color: CyberpunkTheme.accentPink)
             return
         }
@@ -535,7 +535,7 @@ class TerminalViewController: BaseViewController {
         // Could add auto-completion here
     }
     
-    @objc private func keyboardWillShow(_ notification: Notification) {
+    @objc override func keyboardWillShow(_ notification: Notification) {
         // Scroll terminal to bottom when keyboard appears
         if terminalTextView.text.count > 0 {
             let bottom = NSMakeRange(terminalTextView.text.count - 1, 1)

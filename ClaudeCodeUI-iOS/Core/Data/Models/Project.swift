@@ -11,7 +11,7 @@ import SwiftData
 #endif
 
 @Model
-final class Project {
+final class Project: Codable {
     @Attribute(.unique) var id: String
     var name: String
     var path: String
@@ -45,6 +45,37 @@ final class Project {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.sessions = []
+    }
+    
+    // MARK: - Codable
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case path
+        case displayName = "display_name"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.path = try container.decode(String.self, forKey: .path)
+        self.displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
+        self.createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        self.updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
+        self.sessions = []
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(path, forKey: .path)
+        try container.encodeIfPresent(displayName, forKey: .displayName)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
     }
 }
 

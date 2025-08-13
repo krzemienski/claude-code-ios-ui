@@ -25,6 +25,7 @@ enum WebSocketMessageType: String, Codable {
     case sessionEnd = "session:end"
     case sessionCreated = "session-created"
     case claudeOutput = "claude-output"
+    case claudeResponse = "claude-response"
     case sessionAborted = "session-aborted"
     case error = "error"
     case projectList = "project:list"
@@ -54,10 +55,10 @@ enum WebSocketMessageType: String, Codable {
 
 // MARK: - WebSocket Manager Protocol
 protocol WebSocketManagerDelegate: AnyObject {
-    func webSocketDidConnect()
-    func webSocketDidDisconnect(error: Error?)
-    func webSocket(didReceiveMessage message: WebSocketMessage)
-    func webSocket(didReceiveData data: Data)
+    func webSocketDidConnect(_ manager: WebSocketManager)
+    func webSocketDidDisconnect(_ manager: WebSocketManager, error: Error?)
+    func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage)
+    func webSocket(_ manager: WebSocketManager, didReceiveData data: Data)
     func webSocketConnectionStateChanged(_ state: WebSocketConnectionState)
 }
 
@@ -129,7 +130,13 @@ final class WebSocketManager {
         self.url = url
         connectionState = .connecting
         
-        let request = URLRequest(url: url)
+        var request = URLRequest(url: url)
+        
+        // Add authentication token if available
+        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        }
+        
         webSocketTask = session.webSocketTask(with: request)
         webSocketTask?.resume()
         
@@ -145,7 +152,7 @@ final class WebSocketManager {
             if self.webSocketTask?.state == .running {
                 self.connectionState = .connected
                 self.reconnectAttempts = 0
-                self.delegate?.webSocketDidConnect()
+                self.delegate?.webSocketDidConnect(self)
                 self.flushMessageQueue()
                 logInfo("WebSocket connected to: \(urlString)", category: "WebSocket")
             }
@@ -161,11 +168,28 @@ final class WebSocketManager {
         
         if connectionState != .disconnected {
             connectionState = .disconnected
-            delegate?.webSocketDidDisconnect(error: nil)
+            delegate?.webSocketDidDisconnect(self, error: nil)
         }
     }
     
     // MARK: - Message Handling
+    
+    func sendMessage(_ text: String, projectId: String) {
+        // Send Claude command through WebSocket
+        let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(projectId)")
+        
+        let message = WebSocketMessage(
+            type: .claudeCommand,
+            payload: [
+                "command": text,
+                "projectPath": projectId,
+                "sessionId": sessionId as Any,
+                "resume": sessionId != nil,
+                "timestamp": ISO8601DateFormatter.shared.string(from: Date())
+            ]
+        )
+        send(message)
+    }
     
     func send(_ message: Message) async throws {
         let wsMessage = WebSocketMessage(
@@ -234,7 +258,7 @@ final class WebSocketManager {
                 case .string(let text):
                     self.handleTextMessage(text)
                 case .data(let data):
-                    self.delegate?.webSocket(didReceiveData: data)
+                    self.delegate?.webSocket(self, didReceiveData: data)
                 @unknown default:
                     break
                 }
@@ -258,7 +282,8 @@ final class WebSocketManager {
             let message = try decoder.decode(WebSocketMessage.self, from: data)
             
             DispatchQueue.main.async { [weak self] in
-                self?.delegate?.webSocket(didReceiveMessage: message)
+                guard let self = self else { return }
+                self.delegate?.webSocket(self, didReceiveMessage: message)
             }
         } catch {
             // Try to parse as streaming JSON
@@ -269,7 +294,8 @@ final class WebSocketManager {
                 )
                 
                 DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.webSocket(didReceiveMessage: message)
+                    guard let self = self else { return }
+                    self.delegate?.webSocket(self, didReceiveMessage: message)
                 }
             } else {
                 logError("Failed to decode WebSocket message: \(error)", category: "WebSocket")
@@ -360,7 +386,7 @@ final class WebSocketManager {
         let wasConnected = isConnected
         connectionState = .disconnected
         
-        delegate?.webSocketDidDisconnect(error: error)
+        delegate?.webSocketDidDisconnect(self, error: error)
         
         // Attempt reconnection if it was previously connected
         if wasConnected && enableAutoReconnect {

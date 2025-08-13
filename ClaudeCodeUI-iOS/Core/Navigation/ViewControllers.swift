@@ -81,9 +81,32 @@ class DIContainer {
 // Real API Client with Backend Connectivity
 class APIClient {
     var baseURL = "http://localhost:3004"
+    private var authToken: String?
     
     init(baseURL: String = "http://localhost:3004") {
         self.baseURL = baseURL
+        // For development, we'll use the demo token we created
+        // In production, this should be stored securely in Keychain
+        self.authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiZGVtbyIsImlhdCI6MTc1NDc1MDQ1NX0.gLR89Qwue91OU5kRGqVU-JnOJFOjq9D5LnfaAkiYUro"
+    }
+    
+    func authenticate(username: String = "demo", password: String = "demo123") async throws {
+        guard let url = URL(string: "\(baseURL)/api/auth/login") else {
+            throw URLError(.badURL)
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = ["username": username, "password": password]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let token = json["token"] as? String {
+            self.authToken = token
+        }
     }
     
     func fetchProjects() async throws -> [Project] {
@@ -91,7 +114,12 @@ class APIClient {
             throw URLError(.badURL)
         }
         
-        let (data, _) = try await URLSession.shared.data(from: url)
+        var request = URLRequest(url: url)
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
         let projects = try JSONDecoder().decode([Project].self, from: data)
         return projects
     }
@@ -104,6 +132,9 @@ class APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         
         let body = ["name": name, "path": path]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -120,6 +151,9 @@ class APIClient {
         
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         
         _ = try await URLSession.shared.data(for: request)
     }
@@ -387,13 +421,45 @@ public class ChatViewController: UIViewController {
             case .success(let message):
                 switch message {
                 case .string(let text):
-                    DispatchQueue.main.async {
-                        self?.textView.text += "Server: \(text)\n\n"
+                    // Parse JSON response from backend
+                    if let data = text.data(using: .utf8),
+                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                        
+                        let type = json["type"] as? String ?? ""
+                        
+                        DispatchQueue.main.async {
+                            switch type {
+                            case "output":
+                                if let output = json["data"] as? String {
+                                    self?.textView.text += "Claude: \(output)\n"
+                                }
+                            case "error":
+                                if let error = json["error"] as? String {
+                                    self?.textView.text += "Error: \(error)\n\n"
+                                }
+                            case "session-started":
+                                if let sessionId = json["sessionId"] as? String {
+                                    self?.textView.text += "Session started: \(sessionId)\n"
+                                }
+                            case "session-aborted":
+                                self?.textView.text += "Session aborted\n"
+                            case "projects-update":
+                                self?.textView.text += "Projects updated\n"
+                            default:
+                                // Raw text fallback
+                                self?.textView.text += "Server: \(text)\n"
+                            }
+                        }
+                    } else {
+                        // Fallback for non-JSON messages
+                        DispatchQueue.main.async {
+                            self?.textView.text += "Server: \(text)\n"
+                        }
                     }
                 case .data(let data):
                     if let text = String(data: data, encoding: .utf8) {
                         DispatchQueue.main.async {
-                            self?.textView.text += "Server: \(text)\n\n"
+                            self?.textView.text += "Server: \(text)\n"
                         }
                     }
                 @unknown default:
@@ -414,36 +480,25 @@ public class ChatViewController: UIViewController {
         
         textView.text += "You: \(text)\n"
         
-        // Send via WebSocket
-        let message = URLSessionWebSocketTask.Message.string(text)
-        webSocketTask?.send(message) { [weak self] error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    self?.textView.text += "Failed to send: \(error.localizedDescription)\n\n"
-                }
-            }
-        }
+        // Send via WebSocket using the correct protocol
+        let messageData: [String: Any] = [
+            "type": "claude-command",
+            "command": text,
+            "options": [
+                "projectPath": (project as? Project)?.path ?? "/Users/nick/Desktop",
+                "sessionId": nil  // Will create new session for now
+            ]
+        ]
         
-        // Send via HTTP API as fallback
-        Task {
-            do {
-                guard let url = URL(string: "http://localhost:3004/api/chat/message") else { return }
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                let body = ["message": text, "projectId": "current"]
-                request.httpBody = try JSONSerialization.data(withJSONObject: body)
-                
-                let (data, _) = try await URLSession.shared.data(for: request)
-                if let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let reply = response["response"] as? String {
-                    await MainActor.run {
-                        self.textView.text += "Assistant: \(reply)\n\n"
+        if let jsonData = try? JSONSerialization.data(withJSONObject: messageData),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            let message = URLSessionWebSocketTask.Message.string(jsonString)
+            webSocketTask?.send(message) { [weak self] error in
+                if let error = error {
+                    DispatchQueue.main.async {
+                        self?.textView.text += "Failed to send: \(error.localizedDescription)\n\n"
                     }
                 }
-            } catch {
-                print("Failed to send message via API: \(error)")
             }
         }
         

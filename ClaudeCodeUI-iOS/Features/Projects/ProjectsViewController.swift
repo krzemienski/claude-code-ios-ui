@@ -202,16 +202,22 @@ class ProjectsViewController: BaseViewController {
         guard !isLoading else { return }
         isLoading = true
         
-        // Show loading indicator
-        showError("Loading projects...")
+        // Don't show loading as an error dialog
+        print("📱 Loading projects...")
         
         Task {
             do {
-                // First, configure APIClient with saved server URL
+                // First, configure APIClient with saved server URL and auth token
                 if let dataContainer = dataContainer {
                     if let settings = try? await dataContainer.fetchSettings() {
                         self.apiClient = APIClient(baseURL: settings.apiBaseURL)
-                        print("🔧 Configured APIClient with URL: \(settings.apiBaseURL)")
+                        // CRITICAL: Set the auth token if available
+                        if let authToken = settings.authToken {
+                            await self.apiClient.setAuthToken(authToken)
+                            print("🔧 Configured APIClient with URL: \(settings.apiBaseURL) and auth token")
+                        } else {
+                            print("🔧 Configured APIClient with URL: \(settings.apiBaseURL) but no auth token")
+                        }
                     } else {
                         // No saved settings, use default URL from AppConfig
                         self.apiClient = APIClient(baseURL: AppConfig.backendURL)
@@ -235,9 +241,9 @@ class ProjectsViewController: BaseViewController {
                     self.isLoading = false
                     print("🎨 UI updated with \(self.projects.count) projects")
                     
-                    // Show success message
+                    // Log success message
                     if !remoteProjects.isEmpty {
-                        self.showError("Loaded \(remoteProjects.count) projects")
+                        print("✅ Successfully loaded \(remoteProjects.count) projects in UI")
                     }
                 }
             } catch {
@@ -276,11 +282,17 @@ class ProjectsViewController: BaseViewController {
         
         Task {
             do {
-                // First, configure APIClient with saved server URL
+                // First, configure APIClient with saved server URL and auth token
                 if let dataContainer = dataContainer {
                     if let settings = try? await dataContainer.fetchSettings() {
                         self.apiClient = APIClient(baseURL: settings.apiBaseURL)
-                        print("🔧 Configured APIClient with URL: \(settings.apiBaseURL)")
+                        // CRITICAL: Set the auth token if available
+                        if let authToken = settings.authToken {
+                            await self.apiClient.setAuthToken(authToken)
+                            print("🔧 Configured APIClient with URL: \(settings.apiBaseURL) and auth token")
+                        } else {
+                            print("🔧 Configured APIClient with URL: \(settings.apiBaseURL) but no auth token")
+                        }
                     }
                 }
                 

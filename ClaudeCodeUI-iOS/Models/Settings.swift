@@ -27,6 +27,9 @@ final class Settings {
     var enableDebugMode: Bool
     var metadata: [String: String]?
     var lastUpdated: Date
+    var authToken: String?
+    var lastUsername: String?
+    var webSocketURL: String?
     
     init() {
         self.id = "default"

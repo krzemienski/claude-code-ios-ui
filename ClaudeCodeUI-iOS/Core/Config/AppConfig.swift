@@ -21,12 +21,12 @@ struct AppConfig {
             return savedURL
         }
         
-        // Default to localhost for simulator
+        // Default to machine IP for simulator (localhost may not work)
         #if targetEnvironment(simulator)
-        return "http://localhost:3004"  // Test backend server port
+        return "http://192.168.0.152:3004"  // Claude Code backend server port
         #else
         // For device, use the machine's IP address
-        return "http://192.168.0.36:3004"  // Test backend server port
+        return "http://192.168.0.152:3004"  // Claude Code backend server port
         #endif
     }
     
@@ -36,6 +36,24 @@ struct AppConfig {
         let wsURL = httpURL.replacingOccurrences(of: "http://", with: "ws://")
                           .replacingOccurrences(of: "https://", with: "wss://")
         return "\(wsURL)/ws"
+    }
+    
+    /// Backend host (without protocol and port)
+    static var backendHost: String {
+        guard let url = URL(string: backendURL),
+              let host = url.host else {
+            return "localhost"
+        }
+        return host
+    }
+    
+    /// Backend port
+    static var backendPort: Int {
+        guard let url = URL(string: backendURL),
+              let port = url.port else {
+            return 3004
+        }
+        return port
     }
     
     // MARK: - API Configuration
