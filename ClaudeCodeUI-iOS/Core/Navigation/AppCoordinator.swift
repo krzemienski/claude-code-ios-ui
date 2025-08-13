@@ -334,20 +334,14 @@ class AppCoordinator: NSObject, Coordinator {
         // Check if sessions tab already exists
         let existingSessionsIndex = tabBarController.viewControllers?.firstIndex { viewController in
             if let nav = viewController as? UINavigationController {
-                // TODO: Check for SessionListViewController once it's added to project
-                // let sessionsVC = nav.viewControllers.first as? SessionListViewController
-                return false
+                // Check for SessionListViewController
+                return nav.viewControllers.first is SessionListViewController
             }
             return false
         }
         
         // Create sessions view controller to show all sessions for the project
-        // TODO: Uncomment when SessionListViewController is added to Xcode project
-        // let sessionsVC = SessionListViewController(project: project)
-        // For now, use a placeholder
-        let sessionsVC = UIViewController()
-        sessionsVC.view.backgroundColor = .systemBackground
-        sessionsVC.title = "Sessions"
+        let sessionsVC = SessionListViewController(project: project)
         let sessionsNav = UINavigationController(rootViewController: sessionsVC)
         sessionsNav.tabBarItem = UITabBarItem(
             title: "Sessions",

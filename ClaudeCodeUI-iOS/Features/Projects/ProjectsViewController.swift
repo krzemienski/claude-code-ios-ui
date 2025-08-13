@@ -207,26 +207,23 @@ class ProjectsViewController: BaseViewController {
         
         Task {
             do {
-                // First, configure APIClient with saved server URL and auth token
+                // Force localhost for now to ensure connection works
+                // Clear any saved URLs in UserDefaults that might be wrong
+                UserDefaults.standard.removeObject(forKey: "backend_url")
+                
+                // Use localhost directly for simulator
+                let serverURL = "http://localhost:3004"
+                self.apiClient = APIClient(baseURL: serverURL)
+                print("🔧 Using localhost server URL: \(serverURL)")
+                
+                // Load auth token if available from settings
                 if let dataContainer = dataContainer {
                     if let settings = try? await dataContainer.fetchSettings() {
-                        self.apiClient = APIClient(baseURL: settings.apiBaseURL)
-                        // CRITICAL: Set the auth token if available
                         if let authToken = settings.authToken {
                             await self.apiClient.setAuthToken(authToken)
-                            print("🔧 Configured APIClient with URL: \(settings.apiBaseURL) and auth token")
-                        } else {
-                            print("🔧 Configured APIClient with URL: \(settings.apiBaseURL) but no auth token")
+                            print("🔧 Set auth token from saved settings")
                         }
-                    } else {
-                        // No saved settings, use default URL from AppConfig
-                        self.apiClient = APIClient(baseURL: AppConfig.backendURL)
-                        print("🔧 Using default server URL: \(AppConfig.backendURL)")
                     }
-                } else {
-                    // No data container, use default URL from AppConfig
-                    self.apiClient = APIClient(baseURL: AppConfig.backendURL)
-                    print("🔧 Using default server URL (no data container): \(AppConfig.backendURL)")
                 }
                 
                 print("📱 Attempting to fetch projects from API...")

@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SessionListViewController: UIViewController {
+public class SessionListViewController: UIViewController {
     // MARK: - Properties
     private let project: Project
     private var sessions: [Session] = []
@@ -32,7 +32,7 @@ class SessionListViewController: UIViewController {
     }
     
     // MARK: - Lifecycle
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         fetchSessions()
@@ -126,7 +126,12 @@ class SessionListViewController: UIViewController {
         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let sceneDelegate = scene.delegate as? SceneDelegate,
            let appCoordinator = sceneDelegate.appCoordinator {
-            appCoordinator.showChat(for: project)
+            // TODO: Implement showChat in AppCoordinator
+            // For now, navigate to ChatViewController directly
+            let chatVC = ChatViewController(project: project)
+            let navController = UINavigationController(rootViewController: chatVC)
+            navController.modalPresentationStyle = .fullScreen
+            present(navController, animated: true)
         }
     }
     
@@ -168,9 +173,10 @@ extension SessionListViewController: UITableViewDelegate {
         let session = sessions[indexPath.row]
         
         // Navigate to chat with selected session
-        if let appCoordinator = (UIApplication.shared.delegate as? AppDelegate)?.appCoordinator {
-            appCoordinator.showChat(for: project, session: session)
-        }
+        // Navigate to chat with selected session
+        // TODO: Pass session to ChatViewController
+        let chatVC = ChatViewController(project: project)
+        navigationController?.pushViewController(chatVC, animated: true)
     }
     
     public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -221,13 +227,8 @@ extension SessionListViewController: UITableViewDelegate {
                     // For now, just remove from local array
                     await MainActor.run {
                         self.sessions.remove(at: indexPath.row)
-                        tableView.deleteRows(at: [indexPath], with: .fade)
+                        self.tableView.deleteRows(at: [indexPath], with: .fade)
                         completion(true)
-                    }
-                } catch {
-                    await MainActor.run {
-                        self.showError(error)
-                        completion(false)
                     }
                 }
             }

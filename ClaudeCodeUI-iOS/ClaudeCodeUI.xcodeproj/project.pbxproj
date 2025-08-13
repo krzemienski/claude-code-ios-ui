@@ -31,6 +31,8 @@
 		49F9E9CCE1B5434B80E0C19D /* TerminalViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4026CAF3B7A46A2AC1AD9B2 /* TerminalViewController.swift */; };
 		5CA17007BAD345CBB66820B6 /* FilePreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8160272A1B7942EAB39F2B14 /* FilePreviewViewController.swift */; };
 		704436B7DE1D469495491C6D /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 908A0FC3A7394AEDABD41BAE /* ChatViewController.swift */; };
+		7A4B3ABF6F9D4DC3B86E7721 /* SessionListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6902AE882D214104A2371E83 /* SessionListViewController.swift */; };
+		9C4D3B2E8F6A7C5D2B4A9F1E /* SessionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3F2A1C9D5E7B4F1A6C8E2D /* SessionTableViewCell.swift */; };
 		CF1CDCE8201B4681BC26C272 /* FileExplorerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC926D40F67449184C94AA8 /* FileExplorerViewController.swift */; };
 /* End PBXBuildFile section */
 
@@ -57,8 +59,10 @@
 		1D1A2B712C60A1230001A234 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		1D1A2B732C60A1230001A234 /* FileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNode.swift; sourceTree = "<group>"; };
 		1D6058910D05DD3D006BFB54 /* ClaudeCodeUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudeCodeUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6902AE882D214104A2371E83 /* SessionListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListViewController.swift; sourceTree = "<group>"; };
 		6DC926D40F67449184C94AA8 /* FileExplorerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileExplorerViewController.swift; sourceTree = "<group>"; };
 		8160272A1B7942EAB39F2B14 /* FilePreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePreviewViewController.swift; sourceTree = "<group>"; };
+		8B3F2A1C9D5E7B4F1A6C8E2D /* SessionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTableViewCell.swift; sourceTree = "<group>"; };
 		908A0FC3A7394AEDABD41BAE /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
 		BA20E2A91D59F7BFD98A5C6E /* AppConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppConfig.swift; path = Core/Config/AppConfig.swift; sourceTree = SOURCE_ROOT; };
 		E4026CAF3B7A46A2AC1AD9B2 /* TerminalViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalViewController.swift; sourceTree = "<group>"; };
@@ -104,12 +108,12 @@
 		1D1A2B602C60A1230001A234 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				A3CC483CBE0954D0F5C21948 /* Config */,
 				1D1A2B652C60A1230001A234 /* Data */,
 				1D1A2B662C60A1230001A234 /* DI */,
 				1D1A2B672C60A1230001A234 /* Navigation */,
 				1D1A2B682C60A1230001A234 /* Network */,
 				1D1A2B692C60A1230001A234 /* Services */,
-				A3CC483CBE0954D0F5C21948 /* Config */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -128,8 +132,9 @@
 			children = (
 				CAC97E9AD0264C45900DE34A /* Chat */,
 				19303FF151A9438FAD427E93 /* FileExplorer */,
-				DEB1925DDFEE49489CD64FDD /* Terminal */,
 				1D1A2B6C2C60A1230001A234 /* Launch */,
+				6CA3F607BF8144BDB7856FC3 /* Sessions */,
+				DEB1925DDFEE49489CD64FDD /* Terminal */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -179,8 +184,8 @@
 		1D1A2B682C60A1230001A234 /* Network */ = {
 			isa = PBXGroup;
 			children = (
-				1D1A2B492C60A1230001A234 /* WebSocketManager.swift */,
 				1D1A2B4B2C60A1230001A234 /* APIClient.swift */,
+				1D1A2B492C60A1230001A234 /* WebSocketManager.swift */,
 			);
 			path = Network;
 			sourceTree = "<group>";
@@ -188,8 +193,8 @@
 		1D1A2B692C60A1230001A234 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				1D1A2B512C60A1230001A234 /* Logger.swift */,
 				1D1A2B532C60A1230001A234 /* ErrorHandlingService.swift */,
+				1D1A2B512C60A1230001A234 /* Logger.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -231,8 +236,8 @@
 		1D1A2B6E2C60A1230001A234 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				1D1A2B592C60A1230001A234 /* ProjectCard.swift */,
 				1D1A2B5B2C60A1230001A234 /* MessageBubble.swift */,
+				1D1A2B592C60A1230001A234 /* ProjectCard.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -240,25 +245,34 @@
 		1D1A2B6F2C60A1230001A234 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				1D1A2B732C60A1230001A234 /* FileNode.swift */,
 				1D1A2B4D2C60A1230001A234 /* Project.swift */,
 				1D1A2B712C60A1230001A234 /* Settings.swift */,
-				1D1A2B732C60A1230001A234 /* FileNode.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
 		};
-		29B97314FDCFA39411CA2CEA /* ClaudeCodeUI */ = {
+		29B97314FDCFA39411CA2CEA = {
 			isa = PBXGroup;
 			children = (
 				1D1A2B3A2C60A1230001A234 /* App */,
 				1D1A2B602C60A1230001A234 /* Core */,
 				1D1A2B612C60A1230001A234 /* Design */,
 				1D1A2B622C60A1230001A234 /* Features */,
-				1D1A2B632C60A1230001A234 /* UI */,
-				1D1A2B642C60A1230001A234 /* Resources */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
+				1D1A2B642C60A1230001A234 /* Resources */,
+				1D1A2B632C60A1230001A234 /* UI */,
 			);
 			name = ClaudeCodeUI;
+			sourceTree = "<group>";
+		};
+		6CA3F607BF8144BDB7856FC3 /* Sessions */ = {
+			isa = PBXGroup;
+			children = (
+				6902AE882D214104A2371E83 /* SessionListViewController.swift */,
+				8B3F2A1C9D5E7B4F1A6C8E2D /* SessionTableViewCell.swift */,
+			);
+			path = Sessions;
 			sourceTree = "<group>";
 		};
 		A3CC483CBE0954D0F5C21948 /* Config */ = {
@@ -333,7 +347,7 @@
 				en,
 				Base,
 			);
-			mainGroup = 29B97314FDCFA39411CA2CEA /* ClaudeCodeUI */;
+			mainGroup = 29B97314FDCFA39411CA2CEA;
 			productRefGroup = 19C28FACFE9D520D11CA2CBB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -358,31 +372,33 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D1A2B4C2C60A1230001A234 /* APIClient.swift in Sources */,
+				3B692F99B4F0149A40D4E437 /* AppConfig.swift in Sources */,
+				1D1A2B5E2C60A1230001A234 /* AppCoordinator.swift in Sources */,
 				1D1A2B3C2C60A1230001A234 /* AppDelegate.swift in Sources */,
-				1D1A2B3E2C60A1230001A234 /* SceneDelegate.swift in Sources */,
-				1D1A2B402C60A1230001A234 /* LaunchViewController.swift in Sources */,
+				1D1A2B582C60A1230001A234 /* BaseViewController.swift in Sources */,
+				704436B7DE1D469495491C6D /* ChatViewController.swift in Sources */,
 				1D1A2B422C60A1230001A234 /* CyberpunkTheme.swift in Sources */,
+				1D1A2B562C60A1230001A234 /* DIContainer.swift in Sources */,
+				1D1A2B542C60A1230001A234 /* ErrorHandlingService.swift in Sources */,
+				CF1CDCE8201B4681BC26C272 /* FileExplorerViewController.swift in Sources */,
+				1D1A2B722C60A1230001A234 /* FileNode.swift in Sources */,
+				5CA17007BAD345CBB66820B6 /* FilePreviewViewController.swift in Sources */,
 				1D1A2B442C60A1230001A234 /* GradientBlock.swift in Sources */,
 				1D1A2B462C60A1230001A234 /* GridBackgroundView.swift in Sources */,
-				1D1A2B482C60A1230001A234 /* NeonButton.swift in Sources */,
-				1D1A2B4A2C60A1230001A234 /* WebSocketManager.swift in Sources */,
-				1D1A2B4C2C60A1230001A234 /* APIClient.swift in Sources */,
-				1D1A2B4E2C60A1230001A234 /* Project.swift in Sources */,
-				1D1A2B502C60A1230001A234 /* SwiftDataContainer.swift in Sources */,
+				1D1A2B402C60A1230001A234 /* LaunchViewController.swift in Sources */,
 				1D1A2B522C60A1230001A234 /* Logger.swift in Sources */,
-				1D1A2B542C60A1230001A234 /* ErrorHandlingService.swift in Sources */,
-				1D1A2B562C60A1230001A234 /* DIContainer.swift in Sources */,
-				1D1A2B582C60A1230001A234 /* BaseViewController.swift in Sources */,
-				1D1A2B5A2C60A1230001A234 /* ProjectCard.swift in Sources */,
 				1D1A2B5C2C60A1230001A234 /* MessageBubble.swift in Sources */,
-				1D1A2B5E2C60A1230001A234 /* AppCoordinator.swift in Sources */,
+				1D1A2B482C60A1230001A234 /* NeonButton.swift in Sources */,
+				1D1A2B4E2C60A1230001A234 /* Project.swift in Sources */,
+				1D1A2B5A2C60A1230001A234 /* ProjectCard.swift in Sources */,
+				1D1A2B3E2C60A1230001A234 /* SceneDelegate.swift in Sources */,
+				7A4B3ABF6F9D4DC3B86E7721 /* SessionListViewController.swift in Sources */,
+				9C4D3B2E8F6A7C5D2B4A9F1E /* SessionTableViewCell.swift in Sources */,
 				1D1A2B702C60A1230001A234 /* Settings.swift in Sources */,
-				1D1A2B722C60A1230001A234 /* FileNode.swift in Sources */,
-				3B692F99B4F0149A40D4E437 /* AppConfig.swift in Sources */,
-				704436B7DE1D469495491C6D /* ChatViewController.swift in Sources */,
-				CF1CDCE8201B4681BC26C272 /* FileExplorerViewController.swift in Sources */,
-				5CA17007BAD345CBB66820B6 /* FilePreviewViewController.swift in Sources */,
+				1D1A2B502C60A1230001A234 /* SwiftDataContainer.swift in Sources */,
 				49F9E9CCE1B5434B80E0C19D /* TerminalViewController.swift in Sources */,
+				1D1A2B4A2C60A1230001A234 /* WebSocketManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
