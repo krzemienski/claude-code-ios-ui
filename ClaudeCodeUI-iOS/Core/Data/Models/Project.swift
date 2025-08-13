@@ -81,12 +81,14 @@ final class Project: Codable {
 
 // MARK: - Session Model
 @Model
-final class Session {
+final class Session: Codable {
     @Attribute(.unique) var id: String
     var projectId: String
     var startedAt: Date
     var lastActiveAt: Date
     var status: SessionStatus
+    var summary: String?
+    var cwd: String?  // Current working directory
     
     @Relationship(deleteRule: .nullify)
     var project: Project?
@@ -105,7 +107,46 @@ final class Session {
         self.startedAt = Date()
         self.lastActiveAt = Date()
         self.status = .active
+        self.summary = nil
+        self.cwd = nil
         self.messages = []
+    }
+    
+    // MARK: - Codable
+    enum CodingKeys: String, CodingKey {
+        case id
+        case projectId
+        case startedAt
+        case lastActiveAt
+        case status
+        case summary
+        case cwd
+        case messageCount
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.projectId = try container.decodeIfPresent(String.self, forKey: .projectId) ?? ""
+        self.startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt) ?? Date()
+        self.lastActiveAt = try container.decodeIfPresent(Date.self, forKey: .lastActiveAt) ?? Date()
+        let statusString = try container.decodeIfPresent(String.self, forKey: .status) ?? "active"
+        self.status = SessionStatus(rawValue: statusString) ?? .active
+        self.summary = try container.decodeIfPresent(String.self, forKey: .summary)
+        self.cwd = try container.decodeIfPresent(String.self, forKey: .cwd)
+        self.messages = []
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(projectId, forKey: .projectId)
+        try container.encode(startedAt, forKey: .startedAt)
+        try container.encode(lastActiveAt, forKey: .lastActiveAt)
+        try container.encode(status.rawValue, forKey: .status)
+        try container.encodeIfPresent(summary, forKey: .summary)
+        try container.encodeIfPresent(cwd, forKey: .cwd)
+        try container.encode(messageCount, forKey: .messageCount)
     }
 }
 

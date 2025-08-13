@@ -346,8 +346,10 @@ extension ProjectsViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         let project = projects[indexPath.row]
         // Navigate to sessions list first, NOT directly to chat
-        let sessionsVC = SessionsViewController(project: project)
-        navigationController?.pushViewController(sessionsVC, animated: true)
+        // SessionsViewController is in Features/Sessions/SessionsViewController.swift
+        if let appCoordinator = (UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate)?.appCoordinator {
+            appCoordinator.selectProject(project)
+        }
     }
 }
 

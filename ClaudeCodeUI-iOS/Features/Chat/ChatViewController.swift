@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ChatViewController: BaseViewController {
+public class ChatViewController: BaseViewController {
     
     // MARK: - Properties
     
@@ -104,7 +104,7 @@ class ChatViewController: BaseViewController {
     
     // MARK: - Initialization
     
-    init(project: Project) {
+    public init(project: Project) {
         self.project = project
         self.webSocketManager = DIContainer.shared.webSocketManager
         super.init(nibName: nil, bundle: nil)

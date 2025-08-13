@@ -115,6 +115,8 @@ actor APIClient: APIClientProtocol {
                 session.lastActiveAt = lastActivity  // Use lastActivity as lastActiveAt
             }
             session.status = SessionStatus(rawValue: dto.status ?? "active") ?? .active
+            session.summary = dto.summary
+            session.cwd = dto.cwd
             return session
         }
     }
@@ -378,7 +380,7 @@ extension APIEndpoint {
             "email": feedback.email ?? "",
             "deviceInfo": feedback.deviceInfo,
             "appVersion": feedback.appVersion,
-            "hasScreenshot": feedback.screenshot != nil
+            "hasScreenshot": String(feedback.screenshot != nil)
         ])
         return APIEndpoint(path: "/api/feedback", method: .post, body: body)
     }

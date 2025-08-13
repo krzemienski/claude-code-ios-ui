@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SessionsViewController: BaseViewController {
+public class SessionsViewController: BaseViewController {
     
     // MARK: - Properties
     
@@ -104,7 +104,7 @@ class SessionsViewController: BaseViewController {
     
     // MARK: - Initialization
     
-    init(project: Project) {
+    public init(project: Project) {
         self.project = project
         self.apiClient = DIContainer.shared.apiClient
         super.init(nibName: nil, bundle: nil)
@@ -355,8 +355,8 @@ extension SessionsViewController: UITableViewDelegate {
 
 // MARK: - Session Table View Cell
 
-class SessionTableViewCell: UITableViewCell {
-    static let identifier = "SessionTableViewCell"
+public class SessionTableViewCell: UITableViewCell {
+    public static let identifier = "SessionTableViewCell"
     
     private let containerView: UIView = {
         let view = UIView()
@@ -376,11 +376,21 @@ class SessionTableViewCell: UITableViewCell {
         return label
     }()
     
-    private let messageCountLabel: UILabel = {
+    private let summaryLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = CyberpunkTheme.bodyFont
         label.textColor = CyberpunkTheme.primaryText
+        label.numberOfLines = 2
+        label.lineBreakMode = .byTruncatingTail
+        return label
+    }()
+    
+    private let messageCountLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = CyberpunkTheme.captionFont
+        label.textColor = CyberpunkTheme.secondaryText
         return label
     }()
     
@@ -416,6 +426,7 @@ class SessionTableViewCell: UITableViewCell {
         
         contentView.addSubview(containerView)
         containerView.addSubview(dateLabel)
+        containerView.addSubview(summaryLabel)
         containerView.addSubview(messageCountLabel)
         containerView.addSubview(statusLabel)
         containerView.addSubview(chevronImageView)
@@ -430,7 +441,11 @@ class SessionTableViewCell: UITableViewCell {
             dateLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             dateLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
             
-            messageCountLabel.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 4),
+            summaryLabel.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 4),
+            summaryLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            summaryLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
+            
+            messageCountLabel.topAnchor.constraint(equalTo: summaryLabel.bottomAnchor, constant: 4),
             messageCountLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             messageCountLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
             
@@ -452,7 +467,20 @@ class SessionTableViewCell: UITableViewCell {
         formatter.timeStyle = .short
         dateLabel.text = formatter.string(from: session.lastActiveAt)
         
+        // Display summary or default text
+        if let summary = session.summary, !summary.isEmpty {
+            summaryLabel.text = summary
+        } else {
+            summaryLabel.text = "No summary available"
+            summaryLabel.textColor = CyberpunkTheme.secondaryText
+        }
+        
         messageCountLabel.text = "\(session.messageCount) messages"
+        
+        // Add cwd info if available
+        if let cwd = session.cwd {
+            messageCountLabel.text = "\(session.messageCount) messages • \(cwd)"
+        }
         
         switch session.status {
         case .active:

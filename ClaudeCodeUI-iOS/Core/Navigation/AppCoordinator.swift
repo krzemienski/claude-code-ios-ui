@@ -28,6 +28,9 @@ import Foundation
 // Import the view controllers from ViewControllers.swift which provides
 // connectivity to the backend at localhost:3004
 
+// Import the real SessionsViewController from Features folder
+// The SessionsViewController is defined in Features/Sessions/SessionsViewController.swift
+
 // MARK: - Main Tab Bar Controller
 // This is now moved to Features/Main/MainTabBarController.swift for dynamic tab management
 
