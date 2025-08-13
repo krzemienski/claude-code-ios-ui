@@ -17,6 +17,10 @@ public class MainTabBarController: UITabBarController {
     // MARK: - Lifecycle
     public override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Set delegate to enable tab selection
+        self.delegate = self
+        
         setupTabBar()
         setupViewControllers()
         applyTheme()
@@ -186,22 +190,32 @@ public class MainTabBarController: UITabBarController {
 
 // MARK: - UITabBarControllerDelegate
 extension MainTabBarController: UITabBarControllerDelegate {
-    public override func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
+    public func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
         // Add haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
         
-        // Add subtle scale animation
-        guard let index = tabBar.items?.firstIndex(of: item),
-              let subviews = tabBar.subviews.first(where: { $0.subviews.count > 1 })?.subviews else { return }
+        // Add subtle scale animation for the selected tab
+        guard let tabBar = tabBarController.tabBar as? UITabBar,
+              let selectedIndex = viewControllers?.firstIndex(of: viewController),
+              selectedIndex < tabBar.items?.count ?? 0,
+              let item = tabBar.items?[selectedIndex] else { return }
         
-        let imageView = subviews[index]
-        
-        UIView.animate(withDuration: 0.15, animations: {
-            imageView.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
-        }) { _ in
-            UIView.animate(withDuration: 0.15) {
-                imageView.transform = .identity
+        // Find the image view for the selected tab
+        if let barButtonView = tabBar.subviews.compactMap({ $0 as? UIControl }).first(where: { 
+            $0.subviews.contains(where: { subview in
+                if let imageView = subview as? UIImageView {
+                    return true
+                }
+                return false
+            })
+        }) {
+            UIView.animate(withDuration: 0.15, animations: {
+                barButtonView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+            }) { _ in
+                UIView.animate(withDuration: 0.15) {
+                    barButtonView.transform = .identity
+                }
             }
         }
     }

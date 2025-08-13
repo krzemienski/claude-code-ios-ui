@@ -6,9 +6,10 @@
 //
 
 import UIKit
-
-// Import LoginViewController from Authentication feature
 import Foundation
+
+// Import view controllers from Features folder
+// ChatViewController is properly included in the Xcode project
 
 // MARK: - App Coordinator
 // The view controllers are now properly organized:
@@ -39,7 +40,7 @@ protocol Coordinator: AnyObject {
 }
 
 // MARK: - App Coordinator
-class AppCoordinator: Coordinator {
+class AppCoordinator: NSObject, Coordinator {
     
     // MARK: - Properties
     var childCoordinators: [Coordinator] = []
@@ -51,6 +52,7 @@ class AppCoordinator: Coordinator {
         self.window = window
         self.navigationController = UINavigationController()
         self.navigationController.navigationBar.prefersLargeTitles = true
+        super.init()
     }
     
     // MARK: - Start
@@ -152,12 +154,12 @@ class AppCoordinator: Coordinator {
     }
     
     private func showMainInterface() {
-        // Create a basic tab bar controller with projects and settings
-        // MainTabBarController is not currently included in the Xcode project build
+        // Create tab bar controller with delegate
         let tabBarController = UITabBarController()
+        tabBarController.delegate = self
         
-        // Projects Tab - Using the real ProjectsViewController instead of TempProjectsViewController
-        let projectsVC = ProjectsViewController()
+        // Projects Tab
+        let projectsVC = createProjectsViewController()
         let projectsNav = UINavigationController(rootViewController: projectsVC)
         projectsNav.tabBarItem = UITabBarItem(
             title: "Projects",
@@ -166,7 +168,7 @@ class AppCoordinator: Coordinator {
         )
         
         // Settings Tab
-        let settingsVC = SettingsViewController()
+        let settingsVC = createSettingsViewController()
         let settingsNav = UINavigationController(rootViewController: settingsVC)
         settingsNav.tabBarItem = UITabBarItem(
             title: "Settings",
@@ -174,32 +176,193 @@ class AppCoordinator: Coordinator {
             selectedImage: UIImage(systemName: "gearshape.2.fill")
         )
         
-        // Configure tab bar
+        // Initial view controllers
         tabBarController.viewControllers = [projectsNav, settingsNav]
-        tabBarController.tabBar.backgroundColor = CyberpunkTheme.background
-        tabBarController.tabBar.tintColor = CyberpunkTheme.primaryCyan
-        tabBarController.tabBar.unselectedItemTintColor = CyberpunkTheme.secondaryText
         
-        // Style navigation bars
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = CyberpunkTheme.background
-        appearance.titleTextAttributes = [.foregroundColor: CyberpunkTheme.primaryText]
-        appearance.largeTitleTextAttributes = [.foregroundColor: CyberpunkTheme.primaryText]
+        // Configure tab bar appearance
+        configureTabBarAppearance(tabBarController)
         
+        // Configure navigation bars
         [projectsNav, settingsNav].forEach { nav in
-            guard let nav = nav as? UINavigationController else { return }
-            nav.navigationBar.standardAppearance = appearance
-            nav.navigationBar.scrollEdgeAppearance = appearance
-            nav.navigationBar.prefersLargeTitles = true
-            nav.navigationBar.tintColor = CyberpunkTheme.primaryCyan
+            configureNavigationBar(nav)
         }
+        
+        // Store tab bar controller for later use
+        self.mainTabBarController = tabBarController
+        
+        // Handle project selection to add chat tab
+        setupProjectSelectionHandler(projectsVC: projectsVC, tabBarController: tabBarController)
         
         // Animate transition
         UIView.transition(with: window, duration: 0.5, options: .transitionCrossDissolve, animations: {
             self.window.rootViewController = tabBarController
         })
     }
+    
+    // MARK: - View Controller Creation
+    
+    private func createProjectsViewController() -> UIViewController {
+        let vc = ProjectsListViewController(coordinator: self)
+        vc.title = "Projects"
+        return vc
+    }
+    
+    private func createSettingsViewController() -> UIViewController {
+        let vc = UIViewController()
+        vc.title = "Settings"
+        vc.view.backgroundColor = CyberpunkTheme.background
+        
+        let label = UILabel()
+        label.text = "Settings"
+        label.textColor = CyberpunkTheme.primaryCyan
+        label.font = UIFont.systemFont(ofSize: 24, weight: .bold)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        vc.view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: vc.view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: vc.view.centerYAnchor)
+        ])
+        
+        return vc
+    }
+    
+    private func createChatViewController(for project: Project) -> UIViewController {
+        let vc = UIViewController()
+        vc.title = project.displayName
+        vc.view.backgroundColor = CyberpunkTheme.background
+        
+        let label = UILabel()
+        label.text = "Chat: \(project.displayName)"
+        label.textColor = CyberpunkTheme.primaryCyan
+        label.font = UIFont.systemFont(ofSize: 20, weight: .bold)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        vc.view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: vc.view.centerXAnchor),
+            label.topAnchor.constraint(equalTo: vc.view.safeAreaLayoutGuide.topAnchor, constant: 20)
+        ])
+        
+        return vc
+    }
+    
+    private func configureTabBarAppearance(_ tabBarController: UITabBarController) {
+        tabBarController.tabBar.backgroundColor = CyberpunkTheme.background
+        tabBarController.tabBar.tintColor = CyberpunkTheme.primaryCyan
+        tabBarController.tabBar.unselectedItemTintColor = CyberpunkTheme.textTertiary
+        tabBarController.tabBar.isTranslucent = false
+        
+        // Add top border with neon effect
+        let topBorder = CALayer()
+        topBorder.frame = CGRect(x: 0, y: 0, width: tabBarController.tabBar.frame.width, height: 1)
+        topBorder.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor
+        tabBarController.tabBar.layer.addSublayer(topBorder)
+        
+        // iOS 15+ appearance
+        if #available(iOS 15.0, *) {
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = CyberpunkTheme.background
+            
+            // Normal state
+            appearance.stackedLayoutAppearance.normal.iconColor = CyberpunkTheme.textTertiary
+            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+                .foregroundColor: CyberpunkTheme.textTertiary,
+                .font: UIFont.systemFont(ofSize: 10, weight: .medium)
+            ]
+            
+            // Selected state
+            appearance.stackedLayoutAppearance.selected.iconColor = CyberpunkTheme.primaryCyan
+            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+                .foregroundColor: CyberpunkTheme.primaryCyan,
+                .font: UIFont.systemFont(ofSize: 10, weight: .semibold)
+            ]
+            
+            tabBarController.tabBar.standardAppearance = appearance
+            tabBarController.tabBar.scrollEdgeAppearance = appearance
+        }
+    }
+    
+    private func configureNavigationBar(_ nav: UINavigationController) {
+        nav.navigationBar.prefersLargeTitles = true
+        nav.navigationBar.isTranslucent = false
+        nav.navigationBar.backgroundColor = CyberpunkTheme.background
+        nav.navigationBar.tintColor = CyberpunkTheme.primaryCyan
+        
+        // Navigation bar title attributes
+        nav.navigationBar.largeTitleTextAttributes = [
+            .foregroundColor: CyberpunkTheme.textPrimary,
+            .font: UIFont.systemFont(ofSize: 34, weight: .bold)
+        ]
+        nav.navigationBar.titleTextAttributes = [
+            .foregroundColor: CyberpunkTheme.textPrimary,
+            .font: UIFont.systemFont(ofSize: 17, weight: .semibold)
+        ]
+        
+        // iOS 15+ appearance
+        if #available(iOS 15.0, *) {
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = CyberpunkTheme.background
+            appearance.titleTextAttributes = [.foregroundColor: CyberpunkTheme.textPrimary]
+            appearance.largeTitleTextAttributes = [.foregroundColor: CyberpunkTheme.textPrimary]
+            
+            nav.navigationBar.standardAppearance = appearance
+            nav.navigationBar.scrollEdgeAppearance = appearance
+            nav.navigationBar.compactAppearance = appearance
+        }
+    }
+    
+    private func setupProjectSelectionHandler(projectsVC: UIViewController, tabBarController: UITabBarController) {
+        // Store a reference to handle project selection
+        if let tableView = projectsVC.view.subviews.first(where: { $0 is UITableView }) as? UITableView {
+            tableView.tag = 999 // Tag to identify projects table
+        }
+    }
+    
+    // Add method to handle project selection
+    func selectProject(_ project: Project) {
+        guard let tabBarController = mainTabBarController else { return }
+        
+        // Check if chat tab already exists
+        let existingChatIndex = tabBarController.viewControllers?.firstIndex { viewController in
+            if let nav = viewController as? UINavigationController,
+               let chatVC = nav.viewControllers.first as? ChatViewController {
+                return true
+            }
+            return false
+        }
+        
+        // Create chat view controller
+        let chatVC = ChatViewController(project: project)
+        let chatNav = UINavigationController(rootViewController: chatVC)
+        chatNav.tabBarItem = UITabBarItem(
+            title: "Chat",
+            image: UIImage(systemName: "message.fill"),
+            selectedImage: UIImage(systemName: "message.fill")
+        )
+        
+        if let existingIndex = existingChatIndex {
+            // Replace existing chat tab
+            var viewControllers = tabBarController.viewControllers ?? []
+            viewControllers[existingIndex] = chatNav
+            tabBarController.viewControllers = viewControllers
+        } else {
+            // Add new chat tab
+            var viewControllers = tabBarController.viewControllers ?? []
+            viewControllers.insert(chatNav, at: 1) // Insert after Projects tab
+            tabBarController.viewControllers = viewControllers
+        }
+        
+        // Select the chat tab
+        tabBarController.selectedViewController = chatNav
+        
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+    }
+    
     
     // MARK: - Child Coordinator Management
     func childDidFinish(_ child: Coordinator?) {
@@ -241,4 +404,173 @@ class AuthenticationCoordinator: Coordinator {
 
 protocol AuthenticationCoordinatorDelegate: AnyObject {
     func authenticationCoordinatorDidComplete(_ coordinator: AuthenticationCoordinator)
+}
+
+// MARK: - UITabBarControllerDelegate
+
+extension AppCoordinator: UITabBarControllerDelegate {
+    func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
+        // Allow all tab selections
+        return true
+    }
+    
+    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        // Add haptic feedback on tab touch
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        // Handle special cases for chat tab
+        if let navController = viewController as? UINavigationController,
+           navController.viewControllers.first is ChatViewController {
+            // Chat tab selected - could add analytics or special handling here
+            Logger.shared.info("Chat tab touched")
+        }
+    }
+}
+
+// MARK: - Private Properties
+
+private extension AppCoordinator {
+    // Store reference to main tab bar controller for dynamic tab management
+    var mainTabBarController: UITabBarController? {
+        get {
+            return objc_getAssociatedObject(self, &AssociatedKeys.mainTabBarController) as? UITabBarController
+        }
+        set {
+            objc_setAssociatedObject(self, &AssociatedKeys.mainTabBarController, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    
+    struct AssociatedKeys {
+        static var mainTabBarController: UInt8 = 0
+    }
+}
+
+// MARK: - Projects List View Controller
+
+class ProjectsListViewController: UIViewController {
+    private weak var coordinator: AppCoordinator?
+    private var projects: [Project] = []
+    private let apiClient = DIContainer.shared.apiClient
+    
+    private lazy var tableView: UITableView = {
+        let tableView = UITableView(frame: .zero, style: .plain)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.backgroundColor = CyberpunkTheme.background
+        tableView.separatorColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3)
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ProjectCell")
+        return tableView
+    }()
+    
+    init(coordinator: AppCoordinator) {
+        self.coordinator = coordinator
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        loadProjects()
+    }
+    
+    private func setupUI() {
+        view.backgroundColor = CyberpunkTheme.background
+        
+        view.addSubview(tableView)
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        
+        // Add refresh control
+        let refreshControl = UIRefreshControl()
+        refreshControl.tintColor = CyberpunkTheme.primaryCyan
+        refreshControl.addTarget(self, action: #selector(refreshProjects), for: .valueChanged)
+        tableView.refreshControl = refreshControl
+    }
+    
+    private func loadProjects() {
+        Task {
+            do {
+                let projects = try await apiClient.fetchProjects()
+                await MainActor.run {
+                    self.projects = projects
+                    self.tableView.reloadData()
+                    self.tableView.refreshControl?.endRefreshing()
+                    print("📱 Loaded \(projects.count) projects")
+                }
+            } catch {
+                await MainActor.run {
+                    self.tableView.refreshControl?.endRefreshing()
+                    print("❌ Failed to load projects: \(error)")
+                    self.showError("Failed to load projects")
+                }
+            }
+        }
+    }
+    
+    @objc private func refreshProjects() {
+        loadProjects()
+    }
+    
+    private func showError(_ message: String) {
+        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - UITableViewDataSource
+
+extension ProjectsListViewController: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return projects.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ProjectCell", for: indexPath)
+        let project = projects[indexPath.row]
+        
+        cell.backgroundColor = CyberpunkTheme.surface
+        cell.textLabel?.text = project.displayName
+        cell.textLabel?.textColor = CyberpunkTheme.primaryText
+        cell.textLabel?.font = CyberpunkTheme.bodyFont
+        
+        // Add chevron
+        cell.accessoryType = .disclosureIndicator
+        
+        // Add selection style
+        let selectedView = UIView()
+        selectedView.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.2)
+        cell.selectedBackgroundView = selectedView
+        
+        return cell
+    }
+}
+
+// MARK: - UITableViewDelegate
+
+extension ProjectsListViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        let project = projects[indexPath.row]
+        coordinator?.selectProject(project)
+        
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 60
+    }
 }
