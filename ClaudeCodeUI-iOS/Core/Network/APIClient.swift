@@ -104,11 +104,11 @@ actor APIClient: APIClientProtocol {
         }
     }
     
-    func fetchSessions(projectId: String, limit: Int = 5, offset: Int = 0) async throws -> [Session] {
-        let response: SessionsResponse = try await request(.getSessions(projectId: projectId, limit: limit, offset: offset))
+    func fetchSessions(projectName: String, limit: Int = 5, offset: Int = 0) async throws -> [Session] {
+        let response: SessionsResponse = try await request(.getSessions(projectName: projectName, limit: limit, offset: offset))
         return response.sessions.map { dto in
-            // Use the projectId parameter since backend doesn't include it in the response
-            let session = Session(id: dto.id, projectId: projectId)
+            // Use the projectName as projectId since backend doesn't include it in the response
+            let session = Session(id: dto.id, projectId: projectName)
             // Map backend fields to Session model
             if let lastActivity = dto.lastActivity {
                 session.startedAt = lastActivity  // Use lastActivity as startedAt
@@ -121,8 +121,13 @@ actor APIClient: APIClientProtocol {
         }
     }
     
-    func fetchMessages(projectId: String, sessionId: String) async throws -> [Message] {
-        let messages: [MessageDTO] = try await request(.getMessages(projectId: projectId, sessionId: sessionId))
+    func fetchSessionMessages(projectName: String, sessionId: String, limit: Int = 50, offset: Int = 0) async throws -> [Message] {
+        // Update endpoint to include limit and offset parameters
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(projectName)/sessions/\(sessionId)/messages?limit=\(limit)&offset=\(offset)",
+            method: .get
+        )
+        let messages: [MessageDTO] = try await request(endpoint)
         return messages.map { dto in
             let message = Message(
                 id: dto.id ?? UUID().uuidString,
@@ -151,7 +156,7 @@ actor APIClient: APIClientProtocol {
     
     // MARK: - Request Methods
     func request<T: Decodable>(_ endpoint: APIEndpoint) async throws -> T {
-        let data = try await request(endpoint)
+        let data = try await requestWithRetry(endpoint)
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .custom { decoder in
@@ -177,6 +182,35 @@ actor APIClient: APIClientProtocol {
         return try decoder.decode(T.self, from: data)
     }
     
+    // MARK: - Request with Retry Logic
+    private func requestWithRetry(_ endpoint: APIEndpoint, maxRetries: Int = 3) async throws -> Data {
+        var lastError: Error?
+        var retryDelay: UInt64 = 1_000_000_000 // 1 second in nanoseconds
+        
+        for attempt in 0..<maxRetries {
+            do {
+                return try await request(endpoint)
+            } catch let error as APIError {
+                // Don't retry on client errors (4xx)
+                if case .httpError(let statusCode, _) = error, (400..<500).contains(statusCode) {
+                    throw error
+                }
+                lastError = error
+            } catch {
+                lastError = error
+            }
+            
+            // Don't delay after the last attempt
+            if attempt < maxRetries - 1 {
+                print("⚠️ Request failed (attempt \(attempt + 1)/\(maxRetries)). Retrying in \(Double(retryDelay) / 1_000_000_000) seconds...")
+                try await Task.sleep(nanoseconds: retryDelay)
+                retryDelay = min(retryDelay * 2, 10_000_000_000) // Exponential backoff, max 10 seconds
+            }
+        }
+        
+        throw lastError ?? APIError.networkError(NSError(domain: "APIClient", code: -1, userInfo: [NSLocalizedDescriptionKey: "Request failed after \(maxRetries) attempts"]))
+    }
+    
     func request(_ endpoint: APIEndpoint) async throws -> Data {
         let urlRequest = try createRequest(for: endpoint)
         
@@ -192,6 +226,9 @@ actor APIClient: APIClientProtocol {
         print("📦 Response data: \(String(data: data, encoding: .utf8) ?? "nil")")
         
         guard (200...299).contains(httpResponse.statusCode) else {
+            if httpResponse.statusCode == 401 {
+                throw APIError.unauthorized
+            }
             throw APIError.httpError(statusCode: httpResponse.statusCode, data: data)
         }
         
@@ -330,20 +367,20 @@ extension APIEndpoint {
     }
     
     // Session endpoints
-    static func getSessions(projectId: String, limit: Int = 5, offset: Int = 0) -> APIEndpoint {
-        return APIEndpoint(path: "/api/projects/\(projectId)/sessions?limit=\(limit)&offset=\(offset)", method: .get)
+    static func getSessions(projectName: String, limit: Int = 5, offset: Int = 0) -> APIEndpoint {
+        return APIEndpoint(path: "/api/projects/\(projectName)/sessions?limit=\(limit)&offset=\(offset)", method: .get)
     }
     
-    static func createSession(projectId: String) -> APIEndpoint {
-        return APIEndpoint(path: "/api/projects/\(projectId)/sessions", method: .post)
+    static func createSession(projectName: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/projects/\(projectName)/sessions", method: .post)
     }
     
-    static func deleteSession(projectId: String, sessionId: String) -> APIEndpoint {
-        return APIEndpoint(path: "/api/projects/\(projectId)/sessions/\(sessionId)", method: .delete)
+    static func deleteSession(projectName: String, sessionId: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/projects/\(projectName)/sessions/\(sessionId)", method: .delete)
     }
     
-    static func getMessages(projectId: String, sessionId: String) -> APIEndpoint {
-        return APIEndpoint(path: "/api/projects/\(projectId)/sessions/\(sessionId)/messages", method: .get)
+    static func getMessages(projectName: String, sessionId: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/projects/\(projectName)/sessions/\(sessionId)/messages", method: .get)
     }
     
     // Session endpoints (direct)
