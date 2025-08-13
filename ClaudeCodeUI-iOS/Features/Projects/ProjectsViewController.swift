@@ -479,9 +479,9 @@ class ProjectsViewController: BaseViewController {
         if let onProjectSelected = onProjectSelected {
             onProjectSelected(project)
         } else {
-            // Fallback: Navigate to chat interface directly
-            let chatVC = ChatViewController(project: project)
-            navigationController?.pushViewController(chatVC, animated: true)
+            // Navigate to sessions list for the project
+            let sessionsVC = SessionsViewController(project: project)
+            navigationController?.pushViewController(sessionsVC, animated: true)
         }
     }
 }

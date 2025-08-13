@@ -85,35 +85,18 @@ ClaudeCodeUI-iOS/
 - **SwiftData Persistence**: Local data storage with automatic migrations
 
 ### Backend API Endpoints
-```javascript
-// Health & Status
-GET  /api/health           // Server health check
 
-// Projects
-GET  /api/projects         // List all projects
-POST /api/projects         // Create new project
-PUT  /api/projects/:id     // Update project
-DELETE /api/projects/:id   // Delete project
+For complete API documentation including all endpoints, request/response formats, and WebSocket protocols, see [API_DOCUMENTATION.md](./API_DOCUMENTATION.md).
 
-// Chat
-POST /api/chat/message     // Send message
-WS   /api/chat/ws         // WebSocket connection
-
-// Files
-GET  /api/files/:projectId // Get file tree
-POST /api/files/create     // Create file
-PUT  /api/files/rename     // Rename file
-DELETE /api/files/delete   // Delete file
-
-// Terminal
-POST /api/terminal/execute // Execute command
-
-// Settings
-GET  /api/settings         // Get settings
-POST /api/settings         // Update settings
-POST /api/settings/export  // Export settings
-POST /api/settings/import  // Import settings
-```
+**Key API Categories**:
+- **Authentication**: User registration, login, JWT tokens
+- **Projects**: Create, list, rename, delete projects
+- **Sessions**: Get sessions, messages, manage chat history
+- **Files**: File tree, read/write content
+- **Git**: Status, commits, branches, remotes
+- **Cursor Integration**: Config, MCP servers, sessions
+- **WebSocket**: Real-time chat (`ws://localhost:3004/ws`)
+- **Shell**: Terminal commands via WebSocket
 
 ## WebSocket Protocol
 ```javascript
