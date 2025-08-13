@@ -353,6 +353,25 @@ extension ProjectsViewController: UITableViewDelegate {
     }
 }
 
+// Sessions View Controller - Reference to real implementation
+public class SessionsViewController: BaseViewController {
+    let project: Project
+    
+    public init(project: Project) {
+        self.project = project
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Sessions"
+    }
+}
+
 // Chat View Controller with Real WebSocket Connection
 public class ChatViewController: UIViewController {
     var project: Any?
@@ -436,22 +455,34 @@ public class ChatViewController: UIViewController {
                         
                         DispatchQueue.main.async {
                             switch type {
-                            case "output":
-                                if let output = json["data"] as? String {
-                                    self?.textView.text += "Claude: \(output)\n"
+                            case "claude-output":
+                                // Streaming output from Claude
+                                if let content = json["content"] as? String {
+                                    self?.textView.text += content
+                                }
+                            case "claude-response":
+                                // Complete response from Claude
+                                if let content = json["content"] as? String {
+                                    self?.textView.text += "\nClaude: \(content)\n\n"
+                                }
+                            case "session-created":
+                                // Store session ID when created
+                                if let sessionId = json["sessionId"] as? String,
+                                   let projectPath = json["projectPath"] as? String {
+                                    UserDefaults.standard.set(sessionId, forKey: "currentSessionId_\(projectPath)")
+                                    self?.textView.text += "✅ Session created: \(sessionId)\n"
+                                }
+                            case "session-aborted":
+                                self?.textView.text += "❌ Session aborted\n"
+                                if let projectPath = json["projectPath"] as? String {
+                                    UserDefaults.standard.removeObject(forKey: "currentSessionId_\(projectPath)")
                                 }
                             case "error":
                                 if let error = json["error"] as? String {
-                                    self?.textView.text += "Error: \(error)\n\n"
+                                    self?.textView.text += "⚠️ Error: \(error)\n\n"
                                 }
-                            case "session-started":
-                                if let sessionId = json["sessionId"] as? String {
-                                    self?.textView.text += "Session started: \(sessionId)\n"
-                                }
-                            case "session-aborted":
-                                self?.textView.text += "Session aborted\n"
                             case "projects-update":
-                                self?.textView.text += "Projects updated\n"
+                                self?.textView.text += "📁 Projects updated\n"
                             default:
                                 // Raw text fallback
                                 self?.textView.text += "Server: \(text)\n"
@@ -487,14 +518,18 @@ public class ChatViewController: UIViewController {
         
         textView.text += "You: \(text)\n"
         
+        // Get project path and existing session ID
+        let projectPath = (project as? Project)?.path ?? "/Users/nick"
+        let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(projectPath)")
+        
         // Send via WebSocket using the correct protocol
         let messageData: [String: Any] = [
             "type": "claude-command",
             "command": text,
-            "options": [
-                "projectPath": (project as? Project)?.path ?? "/Users/nick/Desktop",
-                "sessionId": nil  // Will create new session for now
-            ]
+            "projectPath": projectPath,
+            "sessionId": sessionId as Any,
+            "resume": sessionId != nil,
+            "timestamp": ISO8601DateFormatter().string(from: Date())
         ]
         
         if let jsonData = try? JSONSerialization.data(withJSONObject: messageData),
