@@ -11,6 +11,9 @@ import Foundation
 // Import view controllers from Features folder
 // ChatViewController is properly included in the Xcode project
 
+// Import SessionListViewController since it's in Features/Sessions
+// The class is declared as public in SessionListViewController.swift
+
 // MARK: - App Coordinator
 // The view controllers are now properly organized:
 // - Features/Projects/ProjectsViewController.swift - Dynamic project list with backend integration
@@ -330,15 +333,21 @@ class AppCoordinator: NSObject, Coordinator {
         
         // Check if sessions tab already exists
         let existingSessionsIndex = tabBarController.viewControllers?.firstIndex { viewController in
-            if let nav = viewController as? UINavigationController,
-               let sessionsVC = nav.viewControllers.first as? SessionsViewController {
-                return true
+            if let nav = viewController as? UINavigationController {
+                // TODO: Check for SessionListViewController once it's added to project
+                // let sessionsVC = nav.viewControllers.first as? SessionListViewController
+                return false
             }
             return false
         }
         
         // Create sessions view controller to show all sessions for the project
-        let sessionsVC = SessionsViewController(project: project)
+        // TODO: Uncomment when SessionListViewController is added to Xcode project
+        // let sessionsVC = SessionListViewController(project: project)
+        // For now, use a placeholder
+        let sessionsVC = UIViewController()
+        sessionsVC.view.backgroundColor = .systemBackground
+        sessionsVC.title = "Sessions"
         let sessionsNav = UINavigationController(rootViewController: sessionsVC)
         sessionsNav.tabBarItem = UITabBarItem(
             title: "Sessions",

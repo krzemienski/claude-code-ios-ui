@@ -7,7 +7,7 @@
 
 import UIKit
 
-public class ChatViewController: BaseViewController {
+class ChatViewController: BaseViewController {
     
     // MARK: - Properties
     
@@ -104,7 +104,7 @@ public class ChatViewController: BaseViewController {
     
     // MARK: - Initialization
     
-    public init(project: Project) {
+    init(project: Project) {
         self.project = project
         self.webSocketManager = DIContainer.shared.webSocketManager
         super.init(nibName: nil, bundle: nil)
@@ -265,10 +265,10 @@ public class ChatViewController: BaseViewController {
                 case .success(let messages):
                     self?.messages = messages.map { message in
                         ChatMessage(
-                            id: message.id,
+                            id: message.id ?? UUID().uuidString,
                             content: message.content,
                             isUser: message.role == "user",
-                            timestamp: message.timestamp,
+                            timestamp: message.timestamp ?? Date(),
                             status: .sent
                         )
                     }
