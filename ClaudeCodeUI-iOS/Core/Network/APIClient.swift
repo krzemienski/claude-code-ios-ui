@@ -7,6 +7,22 @@
 
 import Foundation
 
+// MARK: - Request Models
+struct FeedbackData: Codable {
+    let type: FeedbackType
+    let message: String
+    let email: String?
+    let deviceInfo: String
+    let appVersion: String
+    let screenshot: Data?
+}
+
+enum FeedbackType: String, Codable {
+    case bug = "bug"
+    case feature = "feature"
+    case general = "general"
+}
+
 // MARK: - API Client Protocol
 protocol APIClientProtocol {
     func request<T: Decodable>(_ endpoint: APIEndpoint) async throws -> T
@@ -17,6 +33,9 @@ protocol APIClientProtocol {
 // MARK: - API Client
 actor APIClient: APIClientProtocol {
     
+    // MARK: - Singleton
+    static let shared = APIClient()
+    
     // MARK: - Properties
     private let baseURL: String
     private let session: URLSession
@@ -26,11 +45,21 @@ actor APIClient: APIClientProtocol {
     init(baseURL: String = AppConfig.backendURL, session: URLSession = .shared) {
         self.baseURL = baseURL
         self.session = session
+        
+        // Load saved auth token
+        if let savedToken = UserDefaults.standard.string(forKey: "authToken") {
+            self.authToken = savedToken
+        }
     }
     
     // MARK: - Authentication
     func setAuthToken(_ token: String?) {
         self.authToken = token
+        if let token = token {
+            UserDefaults.standard.set(token, forKey: "authToken")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "authToken")
+        }
     }
     
     // MARK: - Convenience Methods
@@ -64,13 +93,28 @@ actor APIClient: APIClientProtocol {
         try await requestVoid(.deleteProject(id: id))
     }
     
+    func submitFeedback(_ feedback: FeedbackData, completion: @escaping (Result<Void, Error>) -> Void) {
+        Task {
+            do {
+                try await requestVoid(.submitFeedback(feedback))
+                completion(.success(()))
+            } catch {
+                completion(.failure(error))
+            }
+        }
+    }
+    
     func fetchSessions(projectId: String, limit: Int = 5, offset: Int = 0) async throws -> [Session] {
         let response: SessionsResponse = try await request(.getSessions(projectId: projectId, limit: limit, offset: offset))
         return response.sessions.map { dto in
+            // Use the projectId parameter since backend doesn't include it in the response
             let session = Session(id: dto.id, projectId: projectId)
-            session.startedAt = dto.startedAt
-            session.lastActiveAt = dto.lastActiveAt
-            session.status = SessionStatus(rawValue: dto.status) ?? .active
+            // Map backend fields to Session model
+            if let lastActivity = dto.lastActivity {
+                session.startedAt = lastActivity  // Use lastActivity as startedAt
+                session.lastActiveAt = lastActivity  // Use lastActivity as lastActiveAt
+            }
+            session.status = SessionStatus(rawValue: dto.status ?? "active") ?? .active
             return session
         }
     }
@@ -85,6 +129,21 @@ actor APIClient: APIClientProtocol {
             )
             message.timestamp = dto.timestamp ?? Date()
             return message
+        }
+    }
+    
+    // MARK: - Completion Handler Methods for Legacy Support
+    
+    func getSessionMessages(sessionId: String, completion: @escaping (Result<[MessageDTO], Error>) -> Void) {
+        Task {
+            do {
+                // Extract project ID from session ID or use a default
+                // For now, we'll use the session endpoint directly
+                let messages: [MessageDTO] = try await request(.getSessionMessages(sessionId: sessionId))
+                completion(.success(messages))
+            } catch {
+                completion(.failure(error))
+            }
         }
     }
     
@@ -285,6 +344,11 @@ extension APIEndpoint {
         return APIEndpoint(path: "/api/projects/\(projectId)/sessions/\(sessionId)/messages", method: .get)
     }
     
+    // Session endpoints (direct)
+    static func getSessionMessages(sessionId: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/sessions/\(sessionId)/messages", method: .get)
+    }
+    
     // File endpoints
     static func getFiles(projectId: String, path: String) -> APIEndpoint {
         let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? path
@@ -304,6 +368,19 @@ extension APIEndpoint {
     static func deleteFile(projectId: String, path: String) -> APIEndpoint {
         let body = try? JSONEncoder().encode(["path": path])
         return APIEndpoint(path: "/api/projects/\(projectId)/files/delete", method: .post, body: body)
+    }
+    
+    // Feedback endpoints
+    static func submitFeedback(_ feedback: FeedbackData) -> APIEndpoint {
+        let body = try? JSONEncoder().encode([
+            "type": feedback.type.rawValue,
+            "message": feedback.message,
+            "email": feedback.email ?? "",
+            "deviceInfo": feedback.deviceInfo,
+            "appVersion": feedback.appVersion,
+            "hasScreenshot": feedback.screenshot != nil
+        ])
+        return APIEndpoint(path: "/api/feedback", method: .post, body: body)
     }
 }
 
@@ -345,10 +422,12 @@ struct SessionsResponse: Codable {
 
 struct SessionDTO: Codable {
     let id: String
-    let projectId: String
-    let startedAt: Date
-    let lastActiveAt: Date
-    let status: String
+    let projectId: String?  // Optional since backend doesn't include it
+    let summary: String?
+    let messageCount: Int?
+    let lastActivity: Date?  // Backend uses "lastActivity" instead of "startedAt" and "lastActiveAt"
+    let cwd: String?
+    let status: String?  // Make optional since backend response doesn't include it
 }
 
 struct MessageDTO: Codable {

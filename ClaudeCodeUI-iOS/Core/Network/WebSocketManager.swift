@@ -119,8 +119,16 @@ final class WebSocketManager {
     // MARK: - Connection Management
     
     func connect(to urlString: String) {
-        guard let url = URL(string: urlString) else {
-            logError("Invalid WebSocket URL: \(urlString)", category: "WebSocket")
+        // Add JWT token to URL if available
+        var finalUrlString = urlString
+        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+            // Add token as query parameter for WebSocket connection
+            let separator = urlString.contains("?") ? "&" : "?"
+            finalUrlString = "\(urlString)\(separator)token=\(authToken)"
+        }
+        
+        guard let url = URL(string: finalUrlString) else {
+            logError("Invalid WebSocket URL: \(finalUrlString)", category: "WebSocket")
             connectionState = .failed
             return
         }
@@ -132,7 +140,7 @@ final class WebSocketManager {
         
         var request = URLRequest(url: url)
         
-        // Add authentication token if available
+        // Also add authentication token in header for compatibility
         if let authToken = UserDefaults.standard.string(forKey: "authToken") {
             request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         }

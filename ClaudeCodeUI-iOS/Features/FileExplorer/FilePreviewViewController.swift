@@ -189,106 +189,55 @@ class FilePreviewViewController: BaseViewController {
     private func loadFileContent() {
         loadingView.startAnimating()
         
-        // Load mock content for now
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.loadMockContent()
-            self?.loadingView.stopAnimating()
+        Task {
+            await fetchFileContent()
         }
     }
     
-    private func loadMockContent() {
-        let ext = (fileNode.name as NSString).pathExtension.lowercased()
-        
-        switch ext {
-        case "swift":
-            fileContent = """
-            //
-            //  \(fileNode.name)
-            //  \(project.name)
-            //
+    @MainActor
+    private func fetchFileContent() async {
+        do {
+            // Call backend API to get file content
+            let endpoint = APIEndpoint(
+                path: "/api/projects/\(project.id)/files/read",
+                method: .post,
+                body: try? JSONEncoder().encode(["path": fileNode.path])
+            )
             
-            import UIKit
+            // The backend returns the file content as a simple text response
+            let data: Data = try await apiClient.request(endpoint)
             
-            class ViewController: UIViewController {
-                
-                override func viewDidLoad() {
-                    super.viewDidLoad()
-                    setupUI()
-                }
-                
-                private func setupUI() {
-                    view.backgroundColor = .systemBackground
-                    
-                    let label = UILabel()
-                    label.text = "Hello, World!"
-                    label.translatesAutoresizingMaskIntoConstraints = false
-                    
-                    view.addSubview(label)
-                    
-                    NSLayoutConstraint.activate([
-                        label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                        label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-                    ])
-                }
+            // Convert data to string
+            if let content = String(data: data, encoding: .utf8) {
+                self.fileContent = content
+                self.textView.text = content
+                self.updateLineNumbers()
+                self.applySyntaxHighlighting()
+            } else {
+                throw NSError(domain: "FilePreview", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to decode file content"])
             }
-            """
             
-        case "json":
-            fileContent = """
-            {
-              "name": "\(project.name)",
-              "version": "1.0.0",
-              "description": "iOS application",
-              "dependencies": {
-                "swift": "5.9",
-                "ios": "17.0"
-              },
-              "scripts": {
-                "build": "xcodebuild",
-                "test": "xcodebuild test"
-              }
+            self.loadingView.stopAnimating()
+        } catch {
+            Logger.shared.error("Failed to load file content: \(error)")
+            
+            await MainActor.run {
+                self.loadingView.stopAnimating()
+                self.showError("Failed to load file: \(error.localizedDescription)")
             }
-            """
-            
-        case "md":
-            fileContent = """
-            # \(project.name)
-            
-            ## Overview
-            This is an iOS application built with Swift and UIKit.
-            
-            ## Features
-            - Modern UI with cyberpunk theme
-            - Real-time WebSocket communication
-            - File explorer with syntax highlighting
-            - Integrated terminal
-            
-            ## Installation
-            1. Clone the repository
-            2. Open in Xcode
-            3. Build and run
-            
-            ## License
-            MIT
-            """
-            
-        default:
-            fileContent = """
-            // File: \(fileNode.name)
-            // Path: \(fileNode.path)
-            // Project: \(project.name)
-            
-            This is a sample file content.
-            You can edit this file and save your changes.
-            
-            Lines of code will be displayed here with syntax highlighting.
-            """
         }
-        
-        textView.text = fileContent
-        updateLineNumbers()
-        applySyntaxHighlighting()
     }
+    
+    private func showError(_ message: String) {
+        let alert = UIAlertController(
+            title: "Error",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
     
     // MARK: - Actions
     
@@ -313,24 +262,50 @@ class FilePreviewViewController: BaseViewController {
     @objc private func saveFile() {
         guard textView.isEditable else { return }
         
-        // TODO: Implement actual file saving via API
         fileContent = textView.text
         
-        // Show success feedback
-        let alert = UIAlertController(
-            title: "Saved",
-            message: "File saved successfully",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
-        
-        // Exit edit mode
-        toggleEditMode()
-        
-        // Haptic feedback
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+        Task {
+            await saveFileContent()
+        }
+    }
+    
+    @MainActor
+    private func saveFileContent() async {
+        do {
+            // Call backend API to save file content
+            let endpoint = APIEndpoint(
+                path: "/api/projects/\(project.id)/files/write",
+                method: .post,
+                body: try? JSONEncoder().encode([
+                    "path": fileNode.path,
+                    "content": fileContent
+                ])
+            )
+            
+            // Save via API
+            let _: Data = try await apiClient.request(endpoint)
+            
+            // Show success feedback
+            let alert = UIAlertController(
+                title: "Saved",
+                message: "File saved successfully",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            
+            // Exit edit mode
+            toggleEditMode()
+            
+            // Haptic feedback
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+            
+        } catch {
+            Logger.shared.error("Failed to save file: \(error)")
+            
+            showError("Failed to save file: \(error.localizedDescription)")
+        }
     }
     
     @objc private func copyContent() {

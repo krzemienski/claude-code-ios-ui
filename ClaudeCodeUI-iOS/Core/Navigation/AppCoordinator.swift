@@ -325,38 +325,38 @@ class AppCoordinator: NSObject, Coordinator {
     func selectProject(_ project: Project) {
         guard let tabBarController = mainTabBarController else { return }
         
-        // Check if chat tab already exists
-        let existingChatIndex = tabBarController.viewControllers?.firstIndex { viewController in
+        // Check if sessions tab already exists
+        let existingSessionsIndex = tabBarController.viewControllers?.firstIndex { viewController in
             if let nav = viewController as? UINavigationController,
-               let chatVC = nav.viewControllers.first as? ChatViewController {
+               let sessionsVC = nav.viewControllers.first as? SessionsViewController {
                 return true
             }
             return false
         }
         
-        // Create chat view controller
-        let chatVC = ChatViewController(project: project)
-        let chatNav = UINavigationController(rootViewController: chatVC)
-        chatNav.tabBarItem = UITabBarItem(
-            title: "Chat",
-            image: UIImage(systemName: "message.fill"),
-            selectedImage: UIImage(systemName: "message.fill")
+        // Create sessions view controller to show all sessions for the project
+        let sessionsVC = SessionsViewController(project: project)
+        let sessionsNav = UINavigationController(rootViewController: sessionsVC)
+        sessionsNav.tabBarItem = UITabBarItem(
+            title: "Sessions",
+            image: UIImage(systemName: "bubble.left.and.bubble.right.fill"),
+            selectedImage: UIImage(systemName: "bubble.left.and.bubble.right.fill")
         )
         
-        if let existingIndex = existingChatIndex {
-            // Replace existing chat tab
+        if let existingIndex = existingSessionsIndex {
+            // Replace existing sessions tab
             var viewControllers = tabBarController.viewControllers ?? []
-            viewControllers[existingIndex] = chatNav
+            viewControllers[existingIndex] = sessionsNav
             tabBarController.viewControllers = viewControllers
         } else {
-            // Add new chat tab
+            // Add new sessions tab
             var viewControllers = tabBarController.viewControllers ?? []
-            viewControllers.insert(chatNav, at: 1) // Insert after Projects tab
+            viewControllers.insert(sessionsNav, at: 1) // Insert after Projects tab
             tabBarController.viewControllers = viewControllers
         }
         
-        // Select the chat tab
-        tabBarController.selectedViewController = chatNav
+        // Select the sessions tab
+        tabBarController.selectedViewController = sessionsNav
         
         // Haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .medium)

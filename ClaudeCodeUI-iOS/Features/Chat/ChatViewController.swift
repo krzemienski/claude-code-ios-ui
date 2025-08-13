@@ -232,8 +232,8 @@ class ChatViewController: BaseViewController {
     
     private func connectWebSocket() {
         webSocketManager.delegate = self
-        // Fix: Use correct WebSocket path that backend expects
-        var wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/ws"
+        // Use correct WebSocket path that backend expects
+        var wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/api/chat/ws"
         
         // Add authentication token as query parameter
         if let authToken = UserDefaults.standard.string(forKey: "authToken") {
@@ -247,16 +247,49 @@ class ChatViewController: BaseViewController {
     // MARK: - Data Loading
     
     private func loadInitialMessages() {
-        // Add welcome message
-        let welcomeMessage = ChatMessage(
-            id: UUID().uuidString,
-            content: "Welcome to \(project.displayName)! How can I help you today?",
-            isUser: false,
-            timestamp: Date(),
-            status: .sent
-        )
-        messages.append(welcomeMessage)
-        tableView.reloadData()
+        // Load existing session messages from backend
+        if let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)") {
+            loadSessionMessages(sessionId: sessionId)
+        } else {
+            // No existing session - keep messages empty (no fake welcome message)
+            messages = []
+            tableView.reloadData()
+        }
+    }
+    
+    private func loadSessionMessages(sessionId: String) {
+        // Load messages from backend
+        APIClient.shared.getSessionMessages(sessionId: sessionId) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let messages):
+                    self?.messages = messages.map { message in
+                        ChatMessage(
+                            id: message.id,
+                            content: message.content,
+                            isUser: message.role == "user",
+                            timestamp: message.timestamp,
+                            status: .sent
+                        )
+                    }
+                    self?.tableView.reloadData()
+                    
+                    // Scroll to bottom if there are messages
+                    if !messages.isEmpty {
+                        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+                        self?.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+                    }
+                    
+                case .failure(let error):
+                    Logger.shared.error("Failed to load session messages: \(error)")
+                    // Keep messages empty on error - no fake data
+                    self?.messages = []
+                    self?.tableView.reloadData()
+                    // Show error to user
+                    self?.showError("Failed to load session messages: \(error.localizedDescription)")
+                }
+            }
+        }
     }
     
     // MARK: - Actions

@@ -85,12 +85,11 @@ class APIClient {
     
     init(baseURL: String = "http://localhost:3004") {
         self.baseURL = baseURL
-        // For development, we'll use the demo token we created
-        // In production, this should be stored securely in Keychain
-        self.authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiZGVtbyIsImlhdCI6MTc1NDc1MDQ1NX0.gLR89Qwue91OU5kRGqVU-JnOJFOjq9D5LnfaAkiYUro"
+        // Retrieve saved token from UserDefaults
+        self.authToken = UserDefaults.standard.string(forKey: "authToken")
     }
     
-    func authenticate(username: String = "demo", password: String = "demo123") async throws {
+    func authenticate(username: String, password: String) async throws {
         guard let url = URL(string: "\(baseURL)/api/auth/login") else {
             throw URLError(.badURL)
         }
@@ -106,6 +105,10 @@ class APIClient {
         if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
            let token = json["token"] as? String {
             self.authToken = token
+            // Store token in UserDefaults for WebSocket connection
+            UserDefaults.standard.set(token, forKey: "authToken")
+        } else {
+            throw NSError(domain: "AuthError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get authentication token"])
         }
     }
     
@@ -184,12 +187,14 @@ struct AppConfig {
 
 // Simple SwiftDataContainer
 class SwiftDataContainer {
+    static let shared = SwiftDataContainer()
+    
     func fetchProjects() async throws -> [Project] {
         return []
     }
     
-    func fetchSettings() async throws -> Settings? {
-        return nil
+    func fetchSettings() async throws -> Settings {
+        return Settings()
     }
     
     func saveProject(_ project: Project) async throws {
@@ -224,7 +229,7 @@ public class ProjectsViewController: BaseViewController {
         super.viewDidLoad()
         title = "Projects"
         setupUI()
-        loadSampleProjects()
+        loadProjects()
     }
     
     private func setupUI() {
@@ -255,7 +260,7 @@ public class ProjectsViewController: BaseViewController {
         navigationItem.rightBarButtonItem?.tintColor = CyberpunkTheme.primaryCyan
     }
     
-    private func loadSampleProjects() {
+    private func loadProjects() {
         // Load real projects from backend
         Task {
             do {
@@ -340,9 +345,9 @@ extension ProjectsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let project = projects[indexPath.row]
-        // Navigate to chat with this project
-        let chatVC = ChatViewController(project: project)
-        navigationController?.pushViewController(chatVC, animated: true)
+        // Navigate to sessions list first, NOT directly to chat
+        let sessionsVC = SessionsViewController(project: project)
+        navigationController?.pushViewController(sessionsVC, animated: true)
     }
 }
 

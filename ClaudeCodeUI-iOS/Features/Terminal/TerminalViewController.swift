@@ -388,27 +388,16 @@ class TerminalViewController: BaseViewController {
         echo <msg>  - Display message
         date        - Show current date/time
         whoami      - Display current user
-        matrix      - Enter the matrix
-        hack        - Simulate hacking sequence
         exit        - Close terminal (if in project)
         
         Navigation:
         ↑/↓         - Browse command history
+        
+        Note: All commands except 'clear' and 'exit' are
+        executed on the backend server.
         """
         
         appendToTerminal(helpText, color: CyberpunkTheme.primaryText)
-    }
-    
-    private func listDirectory() {
-        let files = """
-        total 42
-        drwxr-xr-x  src/
-        drwxr-xr-x  tests/
-        -rw-r--r--  Package.swift
-        -rw-r--r--  README.md
-        -rw-r--r--  .gitignore
-        """
-        appendToTerminal(files)
     }
     
     private func changeDirectory(_ path: String) {
@@ -423,48 +412,6 @@ class TerminalViewController: BaseViewController {
         }
         updatePrompt()
         appendToTerminal("Changed directory to: \(currentDirectory)")
-    }
-    
-    private func showMatrix() {
-        let matrixText = """
-        ░▒▓█ ENTERING THE MATRIX █▓▒░
-        
-        01001000 01100001 01100011 01101011
-        ╔═══╦═══╦═══╦═══╗
-        ║ ▓ ║ █ ║ ▒ ║ ░ ║
-        ╠═══╬═══╬═══╬═══╣
-        ║ █ ║ ░ ║ ▓ ║ ▒ ║
-        ╚═══╩═══╩═══╩═══╝
-        
-        Wake up, Neo...
-        """
-        
-        appendToTerminal(matrixText, color: .green)
-    }
-    
-    private func simulateHacking() {
-        appendToTerminal("Initializing hack sequence...", color: CyberpunkTheme.accentPink)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.appendToTerminal("[██░░░░░░░░] 20% - Bypassing firewall...", color: CyberpunkTheme.primaryCyan)
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            self?.appendToTerminal("[████░░░░░░] 40% - Decrypting protocols...", color: CyberpunkTheme.primaryCyan)
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.appendToTerminal("[██████░░░░] 60% - Accessing mainframe...", color: CyberpunkTheme.primaryCyan)
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            self?.appendToTerminal("[████████░░] 80% - Downloading data...", color: CyberpunkTheme.primaryCyan)
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
-            self?.appendToTerminal("[██████████] 100% - Access granted!", color: .green)
-            self?.appendToTerminal("\n🔓 SYSTEM COMPROMISED 🔓", color: CyberpunkTheme.accentPink)
-        }
     }
     
     private func updatePrompt() {

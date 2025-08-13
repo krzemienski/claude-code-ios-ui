@@ -213,10 +213,12 @@ class FileExplorerViewController: BaseViewController {
         } catch {
             Logger.shared.error("Failed to load file tree: \(error)")
             
-            // Fall back to mock data on error
-            rootNode = createMockFileTree()
-            tableView.reloadData()
-            emptyStateView.isHidden = rootNode != nil
+            // Show error to user instead of fake data
+            await MainActor.run {
+                self.showError("Failed to load file tree: \(error.localizedDescription)")
+                self.emptyStateView.isHidden = false
+                self.tableView.reloadData()
+            }
         }
     }
     
@@ -230,32 +232,6 @@ class FileExplorerViewController: BaseViewController {
         )
     }
     
-    private func createMockFileTree() -> FileTreeNode {
-        // Add mock files
-        let srcFolder = FileTreeNode(name: "src", path: "/src", isDirectory: true, children: [
-            FileTreeNode(name: "main.swift", path: "/src/main.swift", isDirectory: false, children: nil),
-            FileTreeNode(name: "utils.swift", path: "/src/utils.swift", isDirectory: false, children: nil),
-            FileTreeNode(name: "models", path: "/src/models", isDirectory: true, children: [
-                FileTreeNode(name: "User.swift", path: "/src/models/User.swift", isDirectory: false, children: nil),
-                FileTreeNode(name: "Project.swift", path: "/src/models/Project.swift", isDirectory: false, children: nil)
-            ])
-        ])
-        
-        let testsFolder = FileTreeNode(name: "tests", path: "/tests", isDirectory: true, children: [
-            FileTreeNode(name: "MainTests.swift", path: "/tests/MainTests.swift", isDirectory: false, children: nil)
-        ])
-        
-        let configFiles = [
-            FileTreeNode(name: "Package.swift", path: "/Package.swift", isDirectory: false, children: nil),
-            FileTreeNode(name: "README.md", path: "/README.md", isDirectory: false, children: nil),
-            FileTreeNode(name: ".gitignore", path: "/.gitignore", isDirectory: false, children: nil)
-        ]
-        
-        let rootChildren = [srcFolder, testsFolder] + configFiles
-        let root = FileTreeNode(name: project.name, path: "/", isDirectory: true, children: rootChildren)
-        
-        return root
-    }
     
     // MARK: - Actions
     
@@ -368,6 +344,16 @@ class FileExplorerViewController: BaseViewController {
         
         let previewVC = FilePreviewViewController(fileNode: node, project: project)
         navigationController?.pushViewController(previewVC, animated: true)
+    }
+    
+    private func showError(_ message: String) {
+        let alert = UIAlertController(
+            title: "Error",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
     
     // MARK: - Helper Methods
