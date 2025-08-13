@@ -256,6 +256,36 @@ final class WebSocketManager {
         send(message)
     }
     
+    // MARK: - Claude Command Support
+    
+    func sendClaudeCommand(content: String, projectPath: String, sessionId: String? = nil) {
+        var payload: [String: Any] = [
+            "content": content,
+            "projectPath": projectPath
+        ]
+        
+        if let sessionId = sessionId {
+            payload["sessionId"] = sessionId
+        }
+        
+        let message = WebSocketMessage(
+            type: .claudeCommand,
+            payload: payload,
+            sessionId: sessionId
+        )
+        
+        send(message)
+    }
+    
+    func abortSession(sessionId: String) {
+        let message = WebSocketMessage(
+            type: .abortSession,
+            payload: ["sessionId": sessionId],
+            sessionId: sessionId
+        )
+        send(message)
+    }
+    
     private func receiveMessage() {
         webSocketTask?.receive { [weak self] result in
             guard let self = self else { return }
