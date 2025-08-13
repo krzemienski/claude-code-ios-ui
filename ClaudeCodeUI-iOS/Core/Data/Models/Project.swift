@@ -15,6 +15,7 @@ final class Project: Codable {
     @Attribute(.unique) var id: String
     var name: String
     var path: String
+    var fullPath: String?
     var displayName: String?
     var createdAt: Date
     var updatedAt: Date
@@ -35,12 +36,14 @@ final class Project: Codable {
     init(id: String = UUID().uuidString, 
          name: String, 
          path: String, 
+         fullPath: String? = nil,
          displayName: String? = nil,
          createdAt: Date = Date(),
          updatedAt: Date = Date()) {
         self.id = id
         self.name = name
         self.path = path
+        self.fullPath = fullPath
         self.displayName = displayName
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -52,6 +55,7 @@ final class Project: Codable {
         case id
         case name
         case path
+        case fullPath = "full_path"
         case displayName = "display_name"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
@@ -62,6 +66,7 @@ final class Project: Codable {
         self.id = try container.decode(String.self, forKey: .id)
         self.name = try container.decode(String.self, forKey: .name)
         self.path = try container.decode(String.self, forKey: .path)
+        self.fullPath = try container.decodeIfPresent(String.self, forKey: .fullPath)
         self.displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
         self.createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         self.updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
@@ -73,6 +78,7 @@ final class Project: Codable {
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
         try container.encode(path, forKey: .path)
+        try container.encodeIfPresent(fullPath, forKey: .fullPath)
         try container.encodeIfPresent(displayName, forKey: .displayName)
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
