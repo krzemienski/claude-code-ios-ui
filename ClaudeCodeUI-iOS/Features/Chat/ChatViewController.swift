@@ -12,6 +12,7 @@ class ChatViewController: BaseViewController {
     // MARK: - Properties
     
     private let project: Project
+    private var currentSession: Session?
     private var messages: [ChatMessage] = []
     private let webSocketManager: WebSocketManager
     private var isTyping = false
@@ -104,8 +105,9 @@ class ChatViewController: BaseViewController {
     
     // MARK: - Initialization
     
-    init(project: Project) {
+    init(project: Project, session: Session? = nil) {
         self.project = project
+        self.currentSession = session
         self.webSocketManager = DIContainer.shared.webSocketManager
         super.init(nibName: nil, bundle: nil)
     }
@@ -232,10 +234,10 @@ class ChatViewController: BaseViewController {
     
     private func connectWebSocket() {
         webSocketManager.delegate = self
-        // Use correct WebSocket path that backend expects
-        var wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/api/chat/ws"
+        // Use correct WebSocket path that backend expects - just /ws not /api/chat/ws
+        var wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/ws"
         
-        // Add authentication token as query parameter
+        // Add authentication token as query parameter (though backend may not require it)
         if let authToken = UserDefaults.standard.string(forKey: "authToken") {
             wsURL += "?token=\(authToken)"
         }
@@ -248,7 +250,12 @@ class ChatViewController: BaseViewController {
     
     private func loadInitialMessages() {
         // Load existing session messages from backend
-        if let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)") {
+        if let session = currentSession {
+            // Use the provided session
+            UserDefaults.standard.set(session.id, forKey: "currentSessionId_\(project.id)")
+            loadSessionMessages(sessionId: session.id)
+        } else if let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)") {
+            // Try to resume a previous session
             loadSessionMessages(sessionId: sessionId)
         } else {
             // No existing session - keep messages empty (no fake welcome message)
@@ -319,7 +326,9 @@ class ChatViewController: BaseViewController {
         updateInputTextViewHeight()
         
         // Send via WebSocket
-        webSocketManager.sendMessage(text, projectId: project.id)
+        // Use project.path if available, otherwise use fullPath or path as fallback
+        let projectPath = project.path.isEmpty ? (project.fullPath ?? project.id) : project.path
+        webSocketManager.sendMessage(text, projectId: project.id, projectPath: projectPath)
         
         // Haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .light)

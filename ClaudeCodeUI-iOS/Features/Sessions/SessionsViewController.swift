@@ -171,11 +171,12 @@ public class SessionsViewController: BaseViewController {
         guard !isLoading else { return }
         isLoading = true
         
-        print("📱 Loading sessions for project: \(project.id)")
+        print("📱 Loading sessions for project: \(project.name)")
         
         Task {
             do {
-                let sessions = try await apiClient.fetchSessions(projectId: project.id, limit: 50, offset: 0)
+                // Use project.name instead of project.id - API expects projectName not projectId
+                let sessions = try await apiClient.fetchSessions(projectName: project.name, limit: 50, offset: 0)
                 print("✅ Successfully fetched \(sessions.count) sessions from API")
                 
                 await MainActor.run {
@@ -198,7 +199,7 @@ public class SessionsViewController: BaseViewController {
         
         Task {
             do {
-                let sessions = try await apiClient.fetchSessions(projectId: project.id, limit: 50, offset: 0)
+                let sessions = try await apiClient.fetchSessions(projectName: project.name, limit: 50, offset: 0)
                 
                 await MainActor.run {
                     self.sessions = sessions
@@ -229,7 +230,7 @@ public class SessionsViewController: BaseViewController {
         Task {
             do {
                 // Create new session via API
-                let endpoint = APIEndpoint.createSession(projectId: project.id)
+                let endpoint = APIEndpoint.createSession(projectName: project.name)
                 let response: [String: Any] = try await apiClient.request(endpoint)
                 
                 if let sessionId = response["id"] as? String {
@@ -274,7 +275,7 @@ public class SessionsViewController: BaseViewController {
             
             Task {
                 do {
-                    try await self.apiClient.requestVoid(.deleteSession(projectId: self.project.id, sessionId: session.id))
+                    try await self.apiClient.requestVoid(.deleteSession(projectName: self.project.name, sessionId: session.id))
                     
                     await MainActor.run {
                         // Remove from local array

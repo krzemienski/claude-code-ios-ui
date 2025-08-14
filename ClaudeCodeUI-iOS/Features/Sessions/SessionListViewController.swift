@@ -173,9 +173,7 @@ extension SessionListViewController: UITableViewDelegate {
         let session = sessions[indexPath.row]
         
         // Navigate to chat with selected session
-        // Navigate to chat with selected session
-        // TODO: Pass session to ChatViewController
-        let chatVC = ChatViewController(project: project)
+        let chatVC = ChatViewController(project: project, session: session)
         navigationController?.pushViewController(chatVC, animated: true)
     }
     

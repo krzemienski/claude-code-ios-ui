@@ -47,9 +47,11 @@ enum WebSocketMessageType: String, Codable {
     
     // Shell WebSocket
     case shellInit = "init"
+    case shellCommand = "shell-command"
+    case shellOutput = "shell-output"
+    case shellError = "shell-error"
     case shellInput = "input"
     case shellResize = "resize"
-    case shellOutput = "output"
     case urlOpen = "url_open"
 }
 
@@ -182,15 +184,18 @@ final class WebSocketManager {
     
     // MARK: - Message Handling
     
-    func sendMessage(_ text: String, projectId: String) {
+    func sendMessage(_ text: String, projectId: String, projectPath: String? = nil) {
         // Send Claude command through WebSocket
         let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(projectId)")
+        
+        // Use projectPath if provided, otherwise use projectId as fallback
+        let actualProjectPath = projectPath ?? projectId
         
         let message = WebSocketMessage(
             type: .claudeCommand,
             payload: [
                 "command": text,
-                "projectPath": projectId,
+                "projectPath": actualProjectPath,
                 "sessionId": sessionId as Any,
                 "resume": sessionId != nil,
                 "timestamp": ISO8601DateFormatter.shared.string(from: Date())
@@ -200,13 +205,15 @@ final class WebSocketManager {
     }
     
     func send(_ message: Message) async throws {
+        // Use claudeCommand type for all messages to Claude
         let wsMessage = WebSocketMessage(
-            type: .message,
+            type: .claudeCommand,
             payload: [
                 "id": message.id,
                 "content": message.content,
                 "role": message.role.rawValue,
                 "timestamp": ISO8601DateFormatter.shared.string(from: message.timestamp)
+                // Note: projectPath should be passed via sendMessage method which already handles it
             ]
         )
         

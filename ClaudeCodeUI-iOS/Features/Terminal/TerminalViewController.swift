@@ -16,6 +16,8 @@ class TerminalViewController: BaseViewController {
     private var historyIndex = -1
     private var currentDirectory = "~"
     private let webSocketManager: WebSocketManager
+    private let shellWebSocketManager: WebSocketManager
+    private var isShellConnected = false
     
     // MARK: - UI Components
     
@@ -137,12 +139,15 @@ class TerminalViewController: BaseViewController {
     init(project: Project? = nil) {
         self.project = project
         self.webSocketManager = DIContainer.shared.webSocketManager
+        // Create a separate WebSocket manager for shell commands
+        self.shellWebSocketManager = WebSocketManager()
         super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) {
         self.project = nil
         self.webSocketManager = DIContainer.shared.webSocketManager
+        self.shellWebSocketManager = WebSocketManager()
         super.init(coder: coder)
     }
     
@@ -155,11 +160,18 @@ class TerminalViewController: BaseViewController {
         showWelcomeMessage()
         startScanlineAnimation()
         setupKeyboardObservers()
+        connectShellWebSocket()
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         commandTextField.becomeFirstResponder()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Disconnect shell WebSocket when leaving the terminal
+        shellWebSocketManager.disconnect()
     }
     
     deinit {
@@ -307,6 +319,13 @@ class TerminalViewController: BaseViewController {
     }
     
     private func sendCommandToBackend(_ command: String) {
+        // If shell WebSocket is connected, use it for real-time communication
+        if isShellConnected {
+            sendCommandViaWebSocket(command)
+            return
+        }
+        
+        // Fallback to HTTP if WebSocket is not connected
         // Create the request body
         let parameters: [String: Any] = [
             "command": command,
@@ -374,6 +393,45 @@ class TerminalViewController: BaseViewController {
                 }
             }
         }.resume()
+    }
+    
+    // MARK: - WebSocket Methods
+    
+    private func connectShellWebSocket() {
+        // Set self as delegate to receive messages
+        shellWebSocketManager.delegate = self
+        
+        // Connect to shell WebSocket endpoint
+        var wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/shell"
+        
+        // Add authentication token if available
+        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+            wsURL += "?token=\(authToken)"
+        }
+        
+        // Add project ID if available
+        if let projectId = project?.id {
+            wsURL += wsURL.contains("?") ? "&projectId=\(projectId)" : "?projectId=\(projectId)"
+        }
+        
+        shellWebSocketManager.connect(to: wsURL)
+        print("🐚 Connecting to Shell WebSocket at: \(wsURL)")
+    }
+    
+    private func sendCommandViaWebSocket(_ command: String) {
+        // Create message for shell command execution
+        let message = WebSocketMessage(
+            type: .shellCommand,
+            payload: [
+                "command": command,
+                "projectPath": project?.path ?? project?.id ?? "",
+                "cwd": currentDirectory,
+                "timestamp": ISO8601DateFormatter.shared.string(from: Date())
+            ]
+        )
+        
+        shellWebSocketManager.send(message)
+        print("🐚 Sent shell command via WebSocket: \(command)")
     }
     
     private func showHelp() {
@@ -518,5 +576,79 @@ extension TerminalViewController: UITextFieldDelegate {
         generator.impactOccurred()
         
         return true
+    }
+}
+
+// MARK: - WebSocketManagerDelegate
+
+extension TerminalViewController: WebSocketManagerDelegate {
+    func webSocketDidConnect(_ manager: WebSocketManager) {
+        if manager === shellWebSocketManager {
+            isShellConnected = true
+            appendToTerminal("✓ Shell WebSocket connected", color: CyberpunkTheme.success)
+            print("🐚 Shell WebSocket connected successfully")
+        }
+    }
+    
+    func webSocketDidDisconnect(_ manager: WebSocketManager, error: Error?) {
+        if manager === shellWebSocketManager {
+            isShellConnected = false
+            if let error = error {
+                appendToTerminal("⚠ Shell WebSocket disconnected: \(error.localizedDescription)", color: CyberpunkTheme.warning)
+            }
+            print("🐚 Shell WebSocket disconnected")
+        }
+    }
+    
+    func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage) {
+        if manager === shellWebSocketManager {
+            // Handle shell output messages
+            switch message.type {
+            case .shellOutput:
+                if let payload = message.payload,
+                   let output = payload["output"] as? String {
+                    appendToTerminal(output, color: CyberpunkTheme.primaryCyan)
+                }
+                
+            case .shellError:
+                if let payload = message.payload,
+                   let error = payload["error"] as? String {
+                    appendToTerminal(error, color: CyberpunkTheme.accentPink)
+                }
+                
+            case .shellInit:
+                if let payload = message.payload,
+                   let cwd = payload["cwd"] as? String {
+                    currentDirectory = cwd
+                    promptLabel.text = "\(currentDirectory) $ "
+                }
+                
+            default:
+                break
+            }
+        }
+    }
+    
+    func webSocket(_ manager: WebSocketManager, didReceiveText text: String) {
+        // Handle text messages if needed
+    }
+    
+    func webSocket(_ manager: WebSocketManager, didReceiveData data: Data) {
+        // Handle binary data if needed
+    }
+    
+    func webSocketConnectionStateChanged(_ state: WebSocketConnectionState) {
+        switch state {
+        case .connecting:
+            print("🐚 Shell WebSocket connecting...")
+        case .connected:
+            print("🐚 Shell WebSocket connected")
+        case .disconnected:
+            print("🐚 Shell WebSocket disconnected")
+        case .reconnecting:
+            print("🐚 Shell WebSocket reconnecting...")
+        @unknown default:
+            print("🐚 Shell WebSocket unknown state")
+        }
     }
 }
