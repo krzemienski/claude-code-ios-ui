@@ -78,6 +78,7 @@ final class WebSocketManager {
     
     // Connection properties
     private var url: URL?
+    private var originalURLString: String? // Store the original URL without token
     private(set) var connectionState: WebSocketConnectionState = .disconnected {
         didSet {
             DispatchQueue.main.async { [weak self] in
@@ -123,6 +124,9 @@ final class WebSocketManager {
     // MARK: - Connection Management
     
     func connect(to urlString: String) {
+        // Store the original URL for reconnection
+        self.originalURLString = urlString
+        
         // Add JWT token to URL if available
         var finalUrlString = urlString
         if let authToken = UserDefaults.standard.string(forKey: "authToken") {
@@ -155,15 +159,25 @@ final class WebSocketManager {
         // Start receiving messages
         receiveMessage()
         
-        // Start ping timer
-        startPingTimer()
-        
-        // Set connected state immediately - the connection is established
-        connectionState = .connected
-        reconnectAttempts = 0
-        delegate?.webSocketDidConnect(self)
-        flushMessageQueue()
-        logInfo("WebSocket connected to: \(finalUrlString)", category: "WebSocket")
+        // Send a test ping to verify connection before marking as connected
+        webSocketTask?.sendPing { [weak self] error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                logError("WebSocket initial ping failed: \(error)", category: "WebSocket")
+                self.handleError(error)
+            } else {
+                // Connection is truly established
+                self.connectionState = .connected
+                self.reconnectAttempts = 0
+                self.delegate?.webSocketDidConnect(self)
+                self.flushMessageQueue()
+                logInfo("WebSocket connected and verified: \(finalUrlString)", category: "WebSocket")
+                
+                // Start ping timer after successful connection
+                self.startPingTimer()
+            }
+        }
     }
     
     func disconnect() {
@@ -425,7 +439,7 @@ final class WebSocketManager {
     private func attemptReconnection() {
         guard enableAutoReconnect,
               reconnectAttempts < maxReconnectAttempts,
-              let url = url else {
+              let urlString = originalURLString else {
             connectionState = .failed
             return
         }
@@ -441,7 +455,8 @@ final class WebSocketManager {
         stopReconnectTimer()
         reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             guard let self = self else { return }
-            self.connect(to: url.absoluteString)
+            // Use the original URL string to get a fresh token
+            self.connect(to: urlString)
         }
     }
     

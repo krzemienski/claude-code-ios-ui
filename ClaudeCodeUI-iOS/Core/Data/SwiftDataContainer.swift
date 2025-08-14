@@ -23,17 +23,61 @@ class SwiftDataContainer {
         
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false
+            isStoredInMemoryOnly: false,
+            allowsSave: true
             // groupContainer: .identifier("group.com.claudecodeui.ios") // Disabled for testing
         )
         
         do {
+            // Try to create the container with migration handling
             container = try ModelContainer(
                 for: schema,
                 configurations: [modelConfiguration]
             )
+            
+            // Ensure default settings exist
+            Task { @MainActor in
+                try? ensureDefaultSettings()
+            }
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // If migration fails, try to delete the existing store and create fresh
+            print("SwiftData migration error: \(error)")
+            print("Attempting to recreate database...")
+            
+            do {
+                // Get the store URL
+                let storeURL = URL.applicationSupportDirectory
+                    .appending(path: "default.store")
+                
+                // Delete existing database files
+                try? FileManager.default.removeItem(at: storeURL)
+                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
+                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
+                
+                // Try to create container again with fresh database
+                container = try ModelContainer(
+                    for: schema,
+                    configurations: [modelConfiguration]
+                )
+                
+                print("Successfully recreated SwiftData container")
+            } catch {
+                fatalError("Could not create ModelContainer even after cleanup: \(error)")
+            }
+        }
+    }
+    
+    // Ensure default settings exist
+    private func ensureDefaultSettings() throws {
+        let descriptor = FetchDescriptor<Settings>(
+            predicate: #Predicate { $0.id == "default" }
+        )
+        
+        let existingSettings = try container.mainContext.fetch(descriptor)
+        if existingSettings.isEmpty {
+            let settings = Settings()
+            container.mainContext.insert(settings)
+            try container.mainContext.save()
         }
     }
     

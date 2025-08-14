@@ -264,7 +264,7 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		29B97314FDCFA39411CA2CEA = {
+		29B97314FDCFA39411CA2CEA /* ClaudeCodeUI */ = {
 			isa = PBXGroup;
 			children = (
 				1D1A2B3A2C60A1230001A234 /* App */,
@@ -359,7 +359,7 @@
 				en,
 				Base,
 			);
-			mainGroup = 29B97314FDCFA39411CA2CEA;
+			mainGroup = 29B97314FDCFA39411CA2CEA /* ClaudeCodeUI */;
 			productRefGroup = 19C28FACFE9D520D11CA2CBB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";

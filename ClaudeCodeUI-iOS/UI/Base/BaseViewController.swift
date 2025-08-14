@@ -112,6 +112,8 @@ public class BaseViewController: UIViewController {
     
     public var isLoading: Bool = false {
         didSet {
+            // Prevent infinite recursion by only updating if value actually changed
+            guard oldValue != isLoading else { return }
             updateLoadingState()
         }
     }
@@ -208,7 +210,7 @@ public class BaseViewController: UIViewController {
         
         currentLoadingMessage = message
         isLoading = true
-        showLoadingWithMessage(message)
+        // showLoadingWithMessage will be called automatically via didSet observer
     }
     
     public func hideLoading() {

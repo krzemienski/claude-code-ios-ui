@@ -208,9 +208,82 @@ class AppCoordinator: NSObject, Coordinator {
     // MARK: - View Controller Creation
     
     private func createProjectsViewController() -> UIViewController {
-        let vc = ProjectsListViewController(coordinator: self)
-        vc.title = "Projects"
-        return vc
+        // Create a simple projects list view controller inline to avoid naming conflicts
+        let projectsVC = ProjectsListViewController()
+        projectsVC.title = "Projects"
+        projectsVC.onProjectSelected = { [weak self] project in
+            self?.selectProject(project)
+        }
+        return projectsVC
+    }
+    
+    // Simple Projects List View Controller
+    class ProjectsListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+        var onProjectSelected: ((Project) -> Void)?
+        private var projects: [Project] = []
+        private let tableView = UITableView()
+        
+        override func viewDidLoad() {
+            super.viewDidLoad()
+            setupUI()
+            loadProjects()
+        }
+        
+        private func setupUI() {
+            view.backgroundColor = CyberpunkTheme.background
+            
+            tableView.backgroundColor = CyberpunkTheme.background
+            tableView.separatorColor = CyberpunkTheme.border
+            tableView.delegate = self
+            tableView.dataSource = self
+            tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ProjectCell")
+            
+            view.addSubview(tableView)
+            tableView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+                tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
+        }
+        
+        private func loadProjects() {
+            Task {
+                do {
+                    let fetchedProjects = try await APIClient.shared.fetchProjects()
+                    await MainActor.run {
+                        self.projects = fetchedProjects
+                        self.tableView.reloadData()
+                    }
+                } catch {
+                    print("Failed to load projects: \(error)")
+                }
+            }
+        }
+        
+        // MARK: - UITableViewDataSource
+        
+        func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+            return projects.count
+        }
+        
+        func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "ProjectCell", for: indexPath)
+            let project = projects[indexPath.row]
+            cell.textLabel?.text = project.displayName
+            cell.textLabel?.textColor = CyberpunkTheme.primaryText
+            cell.backgroundColor = CyberpunkTheme.surface
+            return cell
+        }
+        
+        // MARK: - UITableViewDelegate
+        
+        func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+            tableView.deselectRow(at: indexPath, animated: true)
+            let project = projects[indexPath.row]
+            onProjectSelected?(project)
+        }
     }
     
     private func createSettingsViewController() -> UIViewController {
@@ -333,14 +406,15 @@ class AppCoordinator: NSObject, Coordinator {
         
         // Check if sessions tab already exists
         let existingSessionsIndex = tabBarController.viewControllers?.firstIndex { viewController in
-            if let nav = viewController as? UINavigationController {
-                // Check for SessionListViewController
-                return nav.viewControllers.first is SessionListViewController
+            if let nav = viewController as? UINavigationController,
+               let firstVC = nav.viewControllers.first {
+                // Check for any sessions view controller
+                return String(describing: type(of: firstVC)).contains("Session")
             }
             return false
         }
         
-        // Create sessions view controller to show all sessions for the project
+        // Create sessions view controller - using SessionListViewController from Features folder
         let sessionsVC = SessionListViewController(project: project)
         let sessionsNav = UINavigationController(rootViewController: sessionsVC)
         sessionsNav.tabBarItem = UITabBarItem(
@@ -452,131 +526,5 @@ private extension AppCoordinator {
     }
 }
 
-// MARK: - Projects List View Controller
-
-class ProjectsListViewController: UIViewController {
-    private weak var coordinator: AppCoordinator?
-    private var projects: [Project] = []
-    private let apiClient = DIContainer.shared.apiClient
-    
-    private lazy var tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .plain)
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.backgroundColor = CyberpunkTheme.background
-        tableView.separatorColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3)
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ProjectCell")
-        return tableView
-    }()
-    
-    init(coordinator: AppCoordinator) {
-        self.coordinator = coordinator
-        super.init(nibName: nil, bundle: nil)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        setupUI()
-        loadProjects()
-    }
-    
-    private func setupUI() {
-        view.backgroundColor = CyberpunkTheme.background
-        
-        view.addSubview(tableView)
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-        
-        // Add refresh control
-        let refreshControl = UIRefreshControl()
-        refreshControl.tintColor = CyberpunkTheme.primaryCyan
-        refreshControl.addTarget(self, action: #selector(refreshProjects), for: .valueChanged)
-        tableView.refreshControl = refreshControl
-    }
-    
-    private func loadProjects() {
-        Task {
-            do {
-                let projects = try await apiClient.fetchProjects()
-                await MainActor.run {
-                    self.projects = projects
-                    self.tableView.reloadData()
-                    self.tableView.refreshControl?.endRefreshing()
-                    print("📱 Loaded \(projects.count) projects")
-                }
-            } catch {
-                await MainActor.run {
-                    self.tableView.refreshControl?.endRefreshing()
-                    print("❌ Failed to load projects: \(error)")
-                    self.showError("Failed to load projects")
-                }
-            }
-        }
-    }
-    
-    @objc private func refreshProjects() {
-        loadProjects()
-    }
-    
-    private func showError(_ message: String) {
-        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
-    }
-}
-
-// MARK: - UITableViewDataSource
-
-extension ProjectsListViewController: UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return projects.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ProjectCell", for: indexPath)
-        let project = projects[indexPath.row]
-        
-        cell.backgroundColor = CyberpunkTheme.surface
-        cell.textLabel?.text = project.displayName
-        cell.textLabel?.textColor = CyberpunkTheme.primaryText
-        cell.textLabel?.font = CyberpunkTheme.bodyFont
-        
-        // Add chevron
-        cell.accessoryType = .disclosureIndicator
-        
-        // Add selection style
-        let selectedView = UIView()
-        selectedView.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.2)
-        cell.selectedBackgroundView = selectedView
-        
-        return cell
-    }
-}
-
-// MARK: - UITableViewDelegate
-
-extension ProjectsListViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        let project = projects[indexPath.row]
-        coordinator?.selectProject(project)
-        
-        // Haptic feedback
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
-    }
-    
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 60
-    }
-}
+// The ProjectsListViewController has been removed since we're using 
+// the actual ProjectsViewController from Features/Projects/ProjectsViewController.swift

@@ -11,48 +11,48 @@ import UIKit
 
 @Model
 final class Settings {
-    @Attribute(.unique) var id: String
+    @Attribute(.unique) var id: String = "default"
     
     // Authentication
-    var authToken: String?
-    var authTokenExpiresAt: Date?
-    var isFaceIDEnabled: Bool
+    var authToken: String? = nil
+    var authTokenExpiresAt: Date? = nil
+    var isFaceIDEnabled: Bool = true
     
     // API Configuration  
-    var apiBaseURL: String
-    var webSocketURL: String
-    var apiTimeout: TimeInterval
-    var webSocketReconnectDelay: TimeInterval
-    var maxReconnectAttempts: Int
+    var apiBaseURL: String = "http://localhost:3004"
+    var webSocketURL: String = "ws://localhost:3004"
+    var apiTimeout: TimeInterval = 30.0
+    var webSocketReconnectDelay: TimeInterval = 2.0
+    var maxReconnectAttempts: Int = 5
     
     // UI Preferences
     var theme: ThemePreference
     var fontSize: FontSize
-    var showCodeLineNumbers: Bool
-    var enableSyntaxHighlighting: Bool
+    var showCodeLineNumbers: Bool = true
+    var enableSyntaxHighlighting: Bool = true
     
     // Session Management
-    var autoSaveInterval: TimeInterval
-    var maxSessionHistory: Int
-    var clearCacheOnExit: Bool
+    var autoSaveInterval: TimeInterval = 30.0
+    var maxSessionHistory: Int = 100
+    var clearCacheOnExit: Bool = false
     
     // Developer Options
-    var enableDebugLogging: Bool
-    var showNetworkActivity: Bool
-    var enableCrashReporting: Bool
+    var enableDebugLogging: Bool = false
+    var showNetworkActivity: Bool = false
+    var enableCrashReporting: Bool = true
     
     // App State
-    var lastActiveProjectId: String?
-    var lastSyncDate: Date?
-    var appVersion: String
+    var lastActiveProjectId: String? = nil
+    var lastSyncDate: Date? = nil
+    var appVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     
     init(id: String = "default") {
         self.id = id
         
         // Default values
         self.isFaceIDEnabled = true
-        self.apiBaseURL = "http://localhost:3001"
-        self.webSocketURL = "ws://localhost:3001"
+        self.apiBaseURL = "http://localhost:3004"
+        self.webSocketURL = "ws://localhost:3004"
         self.apiTimeout = 30.0
         self.webSocketReconnectDelay = 2.0
         self.maxReconnectAttempts = 5
@@ -108,32 +108,32 @@ enum SessionStatus: String, Codable {
 @Model
 final class Session {
     // MARK: - Properties
-    @Attribute(.unique) var id: String
-    var projectId: String
-    var summary: String?
-    var messageCount: Int
-    var lastActivity: Date?
-    var cwd: String?  // Current working directory from backend
+    @Attribute(.unique) var id: String = UUID().uuidString
+    var projectId: String = ""
+    var summary: String? = nil
+    var messageCount: Int = 0
+    var lastActivity: Date? = nil
+    var cwd: String? = nil  // Current working directory from backend
     var status: SessionStatus
     
     // Timestamps
-    var createdAt: Date
-    var updatedAt: Date
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
     
     // Additional backend-specific fields
-    var startedAt: Date?
-    var lastActiveAt: Date?
+    var startedAt: Date? = nil
+    var lastActiveAt: Date? = nil
     
     // MARK: - Relationships
     @Relationship(deleteRule: .cascade)
-    var messages: [Message]?
+    var messages: [Message]? = []
     
     // Relationship back to project
-    var project: Project?
+    var project: Project? = nil
     
     // MARK: - Initialization
     init(
-        id: String,
+        id: String = UUID().uuidString,
         projectId: String,
         summary: String? = nil,
         messageCount: Int = 0,

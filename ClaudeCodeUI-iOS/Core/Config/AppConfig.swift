@@ -12,48 +12,77 @@ struct AppConfig {
     
     // MARK: - Network Configuration
     
-    /// Backend server URL
-    /// For local development: "http://192.168.0.36:3004"
-    /// For production: Update to your server URL
-    static var backendURL: String {
-        // Check if there's a saved URL in UserDefaults
-        if let savedURL = UserDefaults.standard.string(forKey: "backend_url") {
-            return savedURL
+    /// HARDCODED Backend server URL for consistent development
+    /// This is the Claude Code backend server running locally
+    static let backendURL: String = "http://localhost:3004"
+    
+    /// HARDCODED WebSocket URLs for real-time communication
+    static let websocketURL: String = "ws://localhost:3004/ws"          // Main chat WebSocket
+    static let shellWebSocketURL: String = "ws://localhost:3004/shell"  // Terminal WebSocket
+    
+    /// HARDCODED Backend host and port
+    static let backendHost: String = "localhost"
+    static let backendPort: Int = 3004
+    
+    // MARK: - API Endpoints (Hardcoded for consistency)
+    
+    struct Endpoints {
+        // Authentication
+        static let authRegister = "/api/auth/register"
+        static let authLogin = "/api/auth/login"
+        static let authStatus = "/api/auth/status"
+        static let authUser = "/api/auth/user"
+        static let authLogout = "/api/auth/logout"
+        
+        // Projects
+        static let projects = "/api/projects"
+        static let projectsCreate = "/api/projects/create"
+        static func projectRename(_ name: String) -> String { "/api/projects/\(name)/rename" }
+        static func projectDelete(_ name: String) -> String { "/api/projects/\(name)" }
+        
+        // Sessions
+        static func projectSessions(_ name: String) -> String { "/api/projects/\(name)/sessions" }
+        static func sessionMessages(_ project: String, _ session: String) -> String {
+            "/api/projects/\(project)/sessions/\(session)/messages"
+        }
+        static func sessionDelete(_ project: String, _ session: String) -> String {
+            "/api/projects/\(project)/sessions/\(session)"
         }
         
-        // Default to 127.0.0.1 for simulator (localhost doesn't work in iOS simulator)
-        #if targetEnvironment(simulator)
-        return "http://127.0.0.1:3004"  // Claude Code backend server port
-        #else
-        // For device, use the machine's IP address (update this for your network)
-        return "http://192.168.0.152:3004"  // Claude Code backend server port
-        #endif
+        // Files
+        static func projectFiles(_ name: String) -> String { "/api/projects/\(name)/files" }
+        static func projectFile(_ name: String) -> String { "/api/projects/\(name)/file" }
+        
+        // Git (Future implementation)
+        static let gitStatus = "/api/git/status"
+        static let gitCommit = "/api/git/commit"
+        static let gitBranches = "/api/git/branches"
+        static let gitPush = "/api/git/push"
+        static let gitPull = "/api/git/pull"
+        
+        // MCP Servers (Future implementation)
+        static let mcpServers = "/api/mcp/servers"
+        static let mcpAdd = "/api/mcp/add"
+        static let mcpRemove = "/api/mcp/remove"
+        
+        // Cursor Integration (Future implementation)
+        static let cursorConfig = "/api/cursor/config"
+        static let cursorSessions = "/api/cursor/sessions"
     }
     
-    /// WebSocket URL
-    static var websocketURL: String {
-        let httpURL = backendURL
-        let wsURL = httpURL.replacingOccurrences(of: "http://", with: "ws://")
-                          .replacingOccurrences(of: "https://", with: "wss://")
-        return "\(wsURL)/ws"
-    }
+    // MARK: - WebSocket Message Types (Hardcoded)
     
-    /// Backend host (without protocol and port)
-    static var backendHost: String {
-        guard let url = URL(string: backendURL),
-              let host = url.host else {
-            return "localhost"
-        }
-        return host
-    }
-    
-    /// Backend port
-    static var backendPort: Int {
-        guard let url = URL(string: backendURL),
-              let port = url.port else {
-            return 3004
-        }
-        return port
+    struct WebSocketMessageTypes {
+        static let claudeCommand = "claude-command"
+        static let cursorCommand = "cursor-command"
+        static let claudeOutput = "claude-output"
+        static let claudeResponse = "claude-response"
+        static let toolUse = "tool_use"
+        static let sessionCreated = "session-created"
+        static let abortSession = "abort-session"
+        static let error = "error"
+        static let ping = "ping"
+        static let pong = "pong"
     }
     
     // MARK: - API Configuration
@@ -89,15 +118,16 @@ struct AppConfig {
     /// Keyboard animation duration
     static let keyboardAnimationDuration: TimeInterval = 0.25
     
-    // MARK: - Methods
+    // MARK: - Hardcoded Configuration Notes
     
-    /// Update the backend URL
-    static func updateBackendURL(_ url: String) {
-        UserDefaults.standard.set(url, forKey: "backend_url")
-    }
-    
-    /// Reset to default backend URL
-    static func resetBackendURL() {
-        UserDefaults.standard.removeObject(forKey: "backend_url")
-    }
+    /// All configurations are now hardcoded for consistency.
+    /// To change the backend server:
+    /// 1. Update backendURL above to your server address
+    /// 2. Update websocketURL and shellWebSocketURL accordingly
+    /// 3. Rebuild the app
+    ///
+    /// For production deployment:
+    /// - Change "localhost" to your production server domain
+    /// - Update from "http://" and "ws://" to "https://" and "wss://" for SSL
+    /// - Consider using environment-specific build configurations
 }

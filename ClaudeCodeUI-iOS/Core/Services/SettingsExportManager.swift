@@ -280,7 +280,9 @@ class SettingsExportManager {
     private func applySettings(_ settings: ExportedSettings.SettingsData) {
         let defaults = UserDefaults.standard
         
-        AppConfig.updateBackendURL(settings.backendURL)
+        // Backend URL is now hardcoded in AppConfig, so we just log the imported value
+        Logger.shared.info("Imported settings had backend URL: \(settings.backendURL)")
+        // Note: AppConfig.backendURL is now hardcoded and cannot be changed
         defaults.set(settings.enableHaptics, forKey: "EnableHaptics")
         defaults.set(settings.enableSounds, forKey: "EnableSounds")
         defaults.set(settings.codeTheme, forKey: "CodeTheme")

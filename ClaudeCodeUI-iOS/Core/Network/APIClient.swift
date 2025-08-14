@@ -570,7 +570,9 @@ extension APIEndpoint {
     }
     
     static func createSession(projectName: String) -> APIEndpoint {
-        return APIEndpoint(path: "/api/projects/\(projectName)/sessions", method: .post)
+        // Create session with empty body - backend creates the session ID
+        let emptyBody = try? JSONEncoder().encode([String: String]())
+        return APIEndpoint(path: "/api/projects/\(projectName)/sessions", method: .post, body: emptyBody)
     }
     
     static func deleteSession(projectName: String, sessionId: String) -> APIEndpoint {

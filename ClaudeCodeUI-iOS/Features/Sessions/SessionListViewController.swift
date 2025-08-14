@@ -338,8 +338,12 @@ public class SessionListViewController: BaseViewController {
     }
     
     @objc private func createNewSession() {
-        // Show loading
+        // Prevent multiple simultaneous session creation
+        guard !isLoading else { return }
+        
+        // Show loading with a more descriptive message
         isLoading = true
+        showLoadingOverlay(message: "Creating new session...")
         
         Task {
             do {
@@ -349,7 +353,14 @@ public class SessionListViewController: BaseViewController {
                 await MainActor.run {
                     // Add to beginning of sessions list
                     self.sessions.insert(newSession, at: 0)
+                    
+                    // Update filtered sessions if searching
+                    if self.isSearching {
+                        self.filteredSessions.insert(newSession, at: 0)
+                    }
+                    
                     self.isLoading = false
+                    self.hideLoadingOverlay()
                     
                     // Store session ID for persistence
                     self.persistenceService.setCurrentSession(newSession.id, for: self.project.name)
@@ -359,6 +370,11 @@ public class SessionListViewController: BaseViewController {
                     self.tableView.reloadData()
                     self.updateEmptyStateVisibility()
                     
+                    // Haptic feedback for successful creation
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                    impactFeedback.prepare()
+                    impactFeedback.impactOccurred()
+                    
                     // Navigate to chat with new session
                     let chatVC = ChatViewController(project: self.project, session: newSession)
                     self.navigationController?.pushViewController(chatVC, animated: true)
@@ -366,7 +382,32 @@ public class SessionListViewController: BaseViewController {
             } catch {
                 await MainActor.run {
                     self.isLoading = false
-                    self.showError(error)
+                    self.hideLoadingOverlay()
+                    
+                    // Show more detailed error message
+                    let errorMessage: String
+                    if let apiError = error as? APIError {
+                        switch apiError {
+                        case .unauthorized:
+                            errorMessage = "Authentication required. Please log in again."
+                        case .networkError:
+                            errorMessage = "Network error. Please check your connection."
+                        case .serverError(let message):
+                            errorMessage = "Server error: \(message)"
+                        default:
+                            errorMessage = "Failed to create session: \(error.localizedDescription)"
+                        }
+                    } else {
+                        errorMessage = "Failed to create session: \(error.localizedDescription)"
+                    }
+                    
+                    let alert = UIAlertController(
+                        title: "Session Creation Failed",
+                        message: errorMessage,
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alert, animated: true)
                 }
             }
         }
@@ -375,6 +416,43 @@ public class SessionListViewController: BaseViewController {
     @objc private func sortOptionChanged() {
         sortSessions()
         tableView.reloadData()
+    }
+    
+    // MARK: - Loading Overlay
+    
+    private func showLoadingOverlay(message: String = "Loading...") {
+        // Create loading overlay if needed
+        let overlayView = UIView(frame: view.bounds)
+        overlayView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        overlayView.tag = 999 // Tag for easy removal
+        
+        let activityIndicator = UIActivityIndicatorView(style: .large)
+        activityIndicator.color = .white
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.startAnimating()
+        
+        let label = UILabel()
+        label.text = message
+        label.textColor = .white
+        label.font = .systemFont(ofSize: 16)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        overlayView.addSubview(activityIndicator)
+        overlayView.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: overlayView.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: overlayView.centerYAnchor, constant: -20),
+            label.centerXAnchor.constraint(equalTo: overlayView.centerXAnchor),
+            label.topAnchor.constraint(equalTo: activityIndicator.bottomAnchor, constant: 10)
+        ])
+        
+        view.addSubview(overlayView)
+    }
+    
+    private func hideLoadingOverlay() {
+        // Remove loading overlay
+        view.subviews.first { $0.tag == 999 }?.removeFromSuperview()
     }
     
     // MARK: - Sorting & Filtering

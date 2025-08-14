@@ -12,13 +12,13 @@ import SwiftData
 
 @Model
 final class Project: Codable {
-    @Attribute(.unique) var id: String
-    var name: String
-    var path: String
-    var fullPath: String?
-    var displayName: String?
-    var createdAt: Date
-    var updatedAt: Date
+    @Attribute(.unique) var id: String = UUID().uuidString
+    var name: String = ""
+    var path: String = ""
+    var fullPath: String? = nil
+    var displayName: String? = nil
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
     
     // Temporarily disabled due to circular dependency
     // @Relationship(deleteRule: .cascade, inverse: \Session.project)
@@ -166,17 +166,17 @@ final class Session: Codable {
 // MARK: - Message Model
 @Model
 final class Message {
-    @Attribute(.unique) var id: String
+    @Attribute(.unique) var id: String = UUID().uuidString
     var role: MessageRole
-    var content: String
-    var timestamp: Date
+    var content: String = ""
+    var timestamp: Date = Date()
     
     // Temporarily disabled due to Session import issue
     // @Relationship(deleteRule: .nullify)
     // var session: Session?
     
     // Store metadata as Data (JSON encoded)
-    var metadataData: Data?
+    var metadataData: Data? = nil
     
     @Transient
     var metadata: MessageMetadata? {

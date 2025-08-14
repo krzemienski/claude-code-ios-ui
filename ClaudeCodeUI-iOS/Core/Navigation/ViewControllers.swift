@@ -225,6 +225,9 @@ public class ProjectsViewController: BaseViewController {
     private var projects: [Project] = []
     private let tableView = UITableView()
     
+    // Callback for project selection to avoid circular dependencies
+    public var onProjectSelected: ((Project) -> Void)?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Projects"
@@ -345,32 +348,19 @@ extension ProjectsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let project = projects[indexPath.row]
-        // Navigate to sessions list first, NOT directly to chat
-        // SessionsViewController is in Features/Sessions/SessionsViewController.swift
-        if let appCoordinator = (UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate)?.appCoordinator {
-            appCoordinator.selectProject(project)
+        // Use the callback if available, otherwise navigate directly
+        if let onProjectSelected = onProjectSelected {
+            onProjectSelected(project)
+        } else {
+            // Fallback: Navigate to sessions list directly
+            let sessionsVC = SessionsViewController(project: project)
+            navigationController?.pushViewController(sessionsVC, animated: true)
         }
     }
 }
 
-// Sessions View Controller - Reference to real implementation
-public class SessionsViewController: BaseViewController {
-    let project: Project
-    
-    public init(project: Project) {
-        self.project = project
-        super.init(nibName: nil, bundle: nil)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "Sessions"
-    }
-}
+// SessionsViewController is defined in Features/Sessions/SessionsViewController.swift
+// No need for a stub here
 
 // Chat View Controller with Real WebSocket Connection
 public class ChatViewController: UIViewController {

@@ -17,8 +17,8 @@ final class DIContainer {
     // MARK: - Services
     
     private(set) lazy var apiClient: APIClient = {
-        // Start with default URL, will be updated from settings
-        return APIClient(baseURL: AppConfig.backendURL)
+        // Use the shared APIClient which already has auth configured
+        return APIClient.shared
     }()
     
     private(set) lazy var webSocketManager: WebSocketManager = {

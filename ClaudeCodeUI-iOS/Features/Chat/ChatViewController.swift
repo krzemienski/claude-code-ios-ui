@@ -1210,9 +1210,9 @@ class ChatViewController: BaseViewController {
                      "Sending test message to backend...",
             isUser: false,
             timestamp: Date(),
-            messageType: .system,
             status: .sent
         )
+        testMessage.messageType = .system
         
         messages.append(testMessage)
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
@@ -1324,9 +1324,9 @@ extension ChatViewController: WebSocketManagerDelegate {
                     content: "✅ Session created successfully! ID: \(sessionId)",
                     isUser: false,
                     timestamp: Date(),
-                    messageType: .system,
                     status: .sent
                 )
+                successMessage.messageType = .system
                 messages.append(successMessage)
                 let indexPath = IndexPath(row: messages.count - 1, section: 0)
                 tableView.insertRows(at: [indexPath], with: .automatic)

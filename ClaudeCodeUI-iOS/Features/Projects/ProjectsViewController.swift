@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ProjectsViewController: BaseViewController {
+public class ProjectsViewController: BaseViewController {
     
     // MARK: - UI Components
     
@@ -83,15 +83,15 @@ class ProjectsViewController: BaseViewController {
     private let refreshControl = UIRefreshControl()
     
     // Callback for project selection
-    var onProjectSelected: ((Project) -> Void)?
+    public var onProjectSelected: ((Project) -> Void)?
     
     // MARK: - Initialization
     
     init(dataContainer: SwiftDataContainer? = try? SwiftDataContainer(),
-         apiClient: APIClient = DIContainer.shared.apiClient,
+         apiClient: APIClient = APIClient.shared,
          errorHandler: ErrorHandlingService = DIContainer.shared.errorHandler) {
         self.dataContainer = dataContainer
-        self.apiClient = apiClient
+        self.apiClient = APIClient.shared  // Always use the shared instance
         self.errorHandler = errorHandler
         super.init(nibName: nil, bundle: nil)
     }
@@ -210,29 +210,12 @@ class ProjectsViewController: BaseViewController {
         
         Task {
             do {
-                // Force 127.0.0.1 for simulator (localhost doesn't work in iOS simulator)
-                // Clear any saved URLs in UserDefaults that might be wrong
-                UserDefaults.standard.removeObject(forKey: "backend_url")
-                
-                // Use 127.0.0.1 for simulator
-                let serverURL = "http://127.0.0.1:3004"
-                self.apiClient = APIClient(baseURL: serverURL)
-                print("🔧 Using server URL: \(serverURL)")
-                
-                // Load auth token if available from settings
-                if let dataContainer = dataContainer {
-                    if let settings = try? await dataContainer.fetchSettings() {
-                        if let authToken = settings.authToken {
-                            await self.apiClient.setAuthToken(authToken)
-                            print("🔧 Set auth token from saved settings")
-                        }
-                    }
-                }
-                
+                // Use the shared APIClient instance which already has auth configured
+                print("🔧 Using backend URL: \(AppConfig.backendURL)")
                 print("📱 Attempting to fetch projects from API...")
                 
-                // Try API first
-                let remoteProjects = try await apiClient.fetchProjects()
+                // The shared APIClient already has the development token configured
+                let remoteProjects = try await APIClient.shared.fetchProjects()
                 print("✅ Successfully fetched \(remoteProjects.count) projects from API")
                 
                 await MainActor.run {
@@ -507,10 +490,12 @@ class ProjectsViewController: BaseViewController {
         // Otherwise push directly (for standalone usage)
         if let onProjectSelected = onProjectSelected {
             onProjectSelected(project)
-        } else {
+        } else if let navigationController = navigationController {
             // Navigate to sessions list for the project
             let sessionsVC = SessionsViewController(project: project)
-            navigationController?.pushViewController(sessionsVC, animated: true)
+            navigationController.pushViewController(sessionsVC, animated: true)
+        } else {
+            print("⚠️ Warning: No navigation controller available and no project selection callback set")
         }
     }
 }
