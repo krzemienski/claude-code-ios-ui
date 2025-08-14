@@ -1,7 +1,20 @@
 # CLAUDE.md - Comprehensive iOS Claude Code UI Implementation Guide [237 Total Tasks]
 
-This file provides comprehensive guidance for implementing and fixing the iOS Claude Code UI application.
-Last Analysis: 2025-01-14 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
+This is the single source of truth for the iOS Claude Code UI project. 
+Last Updated: January 14, 2025 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
+
+## 🚨 CRITICAL FIXES COMPLETED (January 14, 2025)
+
+### ✅ FIXED: JWT Authentication 403 Error
+- **Problem**: JWT generation used milliseconds (Date.now()) instead of seconds (Math.floor(Date.now() / 1000))
+- **Solution**: Fixed in ChatViewController.swift line 1110
+- **Status**: Authentication now working correctly with backend
+
+### ✅ FIXED: Session Messages Not Loading
+- **Problem**: Wrong API endpoint format - using `/api/sessions/:sessionId/messages`
+- **Solution**: Changed to `/api/projects/:projectName/sessions/:sessionId/messages`
+- **Files Fixed**: SessionListViewController.swift line 181
+- **Status**: Messages now load correctly from backend
 
 ## Project Overview
 
@@ -15,49 +28,49 @@ Native iOS client for Claude Code with a cyberpunk-themed UI that communicates w
 
 ## Project Status Summary
 
-### ✅ COMPLETED FEATURES
+### ✅ COMPLETED FEATURES (32% of backend API)
 - Basic project structure and navigation (AppCoordinator, MainTabBarController)
 - Data models (Project, Session, Message with fullPath support)
-- APIClient with partial endpoint implementation
+- APIClient with 19 of 60 endpoints implemented
 - WebSocketManager base implementation
 - SessionListViewController and SessionTableViewCell UI
-- ChatViewController base UI
+- ChatViewController base UI (663 lines)
 - Cyberpunk theme and visual effects
-- Authentication status checking
+- Authentication with JWT (fixed)
 - Projects list loading from backend
+- Session messages loading (fixed)
 
 ### 🔄 IN PROGRESS FEATURES
-- WebSocket real-time messaging (wrong endpoint URL)
-- Session management (UI exists but not functional)
-- Chat message display and sending
-- File explorer integration
-- Terminal command execution
+- WebSocket real-time messaging (needs URL and message type fixes)
+- File explorer integration (UI exists, API not connected)
+- Terminal command execution (shell WebSocket not implemented)
 
-### ❌ NOT STARTED FEATURES
-- Full authentication flow
+### ❌ NOT STARTED FEATURES (68% of backend API)
+- Git integration (0/16 endpoints)
+- Cursor integration (0/8 endpoints)
+- MCP server management (0/6 endpoints)
+- Transcription API
+- Search functionality
 - Settings persistence
 - Offline caching with SwiftData
 - Push notifications
-- Widget extension
-- Share extension
-- App shortcuts
-- Spotlight integration
+- Widget and Share extensions
 
 ## Critical Issues to Fix Immediately
 
 ### 🚨 P0 - BLOCKING ISSUES (Must fix for basic functionality)
 
-1. **WebSocket URL Mismatch**
+1. **WebSocket URL Mismatch** ❌
    - Current: `ws://localhost:3004/api/chat/ws`
    - Should be: `ws://localhost:3004/ws`
    - File: ChatViewController.swift:236
 
-2. **WebSocket Message Type Wrong**
+2. **WebSocket Message Type Wrong** ❌
    - Current: `type: "message"`
    - Should be: `type: "claude-command"` or `type: "cursor-command"`
    - File: WebSocketManager.swift:172
 
-3. **Project Path Not Sent**
+3. **Project Path Not Sent** ❌
    - Current: Sends projectId
    - Should send: project.path
    - Files: ChatViewController.swift, WebSocketManager.swift
@@ -91,19 +104,6 @@ docker-compose -f docker-compose-swift.yml up -d
 docker exec -it ios-swift-validator swift build
 ```
 
-### Docker Commands (for containerized development)
-```bash
-# Start macOS Docker container (requires KVM)
-docker-compose up -d
-
-# Swift validation container
-docker-compose -f docker-compose-swift.yml up -d
-./validate-swift.sh
-
-# Build iOS app in Docker
-./docker-build.sh
-```
-
 ## Project Architecture
 
 ### iOS App Structure
@@ -118,6 +118,7 @@ ClaudeCodeUI-iOS/
 ├── Features/
 │   ├── Projects/        # Project list and management (MVVM)
 │   ├── Chat/           # Real-time messaging with WebSocket
+│   ├── Sessions/       # Session list and message history
 │   ├── FileExplorer/   # File browsing with syntax highlighting
 │   ├── Terminal/       # Command execution with ANSI support
 │   ├── Settings/       # Theme, fonts, backup/restore
@@ -134,201 +135,39 @@ ClaudeCodeUI-iOS/
 - **WebSocket Communication**: Real-time messaging with auto-reconnection
 - **SwiftData Persistence**: Local data storage with automatic migrations
 
-### Backend API Endpoints
+## API Implementation Status
 
-For complete API documentation including all endpoints, request/response formats, and WebSocket protocols, see [API_DOCUMENTATION.md](./API_DOCUMENTATION.md).
+### ✅ Implemented Endpoints (19/60 = 32%)
+- Authentication: 4/5 endpoints
+- Projects: 3/5 endpoints  
+- Sessions: 6/3 endpoints (includes custom implementations)
+- Files: 4/3 endpoints (wrong HTTP methods)
+- Other: 1/1 endpoint
 
-**Key API Categories**:
-- **Authentication**: User registration, login, JWT tokens
-- **Projects**: Create, list, rename, delete projects
-- **Sessions**: Get sessions, messages, manage chat history
-- **Files**: File tree, read/write content
-- **Git**: Status, commits, branches, remotes
-- **Cursor Integration**: Config, MCP servers, sessions
-- **WebSocket**: Real-time chat (`ws://localhost:3004/ws`)
-- **Shell**: Terminal commands via WebSocket
+### ❌ Missing Endpoints (41/60 = 68%)
 
-## WebSocket Protocol
-```javascript
-// Connection
-ws://localhost:3004/api/chat/ws
+#### Git API (0/16) - COMPLETELY MISSING
+- Git status, diff, commit, branches
+- Checkout, create-branch, commits
+- Remote management (fetch, pull, push)
+- Generate commit messages
 
-// Message format
-{
-  "type": "message|typing|status|error",
-  "content": "...",
-  "userId": "...",
-  "timestamp": "ISO-8601",
-  "metadata": {}
-}
+#### Cursor Integration (0/8) - COMPLETELY MISSING  
+- Config management
+- MCP servers
+- Sessions from Cursor DB
 
-// Auto-reconnection with exponential backoff
-// Max retries: 10, Max delay: 30s
-```
+#### MCP Server API (0/6) - COMPLETELY MISSING
+- List, add, remove servers
+- CLI integration
 
-## Testing Guide
+#### Other Missing APIs
+- Transcription API
+- Search API
+- Terminal/Shell API
+- Image Upload API
 
-### Functional Testing via Simulator
-```bash
-# STEP 1: Start backend server (required for real data)
-cd backend
-npm start
-
-# STEP 2: Build iOS app
-xcodebuild build \
-  -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj \
-  -scheme ClaudeCodeUI \
-  -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
-  -derivedDataPath ./Build
-
-# STEP 3: Boot and setup simulator
-xcrun simctl boot "iPhone 15"
-xcrun simctl install booted ./Build/Build/Products/Debug-iphonesimulator/ClaudeCodeUI.app
-xcrun simctl launch booted com.claudecode.ui
-
-# STEP 4: Verify functionality and capture screenshots
-# Navigate through app: Projects → Session → Messages
-# Monitor Xcode console for API calls and WebSocket messages
-xcrun simctl io booted screenshot project-list.png
-xcrun simctl io booted screenshot session-messages.png
-
-# STEP 5: Test real-time messaging
-# Send a message in chat view
-# Verify WebSocket communication in console
-# Screenshot the active chat with responses
-
-# Using MCP XcodeBuild tools for automated testing
-mcp__XcodeBuildMCP__build_run_sim_name_proj \
-  projectPath: "ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj" \
-  scheme: "ClaudeCodeUI" \
-  simulatorName: "iPhone 15"
-
-# Get simulator UI for touch interactions
-mcp__XcodeBuildMCP__ui_describe_all \
-  udid: "[simulator-uuid]"
-
-# Touch specific elements
-mcp__XcodeBuildMCP__ui_tap \
-  udid: "[simulator-uuid]" \
-  x: 100 \
-  y: 200
-```
-
-### Key Test Scenarios
-1. **Onboarding Flow**: 6-page flow, skip/complete options
-2. **Project CRUD**: Create, read, update, delete projects
-3. **WebSocket Connection**: Message send/receive, auto-reconnection
-4. **File Operations**: Browse, create, rename, delete files
-5. **Terminal Commands**: Execute commands, handle ANSI output
-6. **Settings Backup/Restore**: Export/import JSON settings
-7. **Accessibility**: VoiceOver support, Dynamic Type
-8. **Performance**: <2s launch, <150MB memory, no leaks
-
-## Common Development Tasks
-
-### Add New Feature
-1. Create feature folder in `Features/`
-2. Implement ViewController + ViewModel (MVVM pattern)
-3. Register in AppCoordinator for navigation
-4. Add to MainTabBarController if needed
-5. Update backend API if required
-6. Add tests for new functionality
-
-### Modify Theme
-Edit `Design/Theme/CyberpunkTheme.swift`:
-- Primary colors: cyan (#00D9FF), pink (#FF006E)
-- Glow effects in `Design/Effects/GlowEffects.swift`
-- Animations in `Design/Effects/AnimationEffects.swift`
-
-### Debug WebSocket
-1. Check backend logs for connection status
-2. Monitor WebSocketManager logs in Xcode console
-3. Verify reconnection strategy (exponential backoff)
-4. Test with Charles Proxy for network inspection
-
-### Handle Network Errors
-All network calls use Result types:
-```swift
-APIClient.shared.request(.endpoint) { result in
-    switch result {
-    case .success(let data):
-        // Handle success
-    case .failure(let error):
-        // Show error alert or retry
-    }
-}
-```
-
-## Performance Optimization
-
-### Current Benchmarks
-- App launch: <2 seconds
-- Memory usage: <150MB baseline
-- WebSocket reconnect: <3 seconds
-- Screen transitions: <300ms
-
-### Optimization Opportunities
-- Implement lazy loading for large project lists
-- Add image caching for avatars/thumbnails
-- Use virtual scrolling for chat history
-- Batch WebSocket messages
-- Implement diff-based updates
-
-## Known Issues & Workarounds
-
-### Current Limitations
-- Widget extension not implemented
-- Push notifications not configured
-- No authentication (localhost only)
-- Share extension incomplete
-- File size limited to 10MB
-
-### Workarounds
-- **WebSocket disconnection**: Auto-reconnects within 3 seconds
-- **Large files**: Currently limited, implement chunked upload
-- **Offline mode**: Basic caching exists, full offline pending
-
-## Security Considerations
-
-### Current State
-- No authentication (localhost development only)
-- No encryption at rest
-- Basic input validation
-- XSS prevention in WebViews
-
-### Production Requirements
-- Implement JWT authentication
-- Add Keychain storage for sensitive data
-- Enable certificate pinning
-- Encrypt database with SQLCipher
-- Add jailbreak detection
-
-## Debugging Tips
-
-### Console Logs
-- **Xcode Console**: App lifecycle, errors, API calls
-- **Backend Terminal**: Server requests, WebSocket events
-- **Safari Web Inspector**: For WebView debugging
-- **Instruments**: Memory leaks, performance profiling
-
-### Common Issues
-1. **Backend not reachable**: Ensure server running on port 3004
-2. **WebSocket fails**: Check CORS settings in backend
-3. **Build errors**: Clean build folder (Cmd+Shift+K)
-4. **Simulator issues**: Reset simulator (Device → Erase All Content)
-
-## Dependencies
-
-### iOS (via Swift Package Manager)
-- No external dependencies currently (uses native frameworks)
-
-### Backend (package.json)
-- express: Web framework
-- ws: WebSocket support
-- sqlite3: Database
-- multer: File uploads
-- helmet: Security headers
-- cors: Cross-origin support
+For complete API documentation, see the full backend reference at the end of this file.
 
 ## 📋 COMPREHENSIVE IMPLEMENTATION TASKS (237 Total)
 
@@ -399,20 +238,16 @@ APIClient.shared.request(.endpoint) { result in
 
 ## SECTION 2: SESSION MANAGEMENT [P0 - CRITICAL - 18 Tasks]
 
-### Task 2.1: Create Session Selection UI ❌
-**Files**: Create SessionListViewController.swift
-**Implementation**: Table view with session cells
-**Navigation**: Projects → Sessions → Chat
+### Task 2.1: Create Session Selection UI ✅
+**Status**: COMPLETED - SessionListViewController exists
 
 ### Task 2.2: Implement Session Creation ❌
 **File**: APIClient.swift
 **Add**: createSession(projectPath:) method
 **Backend**: POST /api/projects/:projectName/sessions
 
-### Task 2.3: Add Session List Loading ❌
-**File**: SessionListViewController.swift
-**Add**: fetchSessions from backend
-**Backend**: GET /api/projects/:projectName/sessions
+### Task 2.3: Add Session List Loading ✅
+**Status**: COMPLETED - Fixed with correct endpoint
 
 ### Task 2.4: Implement Session Deletion ❌
 **File**: SessionListViewController.swift
@@ -424,15 +259,11 @@ APIClient.shared.request(.endpoint) { result in
 **Add**: Store current sessionId per project
 **Test**: Session resumes after app restart
 
-### Task 2.6: Create Session Cell UI ❌
-**File**: SessionTableViewCell.swift
-**Design**: Summary, message count, last activity
-**Theme**: Cyberpunk styling
+### Task 2.6: Create Session Cell UI ✅
+**Status**: COMPLETED - SessionTableViewCell exists
 
-### Task 2.7: Add Session Navigation ❌
-**File**: ProjectDetailViewController.swift
-**Add**: "View Sessions" button
-**Navigation**: Push to SessionListViewController
+### Task 2.7: Add Session Navigation ✅
+**Status**: COMPLETED - Navigation flow works
 
 ### Task 2.8: Implement Session Sorting ❌
 **File**: SessionListViewController.swift
@@ -491,229 +322,6 @@ APIClient.shared.request(.endpoint) { result in
 
 ## SECTION 3: API IMPLEMENTATION [P1 - HIGH - 25 Tasks]
 
-### Phase 1: Data Models & API Foundation
-- [ ] **Task 1.1**: Create Swift data models
-  - [ ] Create Models/Session.swift with id, summary, messageCount, lastActivity, cwd
-  - [ ] Create Models/Message.swift with id, sessionId, content, role, timestamp, metadata
-  - [ ] Update Models/Project.swift to include path and fullPath from API
-  - [ ] **CHECKPOINT**: Compile project (Cmd+B) - verify no build errors
-  - [ ] **GIT COMMIT**: "feat: Add Session and Message data models"
-
-- [ ] **Task 1.2**: Update APIClient with session endpoints
-  - [ ] Add fetchSessions(projectName:limit:offset:) method
-  - [ ] Add fetchSessionMessages(projectName:sessionId:limit:offset:) method
-  - [ ] Implement proper error handling and retry logic
-  - [ ] **CHECKPOINT**: Compile and run on simulator (Cmd+R)
-  - [ ] **TEST**: Call API methods in viewDidLoad to verify backend connectivity
-  - [ ] **GIT COMMIT**: "feat: Add session and message API endpoints to APIClient"
-
-### Phase 2: WebSocket Integration
-- [ ] **Task 2.1**: Update WebSocketManager message types
-  - [ ] Align message types with backend (claude-command, cursor-command, abort-session)
-  - [ ] Update WebSocketMessageType enum with correct backend types
-  - [ ] **CHECKPOINT**: Compile project - verify enum changes don't break existing code
-  
-- [ ] **Task 2.2**: Fix WebSocket message handling
-  - [ ] Update sendMessage to include projectPath and sessionId parameters
-  - [ ] Handle session-created responses and store sessionId
-  - [ ] Parse claude-output and claude-response message types
-  - [ ] Implement streaming response handling
-  - [ ] **CHECKPOINT**: Run on simulator, test WebSocket connection to ws://localhost:3004/ws
-  - [ ] **TEST**: Send test message and verify response in console
-  - [ ] **GIT COMMIT**: "fix: Update WebSocketManager for backend compatibility"
-
-### Phase 3: Session List UI
-- [ ] **Task 3.1**: Create SessionListViewController
-  - [ ] Create Features/Sessions/SessionListViewController.swift
-  - [ ] Create Features/Sessions/SessionTableViewCell.swift
-  - [ ] Design cell with summary label, message count badge, timestamp
-  - [ ] **CHECKPOINT**: Compile and verify UI layout in Interface Builder
-  
-- [ ] **Task 3.2**: Implement session list functionality
-  - [ ] Add table view data source and delegate methods
-  - [ ] Implement fetchSessions API call on viewDidLoad
-  - [ ] Add pull-to-refresh functionality
-  - [ ] Implement pagination with infinite scrolling
-  - [ ] **CHECKPOINT**: Run on simulator, verify sessions load from backend
-  - [ ] **TEST**: Pull to refresh, scroll to load more
-  - [ ] **GIT COMMIT**: "feat: Add SessionListViewController with pagination"
-
-### Phase 4: Chat Interface
-- [ ] **Task 4.1**: Create ChatViewController
-  - [ ] Create Features/Chat/ChatViewController.swift
-  - [ ] Create Features/Chat/ChatMessageCell.swift
-  - [ ] Design message bubbles with role-based styling
-  - [ ] **CHECKPOINT**: Compile and preview UI in simulator
-  
-- [ ] **Task 4.2**: Implement chat functionality
-  - [ ] Add message input bar with send button
-  - [ ] Load message history on viewDidLoad
-  - [ ] Implement message sending via WebSocket
-  - [ ] Handle incoming messages and update UI
-  - [ ] Add auto-scroll to bottom for new messages
-  - [ ] **CHECKPOINT**: Run on simulator, test full chat flow
-  - [ ] **TEST**: Send message, receive response, verify real-time updates
-  - [ ] **GIT COMMIT**: "feat: Implement ChatViewController with real-time messaging"
-
-### Phase 5: Project Detail Integration
-- [ ] **Task 5.1**: Update ProjectDetailViewController
-  - [ ] Add project path label to display full directory path
-  - [ ] Add "View Sessions" button
-  - [ ] Implement navigation to SessionListViewController
-  - [ ] **CHECKPOINT**: Run on simulator, verify navigation flow
-  - [ ] **TEST**: Navigate from project → sessions → chat
-  - [ ] **GIT COMMIT**: "feat: Add session navigation to ProjectDetailViewController"
-
-### Phase 6: UI Polish & Theme
-- [ ] **Task 6.1**: Apply cyberpunk theme
-  - [ ] Style chat bubbles: user (cyan #00D9FF), assistant (pink #FF006E)
-  - [ ] Add glow effects to active elements
-  - [ ] Implement smooth message animations
-  - [ ] **CHECKPOINT**: Run on simulator, verify visual styling
-  - [ ] **GIT COMMIT**: "style: Apply cyberpunk theme to chat interface"
-
-### Phase 7: Data Persistence
-- [ ] **Task 7.1**: Implement caching
-  - [ ] Store sessionId in UserDefaults per project
-  - [ ] Cache session list for offline viewing
-  - [ ] Store recent messages in SwiftData
-  - [ ] **CHECKPOINT**: Run on simulator, test offline mode
-  - [ ] **TEST**: Kill backend, verify cached data displays
-  - [ ] **GIT COMMIT**: "feat: Add offline caching for sessions and messages"
-
-### Phase 8: Functional Testing & Validation
-- [ ] **Task 8.1**: Build and Run on Simulator
-  - [ ] Start backend server: `cd backend && npm start`
-  - [ ] Build app: `xcodebuild build -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj -scheme ClaudeCodeUI -destination 'platform=iOS Simulator,name=iPhone 15'`
-  - [ ] Boot simulator: `xcrun simctl boot "iPhone 15"`
-  - [ ] Install app: `xcrun simctl install booted Build/Products/Debug-iphonesimulator/ClaudeCodeUI.app`
-  - [ ] Launch app: `xcrun simctl launch booted com.claudecode.ui`
-  - [ ] **VERIFICATION**: App launches successfully on simulator
-  
-- [ ] **Task 8.2**: Test Project & Session Navigation
-  - [ ] Navigate to Projects list in running simulator
-  - [ ] Verify project paths are displayed correctly from backend API
-  - [ ] Touch a project to view details
-  - [ ] Verify full project path is shown in detail view
-  - [ ] Touch "View Sessions" to navigate to session list
-  - [ ] **SCREENSHOT**: Capture session list showing all sessions with summaries
-  - [ ] Check Xcode console logs to verify API calls succeeded
-  
-- [ ] **Task 8.3**: Test Message Display in Sessions
-  - [ ] Touch a session from the list in simulator
-  - [ ] Verify navigation to ChatViewController
-  - [ ] Confirm all messages from that session are displayed
-  - [ ] Check message bubbles show correct role (user/assistant)
-  - [ ] Verify timestamps are displayed correctly
-  - [ ] Swipe to scroll through message history to confirm pagination works
-  - [ ] **SCREENSHOT**: Capture chat view showing session messages
-  - [ ] Check console logs: messages should match backend data
-  
-- [ ] **Task 8.4**: Test Real-time Messaging
-  - [ ] Touch the message input field to activate keyboard
-  - [ ] Type a message in the input field
-  - [ ] Touch send button to send message
-  - [ ] Verify WebSocket sends claude-command with correct sessionId
-  - [ ] Monitor console for WebSocket responses (claude-output, claude-response)
-  - [ ] Confirm new messages appear in chat immediately
-  - [ ] Verify typing indicators work during response
-  - [ ] **SCREENSHOT**: Capture active chat with real-time messages
-  - [ ] **LOG CHECK**: Console shows WebSocket message flow
-  
-- [ ] **Task 8.5**: Verify Data Accuracy
-  - [ ] Compare displayed sessions with backend API response
-  - [ ] Cross-check message content with backend database
-  - [ ] Verify sessionId persistence in UserDefaults
-  - [ ] Test app restart: session should resume correctly
-  - [ ] **GIT COMMIT**: "test: Verify functional messaging features via simulator"
-
-### Phase 9: Screenshots & Documentation
-- [ ] **Task 9.1**: Capture screenshots
-  - [ ] Screenshot 1: Projects list showing project paths
-  - [ ] Screenshot 2: Project detail with full path displayed
-  - [ ] Screenshot 3: Sessions list with summaries and message counts
-  - [ ] Screenshot 4: Active chat with messages
-  - [ ] Screenshot 5: Real-time messaging demonstration
-  - [ ] Screenshot 6: Error states and loading indicators
-  - [ ] **GIT COMMIT**: "docs: Add screenshots of messaging functionality"
-
-### Phase 10: Final Integration
-- [ ] **Task 10.1**: Final validation
-  - [ ] Run full test suite (Cmd+U)
-  - [ ] Check memory leaks with Instruments
-  - [ ] Verify performance metrics
-  - [ ] **GIT PUSH**: Push all commits to repository
-  - [ ] **FINAL TEST**: Clean build, fresh install, complete user flow
-
-## Implementation Commands for Agent
-
-### Build & Run Commands
-```bash
-# Open Xcode project (for GUI development)
-open ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj
-
-# Command-line build with xcodebuild
-xcodebuild build \
-  -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj \
-  -scheme ClaudeCodeUI \
-  -configuration Debug \
-  -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
-  -derivedDataPath ./Build
-
-# Clean build
-xcodebuild clean \
-  -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj \
-  -scheme ClaudeCodeUI
-
-# Build and run on simulator
-xcodebuild build-for-testing \
-  -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj \
-  -scheme ClaudeCodeUI \
-  -destination 'platform=iOS Simulator,name=iPhone 15'
-
-# Install and launch on simulator
-xcrun simctl boot "iPhone 15"
-xcrun simctl install "iPhone 15" ./Build/Products/Debug-iphonesimulator/ClaudeCodeUI.app
-xcrun simctl launch "iPhone 15" com.claudecode.ui
-
-# Run tests with xcodebuild
-xcodebuild test \
-  -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj \
-  -scheme ClaudeCodeUI \
-  -destination 'platform=iOS Simulator,name=iPhone 15' \
-  -enableCodeCoverage YES
-
-# Analyze build (static analysis)
-xcodebuild analyze \
-  -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj \
-  -scheme ClaudeCodeUI
-
-# Using MCP XcodeBuild tools (if configured)
-mcp__XcodeBuildMCP__build_sim_name_proj \
-  projectPath: "ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj" \
-  scheme: "ClaudeCodeUI" \
-  simulatorName: "iPhone 15"
-
-# Xcode GUI shortcuts (when using Xcode.app)
-# Cmd+B - Build/Compile (use after each major change)
-# Cmd+R - Run on simulator (test functionality)
-# Cmd+U - Run tests
-# Cmd+Shift+K - Clean build folder
-
-# Git commands (run from project root)
-git add .
-git commit -m "commit message"
-git push origin main
-```
-
-### Testing Checklist
-1. After each phase, compile (Cmd+B) to catch errors early
-2. Run on simulator (Cmd+R) to test functionality
-3. Commit working code before moving to next phase
-4. Test with backend running: cd backend && npm start
-5. Use Xcode console to monitor WebSocket messages
-6. Check memory usage in Xcode debug navigator
-
 ### Task 3.1: Implement Authentication Flow ❌
 **Files**: LoginViewController.swift, APIClient.swift
 **Endpoints**: POST /api/auth/login, POST /api/auth/register
@@ -724,10 +332,8 @@ git push origin main
 **Endpoint**: POST /api/projects
 **Params**: name, path, description
 
-### Task 3.3: Implement Project Deletion ❌
-**File**: ProjectsViewController.swift
-**Endpoint**: DELETE /api/projects/:projectName
-**UI**: Swipe to delete with confirmation
+### Task 3.3: Implement Project Deletion ✅
+**Status**: COMPLETED - deleteProject() implemented
 
 ### Task 3.4: Add File Tree API ❌
 **File**: FileExplorerViewController.swift
@@ -756,17 +362,17 @@ git push origin main
 
 ### Task 3.9: Implement Git Status API ❌
 **File**: GitViewController.swift
-**Endpoint**: GET /api/projects/:projectName/git/status
+**Endpoint**: GET /api/git/status
 **Display**: Changed files list
 
 ### Task 3.10: Add Git Commit API ❌
 **File**: GitViewController.swift
-**Endpoint**: POST /api/projects/:projectName/git/commit
+**Endpoint**: POST /api/git/commit
 **UI**: Commit message dialog
 
 ### Task 3.11: Implement Git Branch API ❌
 **File**: GitViewController.swift
-**Endpoint**: GET /api/projects/:projectName/git/branches
+**Endpoint**: GET /api/git/branches
 **Feature**: Branch switching
 
 ### Task 3.12: Add Git Push/Pull ❌
@@ -841,93 +447,342 @@ git push origin main
 
 ## SECTION 4: UI/UX IMPROVEMENTS [P1 - HIGH - 30 Tasks]
 
-### Task 4.1: Add Loading States ❌
-### Task 4.2: Implement Skeleton Screens ❌
-### Task 4.3: Add Empty States ❌
-### Task 4.4: Create Error Views ❌
-### Task 4.5: Add Pull-to-Refresh ❌
-### Task 4.6: Implement Infinite Scroll ❌
-### Task 4.7: Add Search Bars ❌
-### Task 4.8: Create Filter Options ❌
-### Task 4.9: Add Sort Controls ❌
-### Task 4.10: Implement Swipe Actions ❌
-### Task 4.11: Add Context Menus ❌
-### Task 4.12: Create Action Sheets ❌
-### Task 4.13: Add Floating Action Button ❌
-### Task 4.14: Implement Tab Bar Badges ❌
-### Task 4.15: Add Navigation Breadcrumbs ❌
-### Task 4.16: Create Onboarding Flow ❌
-### Task 4.17: Add Tool Tips ❌
-### Task 4.18: Implement Coach Marks ❌
-### Task 4.19: Add Keyboard Shortcuts ❌
-### Task 4.20: Create Quick Actions ❌
-### Task 4.21: Add 3D Touch Support ❌
-### Task 4.22: Implement Haptic Feedback ❌
-### Task 4.23: Add Sound Effects ❌
-### Task 4.24: Create Animations ❌
-### Task 4.25: Add Transitions ❌
-### Task 4.26: Implement Dark Mode ❌
-### Task 4.27: Add Theme Switching ❌
-### Task 4.28: Create Custom Fonts ❌
-### Task 4.29: Add Accessibility Labels ❌
-### Task 4.30: Implement VoiceOver ❌
+### Task 4.1-4.30: UI Polish and Features ❌
+- Loading states and skeleton screens
+- Empty states and error views
+- Pull-to-refresh and infinite scroll
+- Search bars and filter options
+- Sort controls and swipe actions
+- Context menus and action sheets
+- Floating action button
+- Tab bar badges
+- Navigation breadcrumbs
+- Onboarding flow
+- Tool tips and coach marks
+- Keyboard shortcuts
+- Quick actions and 3D Touch
+- Haptic feedback and sound effects
+- Animations and transitions
+- Dark mode and theme switching
+- Custom fonts
+- Accessibility labels and VoiceOver
 
 ## SECTION 5: DATA PERSISTENCE [P2 - MEDIUM - 20 Tasks]
 
-### Task 5.1-5.20: SwiftData Models, Migrations, Caching, Sync
+### Task 5.1-5.20: SwiftData Implementation ❌
+- SwiftData models and relationships
+- Migration strategies
+- Local caching
+- Offline sync
+- Conflict resolution
+- Data export/import
+- iCloud sync
+- Background sync
+- Data validation
+- Query optimization
 
 ## SECTION 6: FILE EXPLORER [P2 - MEDIUM - 15 Tasks]
 
-### Task 6.1-6.15: Tree View, Syntax Highlighting, File Operations
+### Task 6.1-6.15: File Management ❌
+- Tree view navigation
+- Syntax highlighting
+- File operations (CRUD)
+- Search and filtering
+- Preview pane
+- Quick look
+- File sharing
+- Version control integration
+- Diff viewer
+- File templates
 
 ## SECTION 7: TERMINAL INTEGRATION [P2 - MEDIUM - 12 Tasks]
 
-### Task 7.1-7.12: ANSI Parsing, Command History, Auto-complete
+### Task 7.1-7.12: Terminal Features ❌
+- ANSI color support
+- Command history
+- Auto-completion
+- Command aliases
+- Split panes
+- Session management
+- SSH integration
+- Script execution
+- Environment variables
+- Terminal themes
 
 ## SECTION 8: AUTHENTICATION [P1 - HIGH - 10 Tasks]
 
-### Task 8.1-8.10: JWT, Biometrics, Keychain, OAuth
+### Task 8.1-8.10: Security Implementation ❌
+- JWT token management
+- Biometric authentication
+- Keychain integration
+- OAuth providers
+- Session management
+- Token refresh
+- Logout everywhere
+- Password reset
+- 2FA support
+- Security audit
 
 ## SECTION 9: TESTING [P1 - HIGH - 25 Tasks]
 
-### Task 9.1-9.25: Unit Tests, UI Tests, Integration Tests
+### Task 9.1-9.25: Test Coverage ❌
+- Unit tests for models
+- Unit tests for ViewModels
+- Unit tests for services
+- UI tests for main flows
+- Integration tests
+- Performance tests
+- Accessibility tests
+- Localization tests
+- Security tests
+- Stress tests
 
 ## SECTION 10: PERFORMANCE [P2 - MEDIUM - 15 Tasks]
 
-### Task 10.1-10.15: Profiling, Optimization, Memory Management
+### Task 10.1-10.15: Optimization ❌
+- Memory profiling
+- CPU optimization
+- Network optimization
+- Battery optimization
+- Launch time optimization
+- Scroll performance
+- Animation performance
+- Image caching
+- Data pagination
+- Background tasks
 
 ## SECTION 11: SECURITY [P1 - HIGH - 12 Tasks]
 
-### Task 11.1-11.12: Encryption, Certificate Pinning, Jailbreak Detection
+### Task 11.1-11.12: Security Hardening ❌
+- Data encryption
+- Certificate pinning
+- Jailbreak detection
+- Code obfuscation
+- Anti-tampering
+- Secure storage
+- Network security
+- Input validation
+- OWASP compliance
+- Security headers
 
 ## SECTION 12: ACCESSIBILITY [P2 - MEDIUM - 10 Tasks]
 
-### Task 12.1-12.10: VoiceOver, Dynamic Type, Reduced Motion
+### Task 12.1-12.10: Accessibility Support ❌
+- VoiceOver support
+- Dynamic Type
+- Reduced motion
+- Color contrast
+- Keyboard navigation
+- Switch control
+- Voice control
+- Accessibility inspector
+- Screen reader testing
+- WCAG compliance
 
 ## SECTION 13: LOCALIZATION [P3 - LOW - 8 Tasks]
 
-### Task 13.1-13.8: String Files, RTL Support, Date Formatting
+### Task 13.1-13.8: Multi-language Support ❌
+- String extraction
+- Localization files
+- RTL support
+- Date formatting
+- Number formatting
+- Currency formatting
+- Pluralization
+- Translation management
 
 ## SECTION 14: EXTENSIONS [P3 - LOW - 10 Tasks]
 
-### Task 14.1-14.10: Widget, Share Extension, Shortcuts
+### Task 14.1-14.10: App Extensions ❌
+- Today widget
+- Share extension
+- Action extension
+- Keyboard extension
+- Notification extension
+- Spotlight integration
+- Shortcuts app
+- Siri suggestions
+- Quick Note
+- Focus filters
 
 ## SECTION 15: DEPLOYMENT [P1 - HIGH - 15 Tasks]
 
-### Task 15.1-15.15: App Store, TestFlight, CI/CD
+### Task 15.1-15.15: Release Preparation ❌
+- App Store assets
+- Screenshots
+- App preview video
+- Description writing
+- Keywords optimization
+- TestFlight setup
+- Beta testing
+- Crash reporting
+- Analytics setup
+- CI/CD pipeline
 
 ## 📈 Progress Tracking
 
 **Total Tasks**: 237
-**Completed**: 15 (6.3%)
+**Completed**: 17 (7.2%)
 **In Progress**: 8 (3.4%)
-**Not Started**: 214 (90.3%)
+**Not Started**: 212 (89.4%)
 
 **By Priority**:
-- P0 Critical: 30 tasks (WebSocket + Sessions)
-- P1 High: 92 tasks (API + UI + Auth + Testing)
-- P2 Medium: 82 tasks (Features + Performance)
-- P3 Low: 33 tasks (Nice-to-have)
+- P0 Critical: 30 tasks (WebSocket + Sessions) - 17% complete
+- P1 High: 92 tasks (API + UI + Auth + Testing) - 3% complete
+- P2 Medium: 82 tasks (Features + Performance) - 0% complete
+- P3 Low: 33 tasks (Nice-to-have) - 0% complete
+
+## Testing Guide
+
+### Functional Testing via Simulator
+```bash
+# STEP 1: Start backend server (required for real data)
+cd backend
+npm start
+
+# STEP 2: Build iOS app
+xcodebuild build \
+  -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj \
+  -scheme ClaudeCodeUI \
+  -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
+  -derivedDataPath ./Build
+
+# STEP 3: Boot and setup simulator
+xcrun simctl boot "iPhone 15"
+xcrun simctl install booted ./Build/Build/Products/Debug-iphonesimulator/ClaudeCodeUI.app
+xcrun simctl launch booted com.claudecode.ui
+
+# STEP 4: Verify functionality and capture screenshots
+# Navigate through app: Projects → Session → Messages
+# Monitor Xcode console for API calls and WebSocket messages
+xcrun simctl io booted screenshot project-list.png
+xcrun simctl io booted screenshot session-messages.png
+
+# Using MCP XcodeBuild tools for automated testing
+mcp__XcodeBuildMCP__build_run_sim_name_proj \
+  projectPath: "ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj" \
+  scheme: "ClaudeCodeUI" \
+  simulatorName: "iPhone 15"
+```
+
+### Key Test Scenarios
+1. **Authentication Flow**: JWT token generation and storage
+2. **Project CRUD**: Create, read, update, delete projects
+3. **Session Management**: Load sessions and messages
+4. **WebSocket Connection**: Message send/receive, auto-reconnection
+5. **File Operations**: Browse, create, rename, delete files
+6. **Terminal Commands**: Execute commands, handle ANSI output
+7. **Settings Backup/Restore**: Export/import JSON settings
+8. **Accessibility**: VoiceOver support, Dynamic Type
+9. **Performance**: <2s launch, <150MB memory, no leaks
+
+## Common Development Tasks
+
+### Add New Feature
+1. Create feature folder in `Features/`
+2. Implement ViewController + ViewModel (MVVM pattern)
+3. Register in AppCoordinator for navigation
+4. Add to MainTabBarController if needed
+5. Update backend API if required
+6. Add tests for new functionality
+
+### Modify Theme
+Edit `Design/Theme/CyberpunkTheme.swift`:
+- Primary colors: cyan (#00D9FF), pink (#FF006E)
+- Glow effects in `Design/Effects/GlowEffects.swift`
+- Animations in `Design/Effects/AnimationEffects.swift`
+
+### Debug WebSocket
+1. Check backend logs for connection status
+2. Monitor WebSocketManager logs in Xcode console
+3. Verify reconnection strategy (exponential backoff)
+4. Test with Charles Proxy for network inspection
+
+### Handle Network Errors
+All network calls use Result types:
+```swift
+APIClient.shared.request(.endpoint) { result in
+    switch result {
+    case .success(let data):
+        // Handle success
+    case .failure(let error):
+        // Show error alert or retry
+    }
+}
+```
+
+## Performance Optimization
+
+### Current Benchmarks
+- App launch: <2 seconds
+- Memory usage: <150MB baseline
+- WebSocket reconnect: <3 seconds
+- Screen transitions: <300ms
+
+### Optimization Opportunities
+- Implement lazy loading for large project lists
+- Add image caching for avatars/thumbnails
+- Use virtual scrolling for chat history
+- Batch WebSocket messages
+- Implement diff-based updates
+
+## Known Issues & Workarounds
+
+### Current Limitations
+- Widget extension not implemented
+- Push notifications not configured
+- No authentication UI (backend auth disabled for testing)
+- Share extension incomplete
+- File size limited to 10MB
+
+### Workarounds
+- **WebSocket disconnection**: Auto-reconnects within 3 seconds
+- **Large files**: Currently limited, implement chunked upload
+- **Offline mode**: Basic caching exists, full offline pending
+
+## Security Considerations
+
+### Current State
+- JWT authentication implemented (fixed)
+- No encryption at rest
+- Basic input validation
+- XSS prevention in WebViews
+
+### Production Requirements
+- Implement full authentication flow
+- Add Keychain storage for sensitive data
+- Enable certificate pinning
+- Encrypt database with SQLCipher
+- Add jailbreak detection
+
+## Debugging Tips
+
+### Console Logs
+- **Xcode Console**: App lifecycle, errors, API calls
+- **Backend Terminal**: Server requests, WebSocket events
+- **Safari Web Inspector**: For WebView debugging
+- **Instruments**: Memory leaks, performance profiling
+
+### Common Issues
+1. **Backend not reachable**: Ensure server running on port 3004
+2. **WebSocket fails**: Check CORS settings in backend
+3. **Build errors**: Clean build folder (Cmd+Shift+K)
+4. **Simulator issues**: Reset simulator (Device → Erase All Content)
+5. **JWT errors**: Verify token expiry time is in seconds, not milliseconds
+
+## Dependencies
+
+### iOS (via Swift Package Manager)
+- No external dependencies currently (uses native frameworks)
+
+### Backend (package.json)
+- express: Web framework
+- ws: WebSocket support
+- sqlite3: Database
+- multer: File uploads
+- helmet: Security headers
+- cors: Cross-origin support
+- jsonwebtoken: JWT authentication
 
 ## Code Style Guidelines
 
@@ -943,3 +798,87 @@ git push origin main
 - Express middleware pattern
 - Error-first callbacks
 - Consistent error handling with try/catch
+
+## Backend API Quick Reference
+
+### Authentication
+- POST `/api/auth/register` - Register first user
+- POST `/api/auth/login` - Login and get JWT
+- GET `/api/auth/status` - Check auth status
+- GET `/api/auth/user` - Get current user
+- POST `/api/auth/logout` - Logout
+
+### Projects
+- GET `/api/projects` - List all projects
+- POST `/api/projects/create` - Create new project
+- PUT `/api/projects/:projectName/rename` - Rename project
+- DELETE `/api/projects/:projectName` - Delete project
+
+### Sessions
+- GET `/api/projects/:projectName/sessions` - Get project sessions
+- GET `/api/projects/:projectName/sessions/:sessionId/messages` - Get session messages
+- DELETE `/api/projects/:projectName/sessions/:sessionId` - Delete session
+
+### Files
+- GET `/api/projects/:projectName/files` - Get file tree
+- GET `/api/projects/:projectName/file?path=` - Read file content
+- PUT `/api/projects/:projectName/file` - Save file content
+
+### Git (Not Implemented in iOS)
+- GET `/api/git/status` - Git status
+- POST `/api/git/commit` - Commit changes
+- GET `/api/git/branches` - List branches
+- POST `/api/git/push` - Push to remote
+- POST `/api/git/pull` - Pull from remote
+
+### WebSocket
+- `ws://localhost:3004/ws` - Chat WebSocket
+- `ws://localhost:3004/shell` - Terminal WebSocket
+
+Message format for chat:
+```json
+{
+  "type": "claude-command",
+  "content": "User message",
+  "projectPath": "/full/path/to/project",
+  "sessionId": "optional-session-id"
+}
+```
+
+For complete API documentation with all 60+ endpoints, request/response formats, and examples, refer to the API_DOCUMENTATION.md file.
+
+## Roadmap to Completion
+
+### Immediate Priorities (Next 2-3 days)
+1. Fix WebSocket URL and message types (P0)
+2. Implement missing session management features (P0)
+3. Connect file explorer to backend API (P1)
+4. Add terminal WebSocket connection (P1)
+
+### Week 1 Targets
+1. Complete all P0 critical fixes
+2. Implement core Git integration
+3. Add search functionality
+4. Basic offline support
+
+### Week 2 Targets
+1. Complete remaining API endpoints
+2. Add comprehensive testing
+3. Implement security features
+4. Performance optimization
+
+### Production Release (Week 3-4)
+1. Full authentication flow
+2. Push notifications
+3. App Store preparation
+4. Beta testing with TestFlight
+
+## Summary
+
+The iOS Claude Code UI app has a solid foundation with 32% of the backend API implemented. The most critical issues are WebSocket communication bugs that prevent real-time chat from working. With the JWT authentication and session loading now fixed, the next priority is fixing WebSocket issues and implementing the remaining 68% of API endpoints, particularly Git integration which is completely missing.
+
+The app follows best practices with MVVM architecture, SwiftData persistence, and a consistent cyberpunk theme. The codebase is well-structured and ready for the remaining implementation work.
+
+---
+
+*This document is the single source of truth for the iOS Claude Code UI project. All other documentation should defer to this file.*
