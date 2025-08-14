@@ -78,7 +78,6 @@ public class ProjectsViewController: BaseViewController {
     
     private var projects: [Project] = []
     private let dataContainer: SwiftDataContainer?
-    private var apiClient: APIClient
     private let errorHandler: ErrorHandlingService
     private let refreshControl = UIRefreshControl()
     
@@ -88,10 +87,8 @@ public class ProjectsViewController: BaseViewController {
     // MARK: - Initialization
     
     init(dataContainer: SwiftDataContainer? = try? SwiftDataContainer(),
-         apiClient: APIClient = APIClient.shared,
          errorHandler: ErrorHandlingService = DIContainer.shared.errorHandler) {
         self.dataContainer = dataContainer
-        self.apiClient = APIClient.shared  // Always use the shared instance
         self.errorHandler = errorHandler
         super.init(nibName: nil, bundle: nil)
     }
@@ -281,22 +278,12 @@ public class ProjectsViewController: BaseViewController {
         
         Task {
             do {
-                // First, configure APIClient with saved server URL and auth token
-                if let dataContainer = dataContainer {
-                    if let settings = try? await dataContainer.fetchSettings() {
-                        self.apiClient = APIClient(baseURL: settings.apiBaseURL)
-                        // CRITICAL: Set the auth token if available
-                        if let authToken = settings.authToken {
-                            await self.apiClient.setAuthToken(authToken)
-                            print("🔧 Configured APIClient with URL: \(settings.apiBaseURL) and auth token")
-                        } else {
-                            print("🔧 Configured APIClient with URL: \(settings.apiBaseURL) but no auth token")
-                        }
-                    }
-                }
+                // Use the shared APIClient instance which already has auth configured
+                // Don't override with database settings - the shared instance has the correct config
+                print("🔧 Using shared APIClient with backend URL: \(AppConfig.backendURL)")
                 
-                // Fetch from API
-                let remoteProjects = try await apiClient.fetchProjects()
+                // Fetch from API using the shared instance
+                let remoteProjects = try await APIClient.shared.fetchProjects()
                 
                 await MainActor.run {
                     self.projects = remoteProjects
@@ -432,7 +419,7 @@ public class ProjectsViewController: BaseViewController {
         Task {
             do {
                 // Create via API
-                let project = try await apiClient.createProject(name: name, path: path)
+                let project = try await APIClient.shared.createProject(name: name, path: path)
                 
                 await MainActor.run {
                     self.projects.append(project)
@@ -459,7 +446,7 @@ public class ProjectsViewController: BaseViewController {
         Task {
             do {
                 // Delete from backend
-                try await apiClient.deleteProject(id: project.id)
+                try await APIClient.shared.deleteProject(id: project.id)
                 
                 // Remove from local array
                 await MainActor.run {

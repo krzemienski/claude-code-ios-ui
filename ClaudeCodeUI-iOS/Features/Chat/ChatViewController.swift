@@ -360,6 +360,11 @@ class ChatViewController: BaseViewController {
     private let messagePageSize = 50
     private var currentSessionId: String?
     
+    // Streaming message accumulator
+    private var streamingMessageId: String?
+    private var streamingMessageContent: String = ""
+    private var streamingMessageIndex: Int?
+    
     // MARK: - UI Components
     
     private lazy var tableView: UITableView = {
@@ -1048,8 +1053,9 @@ class ChatViewController: BaseViewController {
             guard let self = self else { return }
             
             // Check if typing indicator is already shown
-            if self.isShowingTypingIndicator { return }
+            if self.isTyping { return }
             
+            self.isTyping = true
             self.isShowingTypingIndicator = true
             let indexPath = IndexPath(row: self.messages.count, section: 0)
             self.tableView.insertRows(at: [indexPath], with: .automatic)
@@ -1062,8 +1068,9 @@ class ChatViewController: BaseViewController {
             guard let self = self else { return }
             
             // Check if typing indicator is shown
-            if !self.isShowingTypingIndicator { return }
+            if !self.isTyping { return }
             
+            self.isTyping = false
             self.isShowingTypingIndicator = false
             let indexPath = IndexPath(row: self.messages.count, section: 0)
             self.tableView.deleteRows(at: [indexPath], with: .automatic)
@@ -1297,17 +1304,28 @@ extension ChatViewController: WebSocketManagerDelegate {
         if let error = error {
             Logger.shared.error("WebSocket disconnected with error: \(error)")
         }
-        // Attempt reconnection after delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            self?.connectWebSocket()
-        }
+        // Let the WebSocketManager handle reconnection automatically
+        // Do NOT attempt manual reconnection here to avoid double reconnection
     }
     
     func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage) {
-        // Debug logging
+        // Enhanced debug logging
         print("📥 Received WebSocket message:")
         print("   - Type: \(message.type.rawValue)")
         print("   - Payload keys: \(message.payload?.keys.joined(separator: ", ") ?? "none")")
+        
+        // Log full payload for debugging
+        if let payload = message.payload {
+            print("   - Full payload:")
+            for (key, value) in payload {
+                if let stringValue = value as? String {
+                    let preview = stringValue.prefix(100)
+                    print("     • \(key): \(preview)\(stringValue.count > 100 ? "..." : "")")
+                } else {
+                    print("     • \(key): \(type(of: value)) = \(value)")
+                }
+            }
+        }
         
         // Handle different message types from backend
         switch message.type {
@@ -1333,24 +1351,93 @@ extension ChatViewController: WebSocketManagerDelegate {
             }
             
         case .claudeResponse:
-            // Handle streaming Claude response
-            isLoading = false  // Hide loading when response starts
-            showTypingIndicator()  // Show typing while streaming
+            // Handle Claude response (could be complete or streaming)
+            isLoading = false
+            
+            // Check if this is a complete response or streaming
+            let isComplete = message.payload?["isComplete"] as? Bool ?? false
+            let isFinal = message.payload?["isFinal"] as? Bool ?? false
+            
             if let data = message.payload?["data"] as? [String: Any] {
                 handleClaudeResponse(data)
+                if isComplete || isFinal {
+                    hideTypingIndicator()
+                }
             } else if let content = message.payload?["content"] as? String {
                 // Handle direct content response
-                appendToLastMessage(content)
+                if !content.isEmpty {
+                    // Check if we're already streaming
+                    if streamingMessageIndex != nil {
+                        // Append to existing streaming message
+                        appendToLastMessage(content)
+                    } else {
+                        // Create new message for complete response
+                        let claudeMessage = EnhancedChatMessage(
+                            id: message.payload?["id"] as? String ?? UUID().uuidString,
+                            content: content,
+                            isUser: false,
+                            timestamp: Date(),
+                            status: .sent
+                        )
+                        claudeMessage.messageType = .claudeResponse
+                        
+                        DispatchQueue.main.async {
+                            self.messages.append(claudeMessage)
+                            let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                            self.tableView.insertRows(at: [indexPath], with: .automatic)
+                            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+                        }
+                    }
+                    
+                    if isComplete || isFinal {
+                        hideTypingIndicator()
+                        streamingMessageId = nil
+                        streamingMessageContent = ""
+                        streamingMessageIndex = nil
+                    }
+                }
             }
             
         case .claudeOutput:
-            // Handle raw Claude output
-            isLoading = false  // Hide loading when output received
-            showTypingIndicator()  // Show typing while streaming
-            if let content = message.payload?["data"] as? String {
-                appendToLastMessage(content)
-            } else if let content = message.payload?["content"] as? String {
-                appendToLastMessage(content)
+            // Handle raw Claude output (usually streaming chunks)
+            isLoading = false
+            
+            if let content = message.payload?["data"] as? String ?? message.payload?["content"] as? String {
+                if !content.isEmpty {
+                    // Check if we have an active streaming message
+                    if let index = streamingMessageIndex {
+                        // Append to existing streaming message
+                        streamingMessageContent += content
+                        DispatchQueue.main.async {
+                            self.messages[index].content = self.streamingMessageContent
+                            let indexPath = IndexPath(row: index, section: 0)
+                            self.tableView.reloadRows(at: [indexPath], with: .none)
+                            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+                        }
+                    } else {
+                        // Start new streaming message
+                        showTypingIndicator()
+                        streamingMessageId = message.payload?["id"] as? String ?? UUID().uuidString
+                        streamingMessageContent = content
+                        
+                        let streamMessage = EnhancedChatMessage(
+                            id: streamingMessageId!,
+                            content: content,
+                            isUser: false,
+                            timestamp: Date(),
+                            status: .sending
+                        )
+                        streamMessage.messageType = .claudeOutput
+                        
+                        DispatchQueue.main.async {
+                            self.messages.append(streamMessage)
+                            self.streamingMessageIndex = self.messages.count - 1
+                            let indexPath = IndexPath(row: self.streamingMessageIndex!, section: 0)
+                            self.tableView.insertRows(at: [indexPath], with: .automatic)
+                            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+                        }
+                    }
+                }
             }
             
         case .tool_use:
@@ -1367,8 +1454,51 @@ extension ChatViewController: WebSocketManagerDelegate {
                 handleToolResult(resultData)
             }
             
+        case .streamStart:
+            // Start of streaming response
+            isLoading = false
+            showTypingIndicator()
+            
+            // Create a new streaming message
+            streamingMessageId = message.payload?["id"] as? String ?? UUID().uuidString
+            streamingMessageContent = ""
+            
+            // Create placeholder message
+            let streamMessage = EnhancedChatMessage(
+                id: streamingMessageId!,
+                content: "",
+                isUser: false,
+                timestamp: Date(),
+                status: .sending
+            )
+            
+            DispatchQueue.main.async {
+                self.messages.append(streamMessage)
+                self.streamingMessageIndex = self.messages.count - 1
+                let indexPath = IndexPath(row: self.streamingMessageIndex!, section: 0)
+                self.tableView.insertRows(at: [indexPath], with: .automatic)
+                self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+            }
+            
+        case .streamChunk:
+            // Append chunk to streaming message
+            if let chunk = message.payload?["content"] as? String ?? message.payload?["data"] as? String {
+                streamingMessageContent += chunk
+                
+                // Update the streaming message
+                if let index = streamingMessageIndex, index < messages.count {
+                    DispatchQueue.main.async {
+                        self.messages[index].content = self.streamingMessageContent
+                        let indexPath = IndexPath(row: index, section: 0)
+                        self.tableView.reloadRows(at: [indexPath], with: .none)
+                        // Keep scrolled to bottom during streaming
+                        self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+                    }
+                }
+            }
+            
         case .streamingResponse:
-            // Handle streaming response data
+            // Handle streaming response data (legacy support)
             isLoading = false
             showTypingIndicator()
             if let content = message.payload?["content"] as? String {
@@ -1381,8 +1511,20 @@ extension ChatViewController: WebSocketManagerDelegate {
             // Hide typing indicator when streaming ends
             hideTypingIndicator()
             isLoading = false
-            // Update the last message status to sent
-            updateLastMessageStatus(.sent)
+            
+            // Update the streaming message status to sent
+            if let index = streamingMessageIndex, index < messages.count {
+                messages[index].status = .sent
+                let indexPath = IndexPath(row: index, section: 0)
+                DispatchQueue.main.async {
+                    self.tableView.reloadRows(at: [indexPath], with: .none)
+                }
+            }
+            
+            // Clear streaming state
+            streamingMessageId = nil
+            streamingMessageContent = ""
+            streamingMessageIndex = nil
             
         case .error:
             isLoading = false  // Hide loading on error

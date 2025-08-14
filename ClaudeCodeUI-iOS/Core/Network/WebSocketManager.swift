@@ -94,6 +94,7 @@ final class WebSocketManager {
     private var maxReconnectAttempts = 10
     private var reconnectAttempts = 0
     private let maxReconnectDelay: TimeInterval = 30.0
+    private var intentionalDisconnect = false // Track manual disconnections
     
     // Message queue for offline support
     private var messageQueue: [WebSocketMessage] = []
@@ -124,6 +125,15 @@ final class WebSocketManager {
     // MARK: - Connection Management
     
     func connect(to urlString: String) {
+        // Prevent multiple simultaneous connection attempts
+        guard connectionState == .disconnected || connectionState == .failed else {
+            logInfo("WebSocket already connecting/connected, ignoring connect request", category: "WebSocket")
+            return
+        }
+        
+        // Reset intentional disconnect flag when manually connecting
+        intentionalDisconnect = false
+        
         // Store the original URL for reconnection
         self.originalURLString = urlString
         
@@ -141,7 +151,10 @@ final class WebSocketManager {
             return
         }
         
-        disconnect() // Ensure clean state
+        // Clean up any existing connection
+        if webSocketTask != nil {
+            disconnect() // Ensure clean state
+        }
         
         self.url = url
         connectionState = .connecting
@@ -156,9 +169,6 @@ final class WebSocketManager {
         webSocketTask = session.webSocketTask(with: request)
         webSocketTask?.resume()
         
-        // Start receiving messages
-        receiveMessage()
-        
         // Send a test ping to verify connection before marking as connected
         webSocketTask?.sendPing { [weak self] error in
             guard let self = self else { return }
@@ -170,9 +180,13 @@ final class WebSocketManager {
                 // Connection is truly established
                 self.connectionState = .connected
                 self.reconnectAttempts = 0
+                self.intentionalDisconnect = false // Reset on successful connection
                 self.delegate?.webSocketDidConnect(self)
                 self.flushMessageQueue()
                 logInfo("WebSocket connected and verified: \(finalUrlString)", category: "WebSocket")
+                
+                // Start receiving messages ONLY after successful connection
+                self.receiveMessage()
                 
                 // Start ping timer after successful connection
                 self.startPingTimer()
@@ -184,7 +198,12 @@ final class WebSocketManager {
         stopPingTimer()
         stopReconnectTimer()
         
-        webSocketTask?.cancel(with: .goingAway, reason: nil)
+        // Mark this as an intentional disconnect to prevent auto-reconnect
+        intentionalDisconnect = true
+        
+        if let task = webSocketTask {
+            task.cancel(with: .goingAway, reason: nil)
+        }
         webSocketTask = nil
         
         if connectionState != .disconnected {
@@ -337,6 +356,12 @@ final class WebSocketManager {
     }
     
     private func receiveMessage() {
+        // Only receive messages if we're actually connected
+        guard connectionState == .connected else {
+            logInfo("Not receiving messages - connection state: \(connectionState)", category: "WebSocket")
+            return
+        }
+        
         webSocketTask?.receive { [weak self] result in
             guard let self = self else { return }
             
@@ -351,8 +376,10 @@ final class WebSocketManager {
                     break
                 }
                 
-                // Continue receiving messages
-                self.receiveMessage()
+                // Continue receiving messages only if still connected
+                if self.connectionState == .connected {
+                    self.receiveMessage()
+                }
                 
             case .failure(let error):
                 logError("WebSocket receive error: \(error)", category: "WebSocket")
@@ -437,6 +464,12 @@ final class WebSocketManager {
     // MARK: - Reconnection Logic
     
     private func attemptReconnection() {
+        // Prevent multiple reconnection attempts
+        guard connectionState != .reconnecting else {
+            logInfo("Already attempting reconnection, skipping duplicate attempt", category: "WebSocket")
+            return
+        }
+        
         guard enableAutoReconnect,
               reconnectAttempts < maxReconnectAttempts,
               let urlString = originalURLString else {
@@ -455,6 +488,8 @@ final class WebSocketManager {
         stopReconnectTimer()
         reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             guard let self = self else { return }
+            // Reset state before attempting to connect
+            self.connectionState = .disconnected
             // Use the original URL string to get a fresh token
             self.connect(to: urlString)
         }
@@ -480,8 +515,14 @@ final class WebSocketManager {
     
     private func startPingTimer() {
         stopPingTimer()
-        pingTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+        // Increase ping interval to 45 seconds to be less aggressive
+        // Also fire after interval, not immediately
+        pingTimer = Timer.scheduledTimer(withTimeInterval: 45.0, repeats: true) { [weak self] _ in
             self?.sendPing()
+        }
+        // Add timer to run loop to ensure it fires
+        if let timer = pingTimer {
+            RunLoop.current.add(timer, forMode: .common)
         }
     }
     
@@ -505,12 +546,20 @@ final class WebSocketManager {
         stopPingTimer()
         
         let wasConnected = isConnected
+        let previousState = connectionState
         connectionState = .disconnected
         
-        delegate?.webSocketDidDisconnect(self, error: error)
+        // Only notify delegate if we were actually connected or connecting
+        if previousState != .disconnected && previousState != .failed {
+            delegate?.webSocketDidDisconnect(self, error: error)
+        }
         
-        // Attempt reconnection if it was previously connected
-        if wasConnected && enableAutoReconnect {
+        // Attempt reconnection only if:
+        // 1. We were previously connected
+        // 2. Auto-reconnect is enabled
+        // 3. This was NOT an intentional disconnect
+        // 4. We're not already reconnecting
+        if wasConnected && enableAutoReconnect && !intentionalDisconnect && previousState != .reconnecting {
             attemptReconnection()
         }
     }
@@ -535,13 +584,20 @@ final class WebSocketManager {
     
     @objc private func appDidEnterBackground() {
         // Disconnect when app goes to background
+        // Store the URL for later reconnection
+        let savedURL = originalURLString
         disconnect()
+        originalURLString = savedURL // Preserve URL after disconnect
     }
     
     @objc private func appWillEnterForeground() {
         // Reconnect when app returns to foreground, but only if not already connected/connecting
-        if let url = url, connectionState == .disconnected {
-            connect(to: url.absoluteString)
+        if let urlString = originalURLString, 
+           connectionState == .disconnected {
+            // Small delay to ensure app is fully in foreground
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.connect(to: urlString)
+            }
         }
     }
 }
