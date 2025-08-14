@@ -265,35 +265,48 @@ class ChatViewController: BaseViewController {
     }
     
     private func loadSessionMessages(sessionId: String) {
-        // Load messages from backend
-        APIClient.shared.getSessionMessages(sessionId: sessionId) { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let messages):
-                    self?.messages = messages.map { message in
+        // Load messages from backend using the correct project-scoped endpoint
+        Task {
+            do {
+                // Use the async/await API method that includes project name
+                let messages = try await APIClient.shared.fetchSessionMessages(
+                    projectName: project.name,
+                    sessionId: sessionId,
+                    limit: 100,
+                    offset: 0
+                )
+                
+                await MainActor.run {
+                    self.messages = messages.map { message in
                         ChatMessage(
-                            id: message.id ?? UUID().uuidString,
+                            id: message.id,
                             content: message.content,
-                            isUser: message.role == "user",
-                            timestamp: message.timestamp ?? Date(),
+                            isUser: message.role == .user,
+                            timestamp: message.timestamp,
                             status: .sent
                         )
                     }
-                    self?.tableView.reloadData()
-                    
-                    // Scroll to bottom if there are messages
-                    if !messages.isEmpty {
-                        let indexPath = IndexPath(row: messages.count - 1, section: 0)
-                        self?.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+                    self.tableView.reloadData()
+                    // Scroll to bottom to show latest messages
+                    if !self.messages.isEmpty {
+                        self.scrollToBottom(animated: false)
                     }
-                    
-                case .failure(let error):
-                    Logger.shared.error("Failed to load session messages: \(error)")
-                    // Keep messages empty on error - no fake data
-                    self?.messages = []
-                    self?.tableView.reloadData()
+                    print("✅ Loaded \(messages.count) messages for session \(sessionId)")
+                }
+            } catch {
+                print("❌ Failed to load session messages: \(error)")
+                await MainActor.run {
+                    // Keep messages empty on error but don't crash
+                    self.messages = []
+                    self.tableView.reloadData()
                     // Show error to user
-                    self?.showError("Failed to load session messages: \(error.localizedDescription)")
+                    let alert = UIAlertController(
+                        title: "Error",
+                        message: "Failed to load session messages: \(error.localizedDescription)",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alert, animated: true)
                 }
             }
         }
