@@ -579,6 +579,52 @@ class EnhancedMessageCell: UITableViewCell {
             }
         }
     }
+    
+    // MARK: - Status Updates
+    
+    func updateStatus(_ status: MessageStatus) {
+        // Update status icon
+        statusImageView.isHidden = false
+        switch status {
+        case .sending:
+            statusImageView.image = UIImage(systemName: "clock")
+            statusImageView.tintColor = CyberpunkTheme.secondaryText
+            
+            // Add subtle pulsing animation for sending state
+            UIView.animate(withDuration: 0.8,
+                          delay: 0,
+                          options: [.repeat, .autoreverse],
+                          animations: {
+                self.statusImageView.alpha = 0.5
+            })
+        case .sent:
+            statusImageView.image = UIImage(systemName: "checkmark")
+            statusImageView.tintColor = CyberpunkTheme.primaryCyan
+            statusImageView.layer.removeAllAnimations()
+            statusImageView.alpha = 1.0
+            
+            // Add brief scale animation for sent confirmation
+            UIView.animate(withDuration: 0.2, animations: {
+                self.statusImageView.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
+            }) { _ in
+                UIView.animate(withDuration: 0.1) {
+                    self.statusImageView.transform = .identity
+                }
+            }
+        case .failed:
+            statusImageView.image = UIImage(systemName: "exclamationmark.circle")
+            statusImageView.tintColor = CyberpunkTheme.accentPink
+            statusImageView.layer.removeAllAnimations()
+            statusImageView.alpha = 1.0
+            
+            // Add shake animation for failed state
+            let animation = CAKeyframeAnimation(keyPath: "transform.translation.x")
+            animation.timingFunction = CAMediaTimingFunction(name: .linear)
+            animation.duration = 0.5
+            animation.values = [-10, 10, -10, 10, -5, 5, -3, 3, 0]
+            statusImageView.layer.add(animation, forKey: "shake")
+        }
+    }
 }
 
 // MARK: - Todo Item View

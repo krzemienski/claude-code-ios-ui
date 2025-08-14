@@ -37,6 +37,8 @@ enum WebSocketMessageType: String, Codable {
     case streamStart = "stream:start"
     case streamChunk = "stream:chunk"
     case streamEnd = "stream:end"
+    case tool_use = "tool_use"
+    case tool_result = "tool_result"
     
     // Client to server
     case claudeCommand = "claude-command"
@@ -156,17 +158,12 @@ final class WebSocketManager {
         // Start ping timer
         startPingTimer()
         
-        // Update state after a small delay to ensure connection is established
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self = self else { return }
-            if self.webSocketTask?.state == .running {
-                self.connectionState = .connected
-                self.reconnectAttempts = 0
-                self.delegate?.webSocketDidConnect(self)
-                self.flushMessageQueue()
-                logInfo("WebSocket connected to: \(urlString)", category: "WebSocket")
-            }
-        }
+        // Set connected state immediately - the connection is established
+        connectionState = .connected
+        reconnectAttempts = 0
+        delegate?.webSocketDidConnect(self)
+        flushMessageQueue()
+        logInfo("WebSocket connected to: \(finalUrlString)", category: "WebSocket")
     }
     
     func disconnect() {
@@ -191,17 +188,18 @@ final class WebSocketManager {
         // Use projectPath if provided, otherwise use projectId as fallback
         let actualProjectPath = projectPath ?? projectId
         
-        let message = WebSocketMessage(
-            type: .claudeCommand,
-            payload: [
-                "command": text,
-                "projectPath": actualProjectPath,
-                "sessionId": sessionId as Any,
-                "resume": sessionId != nil,
-                "timestamp": ISO8601DateFormatter.shared.string(from: Date())
-            ]
-        )
-        send(message)
+        // Backend expects a flat JSON structure with type and other fields at root level
+        let messageData: [String: Any] = [
+            "type": "claude-command",
+            "content": text,
+            "projectPath": actualProjectPath,
+            "sessionId": sessionId as Any,
+            "resume": sessionId != nil,
+            "timestamp": ISO8601DateFormatter.shared.string(from: Date())
+        ]
+        
+        // Send the raw message directly
+        sendRawMessage(messageData)
     }
     
     func send(_ message: Message) async throws {
@@ -251,6 +249,37 @@ final class WebSocketManager {
             }
         } catch {
             logError("Failed to encode message: \(error)", category: "WebSocket")
+        }
+    }
+    
+    /// Send a raw message dictionary directly without WebSocketMessage wrapper
+    /// This is needed for the backend which expects flat JSON structure
+    func sendRawMessage(_ messageData: [String: Any]) {
+        guard isConnected else {
+            // Attempt reconnection if enabled
+            if enableAutoReconnect && connectionState != .reconnecting {
+                attemptReconnection()
+            }
+            return
+        }
+        
+        guard let webSocketTask = webSocketTask else { return }
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: messageData, options: [])
+            let string = String(data: jsonData, encoding: .utf8)!
+            let wsMessage = URLSessionWebSocketTask.Message.string(string)
+            
+            webSocketTask.send(wsMessage) { [weak self] error in
+                if let error = error {
+                    logError("WebSocket send error: \(error)", category: "WebSocket")
+                    self?.handleError(error)
+                } else {
+                    logInfo("Successfully sent message: \(messageData["type"] ?? "unknown")", category: "WebSocket")
+                }
+            }
+        } catch {
+            logError("Failed to encode raw message: \(error)", category: "WebSocket")
         }
     }
     
@@ -321,6 +350,38 @@ final class WebSocketManager {
     private func handleTextMessage(_ text: String) {
         guard let data = text.data(using: .utf8) else { return }
         
+        // First try to parse as flat JSON from backend
+        if let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+            // Backend sends flat JSON with type at root level
+            if let typeString = json["type"] as? String {
+                // Convert the flat JSON to WebSocketMessage format
+                let messageType = WebSocketMessageType(rawValue: typeString) ?? .message
+                
+                // Store session ID if provided
+                if messageType == .sessionCreated,
+                   let sessionId = json["sessionId"] as? String {
+                    // Store the session ID for future use
+                    if let projectPath = json["projectPath"] as? String {
+                        UserDefaults.standard.set(sessionId, forKey: "currentSessionId_\(projectPath)")
+                    }
+                }
+                
+                // Create WebSocketMessage from flat JSON
+                let message = WebSocketMessage(
+                    type: messageType,
+                    payload: json,  // Pass entire JSON as payload
+                    sessionId: json["sessionId"] as? String
+                )
+                
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.delegate?.webSocket(self, didReceiveMessage: message)
+                }
+                return
+            }
+        }
+        
+        // Fallback to original WebSocketMessage decoding for compatibility
         do {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
@@ -343,7 +404,7 @@ final class WebSocketManager {
                     self.delegate?.webSocket(self, didReceiveMessage: message)
                 }
             } else {
-                logError("Failed to decode WebSocket message: \(error)", category: "WebSocket")
+                logError("Failed to decode WebSocket message: \(error) - Raw: \(text)", category: "WebSocket")
             }
         }
     }
@@ -463,8 +524,8 @@ final class WebSocketManager {
     }
     
     @objc private func appWillEnterForeground() {
-        // Reconnect when app returns to foreground
-        if let url = url {
+        // Reconnect when app returns to foreground, but only if not already connected/connecting
+        if let url = url, connectionState == .disconnected {
             connect(to: url.absoluteString)
         }
     }

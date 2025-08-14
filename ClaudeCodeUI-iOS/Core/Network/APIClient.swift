@@ -6,6 +6,10 @@
 //
 
 import Foundation
+import SwiftData
+
+// MARK: - Temporary Type Definitions
+// Session and SessionStatus are now imported from Models/Session.swift
 
 // MARK: - Request Models
 struct FeedbackData: Codable {
@@ -118,15 +122,15 @@ actor APIClient: APIClientProtocol {
         let response: SessionsResponse = try await request(.getSessions(projectName: projectName, limit: limit, offset: offset))
         return response.sessions.map { dto in
             // Use the projectName as projectId since backend doesn't include it in the response
-            let session = Session(id: dto.id, projectId: projectName)
-            // Map backend fields to Session model
-            if let lastActivity = dto.lastActivity {
-                session.startedAt = lastActivity  // Use lastActivity as startedAt
-                session.lastActiveAt = lastActivity  // Use lastActivity as lastActiveAt
-            }
-            session.status = SessionStatus(rawValue: dto.status ?? "active") ?? .active
-            session.summary = dto.summary
-            session.cwd = dto.cwd
+            let session = Session(
+                id: dto.id,
+                projectId: projectName,
+                summary: dto.summary,
+                messageCount: dto.messageCount ?? 0,
+                lastActivity: dto.lastActivity,
+                cwd: dto.cwd,
+                status: SessionStatus(rawValue: dto.status ?? "active") ?? .active
+            )
             return session
         }
     }
@@ -147,6 +151,180 @@ actor APIClient: APIClientProtocol {
             message.timestamp = dto.timestamp ?? Date()
             return message
         }
+    }
+    
+    func createSession(projectName: String) async throws -> Session {
+        // Create a new session for the project
+        let response: SessionDTO = try await request(.createSession(projectName: projectName))
+        let session = Session(
+            id: response.id,
+            projectId: projectName,
+            summary: response.summary,
+            messageCount: response.messageCount ?? 0,
+            lastActivity: response.lastActivity,
+            cwd: response.cwd,
+            status: SessionStatus(rawValue: response.status ?? "active") ?? .active
+        )
+        
+        // Backend fields are already mapped in the Session initializer
+        
+        // Store sessionId for the project
+        UserDefaults.standard.set(response.id, forKey: "currentSessionId_\(projectName)")
+        
+        return session
+    }
+    
+    func deleteSession(projectName: String, sessionId: String) async throws {
+        try await requestVoid(.deleteSession(projectName: projectName, sessionId: sessionId))
+        
+        // Clear stored sessionId if it matches
+        let storedSessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(projectName)")
+        if storedSessionId == sessionId {
+            UserDefaults.standard.removeObject(forKey: "currentSessionId_\(projectName)")
+        }
+    }
+    
+    // MARK: - Git Methods
+    
+    func getGitStatus(projectPath: String) async throws -> GitStatusResponse {
+        return try await request(.gitStatus(projectPath: projectPath))
+    }
+    
+    func commitChanges(projectPath: String, message: String) async throws -> GitCommitResponse {
+        return try await request(.gitCommit(projectPath: projectPath, message: message))
+    }
+    
+    func getBranches(projectPath: String) async throws -> GitBranchesResponse {
+        return try await request(.gitBranches(projectPath: projectPath))
+    }
+    
+    func checkoutBranch(projectPath: String, branch: String) async throws -> GitActionResponse {
+        return try await request(.gitCheckout(projectPath: projectPath, branch: branch))
+    }
+    
+    func createBranch(projectPath: String, branch: String, from: String? = nil) async throws -> GitActionResponse {
+        return try await request(.gitCreateBranch(projectPath: projectPath, branch: branch, from: from))
+    }
+    
+    func pushChanges(projectPath: String) async throws -> GitActionResponse {
+        return try await request(.gitPush(projectPath: projectPath))
+    }
+    
+    func pullChanges(projectPath: String) async throws -> GitActionResponse {
+        return try await request(.gitPull(projectPath: projectPath))
+    }
+    
+    func fetchChanges(projectPath: String) async throws -> GitActionResponse {
+        return try await request(.gitFetch(projectPath: projectPath))
+    }
+    
+    func getDiff(projectPath: String, cached: Bool = false) async throws -> GitDiffResponse {
+        return try await request(.gitDiff(projectPath: projectPath, cached: cached))
+    }
+    
+    func getLog(projectPath: String, limit: Int = 10) async throws -> GitLogResponse {
+        return try await request(.gitLog(projectPath: projectPath, limit: limit))
+    }
+    
+    func addFiles(projectPath: String, files: [String]) async throws -> GitActionResponse {
+        return try await request(.gitAdd(projectPath: projectPath, files: files))
+    }
+    
+    func resetFiles(projectPath: String, files: [String]? = nil) async throws -> GitActionResponse {
+        return try await request(.gitReset(projectPath: projectPath, files: files))
+    }
+    
+    func stash(projectPath: String, action: String = "push", message: String? = nil) async throws -> GitActionResponse {
+        return try await request(.gitStash(projectPath: projectPath, action: action, message: message))
+    }
+    
+    func generateCommitMessage(projectPath: String) async throws -> GitCommitMessageResponse {
+        return try await request(.gitGenerateCommitMessage(projectPath: projectPath))
+    }
+    
+    // MARK: - File Management Methods
+    
+    func updateProject(_ project: Project) async throws {
+        // Update project on backend
+        let body = try? JSONEncoder().encode(["name": project.displayName ?? project.name])
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(project.name)/rename",
+            method: .put,
+            body: body
+        )
+        try await requestVoid(endpoint)
+    }
+    
+    func fetchFileTree(projectId: String) async throws -> FileNode {
+        // Fetch file tree for project
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(projectId)/files",
+            method: .get
+        )
+        return try await request(endpoint)
+    }
+    
+    func createFile(path: String, content: String?) async throws {
+        // Create a new file in the project
+        let components = path.components(separatedBy: "/")
+        guard let projectId = components.first else {
+            throw NetworkError.invalidRequest
+        }
+        let filePath = components.dropFirst().joined(separator: "/")
+        
+        let body = try? JSONEncoder().encode(["path": filePath, "content": content ?? ""])
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(projectId)/files",
+            method: .post,
+            body: body
+        )
+        try await requestVoid(endpoint)
+    }
+    
+    func deleteFile(path: String) async throws {
+        // Delete a file from the project
+        let components = path.components(separatedBy: "/")
+        guard let projectId = components.first else {
+            throw NetworkError.invalidRequest
+        }
+        let filePath = components.dropFirst().joined(separator: "/")
+        
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(projectId)/files?path=\(filePath)",
+            method: .delete
+        )
+        try await requestVoid(endpoint)
+    }
+    
+    func renameFile(from: String, to: String) async throws {
+        // Rename a file in the project
+        let components = from.components(separatedBy: "/")
+        guard let projectId = components.first else {
+            throw NetworkError.invalidRequest
+        }
+        let fromPath = components.dropFirst().joined(separator: "/")
+        let toPath = to.components(separatedBy: "/").dropFirst().joined(separator: "/")
+        
+        let body = try? JSONEncoder().encode(["from": fromPath, "to": toPath])
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(projectId)/files/rename",
+            method: .put,
+            body: body
+        )
+        try await requestVoid(endpoint)
+    }
+    
+    // MARK: - Terminal Methods
+    
+    func executeTerminalCommand(_ command: String, projectId: String) async throws -> TerminalOutput {
+        // Execute terminal command in project context
+        let body = try? JSONEncoder().encode(["command": command])
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(projectId)/terminal",
+            method: .post,
+            body: body
+        )
+        return try await request(endpoint)
     }
     
     // MARK: - Completion Handler Methods for Legacy Support
@@ -441,6 +619,92 @@ extension APIEndpoint {
         ])
         return APIEndpoint(path: "/api/feedback", method: .post, body: body)
     }
+    
+    // MARK: - Git Endpoints
+    static func gitStatus(projectPath: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath])
+        return APIEndpoint(path: "/api/git/status", method: .post, body: body)
+    }
+    
+    static func gitCommit(projectPath: String, message: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath, "message": message])
+        return APIEndpoint(path: "/api/git/commit", method: .post, body: body)
+    }
+    
+    static func gitBranches(projectPath: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath])
+        return APIEndpoint(path: "/api/git/branches", method: .post, body: body)
+    }
+    
+    static func gitCheckout(projectPath: String, branch: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath, "branch": branch])
+        return APIEndpoint(path: "/api/git/checkout", method: .post, body: body)
+    }
+    
+    static func gitCreateBranch(projectPath: String, branch: String, from: String? = nil) -> APIEndpoint {
+        var params = ["projectPath": projectPath, "branch": branch]
+        if let from = from {
+            params["from"] = from
+        }
+        let body = try? JSONEncoder().encode(params)
+        return APIEndpoint(path: "/api/git/create-branch", method: .post, body: body)
+    }
+    
+    static func gitPush(projectPath: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath])
+        return APIEndpoint(path: "/api/git/push", method: .post, body: body)
+    }
+    
+    static func gitPull(projectPath: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath])
+        return APIEndpoint(path: "/api/git/pull", method: .post, body: body)
+    }
+    
+    static func gitFetch(projectPath: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath])
+        return APIEndpoint(path: "/api/git/fetch", method: .post, body: body)
+    }
+    
+    static func gitDiff(projectPath: String, cached: Bool = false) -> APIEndpoint {
+        let params: [String: Any] = ["projectPath": projectPath, "cached": cached]
+        let body = try? JSONSerialization.data(withJSONObject: params)
+        return APIEndpoint(path: "/api/git/diff", method: .post, body: body)
+    }
+    
+    static func gitLog(projectPath: String, limit: Int = 10) -> APIEndpoint {
+        let params: [String: Any] = ["projectPath": projectPath, "limit": limit]
+        let body = try? JSONSerialization.data(withJSONObject: params)
+        return APIEndpoint(path: "/api/git/log", method: .post, body: body)
+    }
+    
+    static func gitAdd(projectPath: String, files: [String]) -> APIEndpoint {
+        let params: [String: Any] = ["projectPath": projectPath, "files": files]
+        let body = try? JSONSerialization.data(withJSONObject: params)
+        return APIEndpoint(path: "/api/git/add", method: .post, body: body)
+    }
+    
+    static func gitReset(projectPath: String, files: [String]? = nil) -> APIEndpoint {
+        var params = ["projectPath": projectPath]
+        if let files = files {
+            params["files"] = files.joined(separator: ",")
+        }
+        let body = try? JSONEncoder().encode(params)
+        return APIEndpoint(path: "/api/git/reset", method: .post, body: body)
+    }
+    
+    static func gitStash(projectPath: String, action: String = "push", message: String? = nil) -> APIEndpoint {
+        var params = ["projectPath": projectPath, "action": action]
+        if let message = message {
+            params["message"] = message
+        }
+        let body = try? JSONEncoder().encode(params)
+        return APIEndpoint(path: "/api/git/stash", method: .post, body: body)
+    }
+    
+    static func gitGenerateCommitMessage(projectPath: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath])
+        return APIEndpoint(path: "/api/git/generate-commit-message", method: .post, body: body)
+    }
 }
 
 // MARK: - Response Models
@@ -453,6 +717,70 @@ struct AuthResponse: Codable {
 struct User: Codable {
     let id: Int
     let username: String
+}
+
+// MARK: - Git Response Models
+struct GitStatusResponse: Codable {
+    let success: Bool
+    let status: GitStatus?
+    let error: String?
+}
+
+struct GitStatus: Codable {
+    let branch: String
+    let ahead: Int
+    let behind: Int
+    let staged: [String]
+    let modified: [String]
+    let untracked: [String]
+}
+
+struct GitCommitResponse: Codable {
+    let success: Bool
+    let message: String?
+    let error: String?
+}
+
+struct GitBranchesResponse: Codable {
+    let success: Bool
+    let branches: [GitBranch]?
+    let error: String?
+}
+
+struct GitBranch: Codable {
+    let name: String
+    let current: Bool
+}
+
+struct GitActionResponse: Codable {
+    let success: Bool
+    let message: String?
+    let error: String?
+}
+
+struct GitDiffResponse: Codable {
+    let success: Bool
+    let diff: String?
+    let error: String?
+}
+
+struct GitLogResponse: Codable {
+    let success: Bool
+    let commits: [GitCommit]?
+    let error: String?
+}
+
+struct GitCommit: Codable {
+    let hash: String
+    let author: String
+    let date: String
+    let message: String
+}
+
+struct GitCommitMessageResponse: Codable {
+    let success: Bool
+    let message: String?
+    let error: String?
 }
 
 struct ProjectsResponse: Codable {
@@ -479,15 +807,7 @@ struct SessionsResponse: Codable {
     let total: Int
 }
 
-struct SessionDTO: Codable {
-    let id: String
-    let projectId: String?  // Optional since backend doesn't include it
-    let summary: String?
-    let messageCount: Int?
-    let lastActivity: Date?  // Backend uses "lastActivity" instead of "startedAt" and "lastActiveAt"
-    let cwd: String?
-    let status: String?  // Make optional since backend response doesn't include it
-}
+// SessionDTO is now defined in Models/Session.swift
 
 struct MessageDTO: Codable {
     let id: String?

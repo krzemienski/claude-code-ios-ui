@@ -168,6 +168,13 @@ class LoginViewController: BaseViewController {
         #if DEBUG
         usernameTextField.text = "admin"
         passwordTextField.text = "admin123"
+        
+        // Auto-bypass login in development mode for testing
+        if ProcessInfo.processInfo.environment["BYPASS_LOGIN"] == "true" {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.bypassLogin()
+            }
+        }
         #endif
     }
     
@@ -337,6 +344,30 @@ class LoginViewController: BaseViewController {
         mainTabBarController.modalTransitionStyle = .crossDissolve
         present(mainTabBarController, animated: true)
     }
+    
+    #if DEBUG
+    private func bypassLogin() {
+        // Set a fake JWT token for development testing
+        let fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZXZfdXNlciIsInVzZXJuYW1lIjoiZGV2IiwiaWF0IjoxNzM2ODY0MDAwLCJleHAiOjE3MzY5NTA0MDB9.fake_signature"
+        
+        Task {
+            // Save fake auth token
+            let apiClient = DIContainer.shared.apiClient
+            await apiClient.setAuthToken(fakeToken)
+            
+            // Save to settings
+            if let dataContainer = dataContainer {
+                var settings = try? await dataContainer.fetchSettings() ?? Settings()
+                settings.authToken = fakeToken
+                settings.lastUsername = "dev"
+                try? await dataContainer.updateSettings(settings)
+            }
+            
+            // Navigate to main app
+            await proceedToMainApp()
+        }
+    }
+    #endif
 }
 
 // MARK: - UITextFieldDelegate

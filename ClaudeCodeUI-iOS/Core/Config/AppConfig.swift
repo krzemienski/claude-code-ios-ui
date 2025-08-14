@@ -21,9 +21,9 @@ struct AppConfig {
             return savedURL
         }
         
-        // Default to localhost for simulator
+        // Default to 127.0.0.1 for simulator (localhost doesn't work in iOS simulator)
         #if targetEnvironment(simulator)
-        return "http://localhost:3004"  // Claude Code backend server port
+        return "http://127.0.0.1:3004"  // Claude Code backend server port
         #else
         // For device, use the machine's IP address (update this for your network)
         return "http://192.168.0.152:3004"  // Claude Code backend server port

@@ -90,7 +90,10 @@ class SwiftDataContainer {
     }
     
     func createSession(for project: Project) throws -> Session {
-        let session = Session(projectId: project.id)
+        let session = Session(
+            id: UUID().uuidString,
+            projectId: project.id
+        )
         session.project = project
         container.mainContext.insert(session)
         try save()
@@ -111,7 +114,7 @@ class SwiftDataContainer {
     
     func createMessage(for session: Session, role: MessageRole, content: String) throws -> Message {
         let message = Message(role: role, content: content)
-        message.session = session
+        // Message doesn't have a session property anymore, it's handled through relationships
         container.mainContext.insert(message)
         
         // Update session activity time

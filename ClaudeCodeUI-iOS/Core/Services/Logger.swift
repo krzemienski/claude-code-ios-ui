@@ -63,6 +63,7 @@ final class Logger {
     
     var isConsoleLoggingEnabled = true
     var isFileLoggingEnabled = false
+    var isDebugEnabled = false
     private var logFileURL: URL?
     
     // MARK: - Initialization

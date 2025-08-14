@@ -20,17 +20,21 @@ final class Project: Codable {
     var createdAt: Date
     var updatedAt: Date
     
-    @Relationship(deleteRule: .cascade, inverse: \Session.project)
-    var sessions: [Session]?
+    // Temporarily disabled due to circular dependency
+    // @Relationship(deleteRule: .cascade, inverse: \Session.project)
+    // @Transient
+    // var sessions: [Session]? = []
     
     @Transient
     var sessionCount: Int {
-        sessions?.count ?? 0
+        // Temporarily return 0 until sessions relationship is fixed
+        return 0
     }
     
     @Transient
     var lastSessionDate: Date? {
-        sessions?.max(by: { $0.lastActiveAt < $1.lastActiveAt })?.lastActiveAt
+        // Temporarily disabled
+        return nil
     }
     
     init(id: String = UUID().uuidString, 
@@ -47,7 +51,7 @@ final class Project: Codable {
         self.displayName = displayName
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.sessions = []
+        // self.sessions = [] // Temporarily disabled
     }
     
     // MARK: - Codable
@@ -70,7 +74,7 @@ final class Project: Codable {
         self.displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
         self.createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         self.updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
-        self.sessions = []
+        // self.sessions = [] // Temporarily disabled
     }
     
     func encode(to encoder: Encoder) throws {
@@ -86,6 +90,8 @@ final class Project: Codable {
 }
 
 // MARK: - Session Model
+// Session class is now defined in Models/Session.swift
+/*
 @Model
 final class Session: Codable {
     @Attribute(.unique) var id: String
@@ -155,6 +161,7 @@ final class Session: Codable {
         try container.encode(messageCount, forKey: .messageCount)
     }
 }
+*/
 
 // MARK: - Message Model
 @Model
@@ -164,8 +171,9 @@ final class Message {
     var content: String
     var timestamp: Date
     
-    @Relationship(deleteRule: .nullify)
-    var session: Session?
+    // Temporarily disabled due to Session import issue
+    // @Relationship(deleteRule: .nullify)
+    // var session: Session?
     
     // Store metadata as Data (JSON encoded)
     var metadataData: Data?
@@ -190,11 +198,12 @@ final class Message {
 }
 
 // MARK: - Supporting Types
-enum SessionStatus: String, Codable {
-    case active
-    case completed
-    case aborted
-}
+// Commented out - using SessionStatus from Session.swift instead
+// enum SessionStatus: String, Codable {
+//     case active
+//     case completed
+//     case aborted
+// }
 
 enum MessageRole: String, Codable {
     case user

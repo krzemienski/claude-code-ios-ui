@@ -7,6 +7,7 @@
 
 import UIKit
 
+// Ensure we're using the correct DIContainer from Core/Services
 public class SessionsViewController: BaseViewController {
     
     // MARK: - Properties

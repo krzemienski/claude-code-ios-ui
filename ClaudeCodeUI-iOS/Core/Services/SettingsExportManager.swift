@@ -149,7 +149,7 @@ class SettingsExportManager {
             // Handle projects
             if let projects = importedSettings.projects {
                 if mergeProjects {
-                    mergeProjects(projects)
+                    self.mergeProjects(projects)
                 } else {
                     replaceProjects(projects)
                 }
@@ -245,7 +245,7 @@ class SettingsExportManager {
         let defaults = UserDefaults.standard
         
         return ExportedSettings.SettingsData(
-            backendURL: AppConfig.shared.backendURL,
+            backendURL: AppConfig.backendURL,
             enableHaptics: defaults.bool(forKey: "EnableHaptics"),
             enableSounds: defaults.bool(forKey: "EnableSounds"),
             codeTheme: defaults.string(forKey: "CodeTheme") ?? "cyberpunk",
@@ -272,7 +272,7 @@ class SettingsExportManager {
             accentColor: CyberpunkTheme.accentPink.hexString,
             backgroundColor: CyberpunkTheme.background.hexString,
             surfaceColor: CyberpunkTheme.surface.hexString,
-            textColor: CyberpunkTheme.text.hexString,
+            textColor: CyberpunkTheme.textPrimary.hexString,
             customFonts: nil
         )
     }
@@ -280,7 +280,7 @@ class SettingsExportManager {
     private func applySettings(_ settings: ExportedSettings.SettingsData) {
         let defaults = UserDefaults.standard
         
-        AppConfig.shared.backendURL = settings.backendURL
+        AppConfig.updateBackendURL(settings.backendURL)
         defaults.set(settings.enableHaptics, forKey: "EnableHaptics")
         defaults.set(settings.enableSounds, forKey: "EnableSounds")
         defaults.set(settings.codeTheme, forKey: "CodeTheme")

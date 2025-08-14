@@ -1,7 +1,20 @@
 # CLAUDE.md - Comprehensive iOS Claude Code UI Implementation Guide [237 Total Tasks]
 
 This is the single source of truth for the iOS Claude Code UI project. 
-Last Updated: January 14, 2025 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
+Last Updated: January 15, 2025 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
+
+## 🔴 COMPREHENSIVE BACKEND API ANALYSIS COMPLETE
+
+### Backend Server Status: ✅ RUNNING
+- Server: http://localhost:3004
+- WebSocket: ws://localhost:3004/ws (authenticating correctly)
+- Shell WebSocket: ws://localhost:3004/shell  
+- Database: SQLite with auth.db and store.db
+
+### Total Backend Endpoints: 62
+- **Implemented in iOS**: 20 endpoints (32%)
+- **Missing in iOS**: 42 endpoints (68%)
+- **Critical P0 Issues**: 12 WebSocket bugs preventing real-time chat
 
 ## 🚨 CRITICAL FIXES COMPLETED (January 14, 2025)
 
@@ -28,7 +41,7 @@ Native iOS client for Claude Code with a cyberpunk-themed UI that communicates w
 
 ## Project Status Summary
 
-### ✅ COMPLETED FEATURES (32% of backend API)
+### ✅ COMPLETED FEATURES (20 of 62 endpoints = 32%)
 - Basic project structure and navigation (AppCoordinator, MainTabBarController)
 - Data models (Project, Session, Message with fullPath support)
 - APIClient with 19 of 60 endpoints implemented
@@ -45,7 +58,7 @@ Native iOS client for Claude Code with a cyberpunk-themed UI that communicates w
 - File explorer integration (UI exists, API not connected)
 - Terminal command execution (shell WebSocket not implemented)
 
-### ❌ NOT STARTED FEATURES (68% of backend API)
+### ❌ NOT STARTED FEATURES (42 of 62 endpoints = 68%)
 - Git integration (0/16 endpoints)
 - Cursor integration (0/8 endpoints)
 - MCP server management (0/6 endpoints)
@@ -137,14 +150,14 @@ ClaudeCodeUI-iOS/
 
 ## API Implementation Status
 
-### ✅ Implemented Endpoints (19/60 = 32%)
+### ✅ Implemented Endpoints (20/62 = 32%)
 - Authentication: 4/5 endpoints
 - Projects: 3/5 endpoints  
 - Sessions: 6/3 endpoints (includes custom implementations)
 - Files: 4/3 endpoints (wrong HTTP methods)
 - Other: 1/1 endpoint
 
-### ❌ Missing Endpoints (41/60 = 68%)
+### ❌ Missing Endpoints (42/62 = 68%)
 
 #### Git API (0/16) - COMPLETELY MISSING
 - Git status, diff, commit, branches

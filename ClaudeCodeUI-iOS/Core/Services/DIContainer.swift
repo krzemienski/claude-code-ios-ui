@@ -25,7 +25,6 @@ final class DIContainer {
         return WebSocketManager()
     }()
     
-    @MainActor
     private(set) lazy var dataContainer: SwiftDataContainer? = {
         return SwiftDataContainer.shared
     }()
@@ -167,7 +166,7 @@ final class SettingsManager {
     func saveSettings(_ settings: Settings) async throws {
         guard let dataContainer = dataContainer else { return }
         
-        try dataContainer.updateSettings(settings)
+        try await dataContainer.updateSettings(settings)
         cachedSettings = settings
         
         // Update services with new settings
@@ -274,7 +273,7 @@ final class ProjectService: ProjectServiceProtocol {
         
         // Delete from local database
         if let dataContainer = dataContainer,
-           let project = try? dataContainer.fetchProject(byId: id) {
+           let project = try? await dataContainer.fetchProject(byId: id) {
             try? await dataContainer.deleteProject(project)
         }
     }
@@ -301,7 +300,7 @@ final class ChatService: ChatServiceProtocol {
         
         // Save to database
         if let dataContainer = dataContainer {
-            _ = try? dataContainer.createMessage(for: session, role: .user, content: message)
+            _ = try? await dataContainer.createMessage(for: session, role: .user, content: message)
         }
     }
     
@@ -315,7 +314,7 @@ final class ChatService: ChatServiceProtocol {
             throw AppError.persistence(.saveFailed)
         }
         
-        let session = try dataContainer.createSession(for: project)
+        let session = try await dataContainer.createSession(for: project)
         
         // Connect WebSocket for this session
         let wsURL = "\(AppConfig.backendURL.replacingOccurrences(of: "http", with: "ws"))/ws"

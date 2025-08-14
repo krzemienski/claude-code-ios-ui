@@ -27,21 +27,24 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Save any unsaved data
-        try? DIContainer.shared.resolve(SwiftDataContainer.self)?.save()
+        Task { @MainActor in
+            try? DIContainer.shared.dataContainer?.save()
+        }
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
         // Restart any paused WebSocket connections
-        if let webSocketManager = DIContainer.shared.resolve(WebSocketManager.self) {
-            if !webSocketManager.isConnected {
-                webSocketManager.connect(to: AppConfig.websocketURL)
-            }
+        let webSocketManager = DIContainer.shared.webSocketManager
+        if !webSocketManager.isConnected {
+            webSocketManager.connect(to: AppConfig.websocketURL)
         }
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
         // Save state
-        try? DIContainer.shared.resolve(SwiftDataContainer.self)?.save()
+        Task { @MainActor in
+            try? DIContainer.shared.dataContainer?.save()
+        }
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
@@ -49,7 +52,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func sceneDidEnterBackground(_ scene: UIScene) {
         // Save state and disconnect WebSocket
-        try? DIContainer.shared.resolve(SwiftDataContainer.self)?.save()
-        DIContainer.shared.resolve(WebSocketManager.self)?.disconnect()
+        Task { @MainActor in
+            try? DIContainer.shared.dataContainer?.save()
+        }
+        DIContainer.shared.webSocketManager.disconnect()
     }
 }

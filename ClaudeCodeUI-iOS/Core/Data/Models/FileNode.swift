@@ -9,7 +9,7 @@ import Foundation
 
 // File tree node for representing project file structure
 // Not persisted with SwiftData as it's loaded dynamically
-class FileNode: Identifiable, ObservableObject {
+class FileNode: Identifiable, ObservableObject, Decodable {
     let id: String
     let name: String
     let path: String
@@ -31,6 +31,35 @@ class FileNode: Identifiable, ObservableObject {
         self.size = size
         self.modifiedDate = modifiedDate
         self.permissions = permissions
+    }
+    
+    // MARK: - Decodable
+    enum CodingKeys: String, CodingKey {
+        case name
+        case path
+        case type
+        case children
+        case size
+        case modifiedDate
+        case permissions
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.path = try container.decode(String.self, forKey: .path)
+        self.type = try container.decode(FileType.self, forKey: .type)
+        self.id = path
+        self.children = try container.decodeIfPresent([FileNode].self, forKey: .children) ?? []
+        self.size = try container.decodeIfPresent(Int64.self, forKey: .size)
+        self.modifiedDate = try container.decodeIfPresent(Date.self, forKey: .modifiedDate)
+        self.permissions = try container.decodeIfPresent(String.self, forKey: .permissions)
+        self.isExpanded = false
+        
+        // Set parent references for children
+        for child in children {
+            child.parent = self
+        }
     }
     
     // Helper computed properties

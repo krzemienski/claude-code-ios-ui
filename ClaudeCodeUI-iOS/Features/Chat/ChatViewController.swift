@@ -10,6 +10,14 @@ import Foundation
 
 // MARK: - Enhanced Message Types
 
+enum MessageStatus: String, Codable {
+    case sending = "sending"
+    case sent = "sent"
+    case delivered = "delivered"
+    case failed = "failed"
+    case read = "read"
+}
+
 enum MessageType: String, Codable {
     case text = "text"
     case toolUse = "tool_use"
@@ -47,8 +55,8 @@ enum MessageType: String, Codable {
 struct ToolUseData: Codable {
     let name: String
     let parameters: [String: String]?
-    let result: String?
-    let status: String?
+    var result: String?
+    var status: String?
 }
 
 struct TodoItem: Codable {
@@ -293,6 +301,12 @@ class EnhancedMessageCell: UITableViewCell {
             case .sent:
                 statusImageView.image = UIImage(systemName: "checkmark")
                 statusImageView.tintColor = CyberpunkTheme.primaryCyan
+            case .delivered:
+                statusImageView.image = UIImage(systemName: "checkmark.circle")
+                statusImageView.tintColor = CyberpunkTheme.primaryCyan
+            case .read:
+                statusImageView.image = UIImage(systemName: "checkmark.circle.fill")
+                statusImageView.tintColor = CyberpunkTheme.primaryCyan
             case .failed:
                 statusImageView.image = UIImage(systemName: "exclamationmark.circle")
                 statusImageView.tintColor = CyberpunkTheme.accentPink
@@ -339,10 +353,12 @@ class ChatViewController: BaseViewController {
     private var messages: [EnhancedChatMessage] = []
     private let webSocketManager: WebSocketManager
     private var isTyping = false
+    private var isShowingTypingIndicator = false
     private var keyboardHeight: CGFloat = 0
     private var isLoadingMore = false
     private var hasMoreMessages = true
     private let messagePageSize = 50
+    private var currentSessionId: String?
     
     // MARK: - UI Components
     
@@ -541,7 +557,16 @@ class ChatViewController: BaseViewController {
         )
         terminalButton.tintColor = CyberpunkTheme.primaryCyan
         
-        navigationItem.rightBarButtonItems = [terminalButton, fileButton]
+        // Add abort session button
+        let abortButton = UIBarButtonItem(
+            image: UIImage(systemName: "stop.circle.fill"),
+            style: .plain,
+            target: self,
+            action: #selector(abortSession)
+        )
+        abortButton.tintColor = CyberpunkTheme.accentPink
+        
+        navigationItem.rightBarButtonItems = [abortButton, terminalButton, fileButton]
     }
     
     private func setupKeyboardObservers() {
@@ -565,12 +590,9 @@ class ChatViewController: BaseViewController {
     private func connectWebSocket() {
         webSocketManager.delegate = self
         // Use correct WebSocket path that backend expects - just /ws not /api/chat/ws
-        var wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/ws"
+        let wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/ws"
         
-        // Add authentication token as query parameter (though backend may not require it)
-        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
-            wsURL += "?token=\(authToken)"
-        }
+        // Don't add token here - WebSocketManager.connect() will add it
         
         webSocketManager.connect(to: wsURL)
         print("🔌 Connecting to WebSocket at: \(wsURL)")
@@ -597,6 +619,7 @@ class ChatViewController: BaseViewController {
     private func loadSessionMessages(sessionId: String, append: Bool = false) {
         guard !isLoadingMore else { return }
         isLoadingMore = true
+        isLoading = true  // Show loading indicator while fetching messages
         
         let offset = append ? messages.count : 0
         
@@ -633,6 +656,7 @@ class ChatViewController: BaseViewController {
                     
                     self.hasMoreMessages = backendMessages.count == self.messagePageSize
                     self.isLoadingMore = false
+                    self.isLoading = false  // Hide loading indicator after messages load
                     self.tableView.reloadData()
                     
                     if !append && !self.messages.isEmpty {
@@ -649,6 +673,7 @@ class ChatViewController: BaseViewController {
                         self.messages = self.createTestMessages()
                     }
                     self.isLoadingMore = false
+                    self.isLoading = false  // Hide loading indicator on error
                     self.tableView.reloadData()
                     
                     if !self.messages.isEmpty {
@@ -912,6 +937,9 @@ class ChatViewController: BaseViewController {
     @objc private func sendMessage() {
         guard let text = inputTextView.text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
+        // Show loading indicator while sending
+        isLoading = true
+        
         // Create user message
         let message = EnhancedChatMessage(
             id: UUID().uuidString,
@@ -936,6 +964,15 @@ class ChatViewController: BaseViewController {
         // Send via WebSocket
         // Use project.path if available, otherwise use fullPath or path as fallback
         let projectPath = project.path.isEmpty ? (project.fullPath ?? project.id) : project.path
+        
+        // Debug logging for WebSocket testing
+        print("📤 Sending WebSocket message:")
+        print("   - Content: \(text)")
+        print("   - Project ID: \(project.id)")
+        print("   - Project Path: \(projectPath)")
+        print("   - Session ID: \(currentSessionId ?? "none")")
+        print("   - WebSocket Connected: \(webSocketManager.isConnected)")
+        
         webSocketManager.sendMessage(text, projectId: project.id, projectPath: projectPath)
         
         // Haptic feedback
@@ -971,11 +1008,160 @@ class ChatViewController: BaseViewController {
         present(navController, animated: true)
     }
     
+    // MARK: - Message Status Updates
+    
+    private func updateLastMessageStatus(_ status: MessageStatus) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self,
+                  !self.messages.isEmpty else { return }
+            
+            let lastIndex = self.messages.count - 1
+            self.messages[lastIndex].status = status
+            
+            // Update the cell if it's visible
+            let indexPath = IndexPath(row: lastIndex, section: 0)
+            if let cell = self.tableView.cellForRow(at: indexPath) as? ChatMessageCell {
+                cell.updateMessageStatus(status)
+            }
+        }
+    }
+    
+    private func updateMessageStatus(at index: Int, status: MessageStatus) {
+        guard index >= 0 && index < messages.count else { return }
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            self.messages[index].status = status
+            
+            let indexPath = IndexPath(row: index, section: 0)
+            if let cell = self.tableView.cellForRow(at: indexPath) as? ChatMessageCell {
+                cell.updateMessageStatus(status)
+            }
+        }
+    }
+    
+    // MARK: - Typing Indicator
+    
+    private func showTypingIndicator() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Check if typing indicator is already shown
+            if self.isShowingTypingIndicator { return }
+            
+            self.isShowingTypingIndicator = true
+            let indexPath = IndexPath(row: self.messages.count, section: 0)
+            self.tableView.insertRows(at: [indexPath], with: .automatic)
+            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+        }
+    }
+    
+    private func hideTypingIndicator() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Check if typing indicator is shown
+            if !self.isShowingTypingIndicator { return }
+            
+            self.isShowingTypingIndicator = false
+            let indexPath = IndexPath(row: self.messages.count, section: 0)
+            self.tableView.deleteRows(at: [indexPath], with: .automatic)
+        }
+    }
+    
     @objc private func showTerminal() {
         let terminalVC = TerminalViewController(project: project)
         let navController = UINavigationController(rootViewController: terminalVC)
         navController.modalPresentationStyle = .fullScreen
         present(navController, animated: true)
+    }
+    
+    @objc private func abortSession() {
+        // Check if there's an active session
+        guard isShowingTypingIndicator || isLoading else {
+            let alert = UIAlertController(
+                title: "No Active Session",
+                message: "There is no active session to abort.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
+        
+        // Show confirmation alert
+        let alert = UIAlertController(
+            title: "Abort Session?",
+            message: "This will stop the current Claude response. Are you sure?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Abort", style: .destructive) { [weak self] _ in
+            self?.performAbortSession()
+        })
+        
+        present(alert, animated: true)
+    }
+    
+    private func performAbortSession() {
+        // Send abort message through WebSocket
+        if let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)") {
+            webSocketManager.abortSession(sessionId: sessionId)
+        }
+        
+        // Update UI immediately
+        hideTypingIndicator()
+        isLoading = false
+        
+        // Add system message indicating abort
+        let abortMessage = EnhancedChatMessage(
+            id: UUID().uuidString,
+            content: "Session aborted by user.",
+            isUser: false,
+            timestamp: Date(),
+            status: .sent
+        )
+        abortMessage.messageType = .error
+        messages.append(abortMessage)
+        
+        // Reload table to show abort message
+        DispatchQueue.main.async { [weak self] in
+            self?.tableView.reloadData()
+            self?.scrollToBottom(animated: true)
+        }
+        
+        // Show brief feedback
+        let feedbackLabel = UILabel()
+        feedbackLabel.text = "Session Aborted"
+        feedbackLabel.textColor = CyberpunkTheme.accentPink
+        feedbackLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        feedbackLabel.backgroundColor = CyberpunkTheme.surface
+        feedbackLabel.textAlignment = .center
+        feedbackLabel.layer.cornerRadius = 8
+        feedbackLabel.layer.masksToBounds = true
+        feedbackLabel.alpha = 0
+        
+        view.addSubview(feedbackLabel)
+        feedbackLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            feedbackLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            feedbackLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -100),
+            feedbackLabel.widthAnchor.constraint(equalToConstant: 150),
+            feedbackLabel.heightAnchor.constraint(equalToConstant: 40)
+        ])
+        
+        // Animate feedback
+        UIView.animate(withDuration: 0.3, animations: {
+            feedbackLabel.alpha = 1
+        }) { _ in
+            UIView.animate(withDuration: 0.3, delay: 1.5, animations: {
+                feedbackLabel.alpha = 0
+            }) { _ in
+                feedbackLabel.removeFromSuperview()
+            }
+        }
     }
     
     // MARK: - Keyboard Handling
@@ -1010,6 +1196,33 @@ class ChatViewController: BaseViewController {
     }
     
     // MARK: - Helper Methods
+    
+    /// Test WebSocket connection and display diagnostic information
+    private func testWebSocketConnection() {
+        let testMessage = EnhancedChatMessage(
+            id: UUID().uuidString,
+            content: "🧪 WebSocket Connection Test\n\n" +
+                     "• URL: ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/ws\n" +
+                     "• Connected: \(webSocketManager.isConnected ? "✅ Yes" : "❌ No")\n" +
+                     "• Project: \(project.name)\n" +
+                     "• Project Path: \(project.path.isEmpty ? project.fullPath ?? project.id : project.path)\n" +
+                     "• Session ID: \(currentSessionId ?? "Not created yet")\n\n" +
+                     "Sending test message to backend...",
+            isUser: false,
+            timestamp: Date(),
+            messageType: .system,
+            status: .sent
+        )
+        
+        messages.append(testMessage)
+        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        tableView.insertRows(at: [indexPath], with: .automatic)
+        tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+        
+        // Send a simple test message
+        let projectPath = project.path.isEmpty ? (project.fullPath ?? project.id) : project.path
+        webSocketManager.sendMessage("Hello Claude, this is a test message!", projectId: project.id, projectPath: projectPath)
+    }
     
     private func updateInputTextViewHeight() {
         let size = inputTextView.sizeThatFits(CGSize(width: inputTextView.frame.width, height: CGFloat.greatestFiniteMagnitude))
@@ -1091,6 +1304,11 @@ extension ChatViewController: WebSocketManagerDelegate {
     }
     
     func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage) {
+        // Debug logging
+        print("📥 Received WebSocket message:")
+        print("   - Type: \(message.type.rawValue)")
+        print("   - Payload keys: \(message.payload?.keys.joined(separator: ", ") ?? "none")")
+        
         // Handle different message types from backend
         switch message.type {
         case .sessionCreated:
@@ -1098,28 +1316,111 @@ extension ChatViewController: WebSocketManagerDelegate {
                 print("📝 Session created: \(sessionId)")
                 // Store session ID for future use
                 UserDefaults.standard.set(sessionId, forKey: "currentSessionId_\(project.id)")
+                currentSessionId = sessionId
+                
+                // Show success message
+                let successMessage = EnhancedChatMessage(
+                    id: UUID().uuidString,
+                    content: "✅ Session created successfully! ID: \(sessionId)",
+                    isUser: false,
+                    timestamp: Date(),
+                    messageType: .system,
+                    status: .sent
+                )
+                messages.append(successMessage)
+                let indexPath = IndexPath(row: messages.count - 1, section: 0)
+                tableView.insertRows(at: [indexPath], with: .automatic)
             }
             
         case .claudeResponse:
             // Handle streaming Claude response
+            isLoading = false  // Hide loading when response starts
+            showTypingIndicator()  // Show typing while streaming
             if let data = message.payload?["data"] as? [String: Any] {
                 handleClaudeResponse(data)
+            } else if let content = message.payload?["content"] as? String {
+                // Handle direct content response
+                appendToLastMessage(content)
             }
             
         case .claudeOutput:
             // Handle raw Claude output
+            isLoading = false  // Hide loading when output received
+            showTypingIndicator()  // Show typing while streaming
             if let content = message.payload?["data"] as? String {
+                appendToLastMessage(content)
+            } else if let content = message.payload?["content"] as? String {
                 appendToLastMessage(content)
             }
             
+        case .tool_use:
+            // Handle tool use events from Claude
+            isLoading = false
+            showTypingIndicator()
+            if let toolData = message.payload {
+                handleToolUse(toolData)
+            }
+            
+        case .tool_result:
+            // Handle tool result events
+            if let resultData = message.payload {
+                handleToolResult(resultData)
+            }
+            
+        case .streamingResponse:
+            // Handle streaming response data
+            isLoading = false
+            showTypingIndicator()
+            if let content = message.payload?["content"] as? String {
+                appendToLastMessage(content)
+            } else if let data = message.payload?["data"] as? String {
+                appendToLastMessage(data)
+            }
+            
+        case .streamEnd:
+            // Hide typing indicator when streaming ends
+            hideTypingIndicator()
+            isLoading = false
+            // Update the last message status to sent
+            updateLastMessageStatus(.sent)
+            
         case .error:
+            isLoading = false  // Hide loading on error
+            hideTypingIndicator()
             if let error = message.payload?["error"] as? String {
                 showError(error)
+            } else if let message = message.payload?["message"] as? String {
+                showError(message)
+            }
+            
+        case .sessionMessage:
+            // Handle regular session messages
+            if let content = message.payload?["content"] as? String {
+                isLoading = false
+                hideTypingIndicator()
+                let newMessage = EnhancedChatMessage(
+                    id: message.payload?["id"] as? String ?? UUID().uuidString,
+                    content: content,
+                    isUser: false,
+                    timestamp: Date(),
+                    status: .sent
+                )
+                
+                DispatchQueue.main.async {
+                    self.messages.append(newMessage)
+                    let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                    self.tableView.insertRows(at: [indexPath], with: .automatic)
+                    self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+                }
             }
             
         default:
             // Handle generic message for backward compatibility
+            print("⚠️ Unhandled WebSocket message type: \(message.type)")
             if let content = message.payload?["content"] as? String {
+                isLoading = false  // Hide loading when any message received
+                hideTypingIndicator()
+                
                 let assistantMessage = EnhancedChatMessage(
                     id: UUID().uuidString,
                     content: content,
@@ -1187,10 +1488,85 @@ extension ChatViewController: WebSocketManagerDelegate {
                 // Handle tool usage events
                 if let toolName = data["name"] as? String {
                     print("🔧 Claude is using tool: \(toolName)")
+                    handleToolUse(data)
                 }
                 
             default:
                 print("📦 Unhandled Claude response type: \(type)")
+            }
+        }
+    }
+    
+    private func handleToolUse(_ data: [String: Any]) {
+        // Extract tool information
+        let toolName = data["name"] as? String ?? "Unknown Tool"
+        let toolId = data["id"] as? String ?? UUID().uuidString
+        let parametersAny = data["input"] as? [String: Any] ?? data["parameters"] as? [String: Any] ?? [:]
+        
+        // Convert parameters to String dictionary
+        var parameters: [String: String] = [:]
+        for (key, value) in parametersAny {
+            parameters[key] = "\(value)"
+        }
+        
+        // Create tool use message
+        let message = EnhancedChatMessage(
+            id: toolId,
+            content: "🔧 Using tool: \(toolName)",
+            isUser: false,
+            timestamp: Date(),
+            status: .sent
+        )
+        message.messageType = .toolUse
+        message.toolUseData = ToolUseData(
+            name: toolName,
+            parameters: parameters.isEmpty ? nil : parameters,
+            result: nil,
+            status: "running"
+        )
+        
+        DispatchQueue.main.async {
+            self.messages.append(message)
+            let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+            self.tableView.insertRows(at: [indexPath], with: .automatic)
+            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+        }
+    }
+    
+    private func handleToolResult(_ data: [String: Any]) {
+        // Extract tool result information
+        let toolId = data["tool_use_id"] as? String ?? data["id"] as? String
+        let result = data["content"] as? String ?? data["result"] as? String ?? "Tool completed"
+        let isError = data["is_error"] as? Bool ?? false
+        
+        // Find the corresponding tool use message and update it
+        DispatchQueue.main.async {
+            if let toolId = toolId,
+               let index = self.messages.firstIndex(where: { $0.id == toolId }),
+               let message = self.messages[index] as? EnhancedChatMessage {
+                
+                // Update the tool use data with result
+                message.toolUseData?.result = result
+                message.toolUseData?.status = isError ? "error" : "success"
+                
+                // Reload the cell
+                let indexPath = IndexPath(row: index, section: 0)
+                self.tableView.reloadRows(at: [indexPath], with: .none)
+            } else {
+                // If we can't find the original tool use, create a new message
+                let message = EnhancedChatMessage(
+                    id: UUID().uuidString,
+                    content: "📋 Tool Result: \(result)",
+                    isUser: false,
+                    timestamp: Date(),
+                    status: .sent
+                )
+                message.messageType = .toolResult
+                
+                self.messages.append(message)
+                let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                self.tableView.insertRows(at: [indexPath], with: .automatic)
+                self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
             }
         }
     }
@@ -1242,12 +1618,6 @@ class ChatMessage {
     let isUser: Bool
     let timestamp: Date
     var status: MessageStatus
-    
-    enum MessageStatus {
-        case sending
-        case sent
-        case failed
-    }
     
     init(id: String, content: String, isUser: Bool, timestamp: Date, status: MessageStatus) {
         self.id = id
@@ -1348,6 +1718,12 @@ class ChatMessageCell: UITableViewCell {
             case .sent:
                 statusImageView.image = UIImage(systemName: "checkmark")
                 statusImageView.tintColor = CyberpunkTheme.primaryCyan
+            case .delivered:
+                statusImageView.image = UIImage(systemName: "checkmark.circle")
+                statusImageView.tintColor = CyberpunkTheme.primaryCyan
+            case .read:
+                statusImageView.image = UIImage(systemName: "checkmark.circle.fill")
+                statusImageView.tintColor = UIColor.systemGreen
             case .failed:
                 statusImageView.image = UIImage(systemName: "exclamationmark.circle")
                 statusImageView.tintColor = CyberpunkTheme.accentPink
@@ -1376,6 +1752,70 @@ class ChatMessageCell: UITableViewCell {
             ])
             
             statusImageView.isHidden = true
+        }
+    }
+    
+    // MARK: - Status Update
+    
+    func updateMessageStatus(_ status: MessageStatus) {
+        guard statusImageView.isHidden == false else { return }
+        
+        UIView.animate(withDuration: 0.3) {
+            switch status {
+            case .sending:
+                self.statusImageView.image = UIImage(systemName: "clock")
+                self.statusImageView.tintColor = CyberpunkTheme.secondaryText
+                
+                // Add pulsing animation
+                UIView.animate(withDuration: 0.8,
+                              delay: 0,
+                              options: [.repeat, .autoreverse],
+                              animations: {
+                    self.statusImageView.alpha = 0.5
+                })
+                
+            case .sent:
+                self.statusImageView.image = UIImage(systemName: "checkmark")
+                self.statusImageView.tintColor = CyberpunkTheme.primaryCyan
+                self.statusImageView.layer.removeAllAnimations()
+                self.statusImageView.alpha = 1.0
+                
+                // Add check mark animation
+                self.statusImageView.transform = CGAffineTransform(scaleX: 0.1, y: 0.1)
+                UIView.animate(withDuration: 0.3,
+                              delay: 0,
+                              usingSpringWithDamping: 0.5,
+                              initialSpringVelocity: 10,
+                              options: [],
+                              animations: {
+                    self.statusImageView.transform = .identity
+                })
+                
+            case .delivered:
+                self.statusImageView.image = UIImage(systemName: "checkmark.circle")
+                self.statusImageView.tintColor = CyberpunkTheme.primaryCyan
+                self.statusImageView.layer.removeAllAnimations()
+                self.statusImageView.alpha = 1.0
+                
+            case .read:
+                self.statusImageView.image = UIImage(systemName: "checkmark.circle.fill")
+                self.statusImageView.tintColor = UIColor.systemGreen
+                self.statusImageView.layer.removeAllAnimations()
+                self.statusImageView.alpha = 1.0
+                
+            case .failed:
+                self.statusImageView.image = UIImage(systemName: "exclamationmark.circle")
+                self.statusImageView.tintColor = CyberpunkTheme.accentPink
+                self.statusImageView.layer.removeAllAnimations()
+                self.statusImageView.alpha = 1.0
+                
+                // Add shake animation
+                let animation = CAKeyframeAnimation(keyPath: "transform.translation.x")
+                animation.timingFunction = CAMediaTimingFunction(name: .linear)
+                animation.duration = 0.5
+                animation.values = [-10, 10, -10, 10, -5, 5, -3, 3, 0]
+                self.statusImageView.layer.add(animation, forKey: "shake")
+            }
         }
     }
 }

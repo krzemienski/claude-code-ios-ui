@@ -81,7 +81,6 @@ class ProjectsViewController: BaseViewController {
     private var apiClient: APIClient
     private let errorHandler: ErrorHandlingService
     private let refreshControl = UIRefreshControl()
-    private var isLoading = false
     
     // Callback for project selection
     var onProjectSelected: ((Project) -> Void)?
@@ -200,21 +199,25 @@ class ProjectsViewController: BaseViewController {
     
     private func loadProjects() {
         guard !isLoading else { return }
-        isLoading = true
         
-        // Don't show loading as an error dialog
+        print("🚀 DEBUG: loadProjects() called on thread: \(Thread.isMainThread ? "Main" : "Background")")
+        
+        // Show the beautiful loading indicator with message
+        showLoading(message: "Loading projects...")
+        
         print("📱 Loading projects...")
+        print("🚀 DEBUG: After showLoading, isLoading = \(isLoading)")
         
         Task {
             do {
-                // Force localhost for now to ensure connection works
+                // Force 127.0.0.1 for simulator (localhost doesn't work in iOS simulator)
                 // Clear any saved URLs in UserDefaults that might be wrong
                 UserDefaults.standard.removeObject(forKey: "backend_url")
                 
-                // Use localhost directly for simulator
-                let serverURL = "http://localhost:3004"
+                // Use 127.0.0.1 for simulator
+                let serverURL = "http://127.0.0.1:3004"
                 self.apiClient = APIClient(baseURL: serverURL)
-                print("🔧 Using localhost server URL: \(serverURL)")
+                print("🔧 Using server URL: \(serverURL)")
                 
                 // Load auth token if available from settings
                 if let dataContainer = dataContainer {
@@ -235,7 +238,7 @@ class ProjectsViewController: BaseViewController {
                 await MainActor.run {
                     self.projects = remoteProjects
                     self.updateUI()
-                    self.isLoading = false
+                    self.hideLoading()  // Hide the beautiful loading indicator
                     print("🎨 UI updated with \(self.projects.count) projects")
                     
                     // Log success message
@@ -246,6 +249,12 @@ class ProjectsViewController: BaseViewController {
             } catch {
                 print("❌ Failed to fetch from API: \(error)")
                 print("❌ Error details: \(String(describing: error))")
+                print("❌ Error type: \(type(of: error))")
+                
+                // Print more detailed error information
+                if let apiError = error as? APIError {
+                    print("❌ API Error: \(apiError.errorDescription ?? "Unknown")")
+                }
                 
                 // Fall back to local data if available
                 if let dataContainer = dataContainer {
@@ -255,18 +264,18 @@ class ProjectsViewController: BaseViewController {
                         await MainActor.run {
                             self.projects = localProjects
                             self.updateUI()
-                            self.isLoading = false
+                            self.hideLoading()  // Hide the beautiful loading indicator
                         }
                     } catch {
                         print("❌ Failed to load from local storage: \(error)")
                         await MainActor.run {
-                            self.isLoading = false
+                            self.hideLoading()  // Hide the beautiful loading indicator
                             self.showError("Failed to load projects: \(error.localizedDescription)")
                         }
                     }
                 } else {
                     await MainActor.run {
-                        self.isLoading = false
+                        self.hideLoading()  // Hide the beautiful loading indicator
                         self.showError("Failed to load projects: \(error.localizedDescription)")
                     }
                 }
@@ -275,7 +284,17 @@ class ProjectsViewController: BaseViewController {
     }
     
     private func refreshProjects() {
-        guard !isLoading else { return }
+        guard !isLoading else { 
+            print("⚠️ DEBUG: refreshProjects() skipped - already loading")
+            return 
+        }
+        
+        print("🔄 DEBUG: refreshProjects() called on thread: \(Thread.isMainThread ? "Main" : "Background")")
+        
+        // Show loading indicator during refresh
+        showLoading(message: "Refreshing projects...")
+        
+        print("🔄 DEBUG: After showLoading in refresh, isLoading = \(isLoading)")
         
         Task {
             do {
@@ -299,6 +318,7 @@ class ProjectsViewController: BaseViewController {
                 await MainActor.run {
                     self.projects = remoteProjects
                     self.updateUI()
+                    self.hideLoading()  // Hide the beautiful loading indicator
                     self.refreshControl.endRefreshing()
                 }
                 
@@ -310,6 +330,7 @@ class ProjectsViewController: BaseViewController {
                 }
             } catch {
                 await MainActor.run {
+                    self.hideLoading()  // Hide the beautiful loading indicator
                     self.refreshControl.endRefreshing()
                     // Don't show error on refresh, just keep existing data
                     Logger.shared.error("Failed to refresh projects: \(error)")
@@ -368,12 +389,23 @@ class ProjectsViewController: BaseViewController {
     }
     
     private func showError(_ message: String) {
+        print("❌ DEBUG: showError called with message: \(message)")
+        print("❌ DEBUG: Current isLoading state: \(isLoading)")
+        
         let alert = UIAlertController(
             title: "Error",
             message: message,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        
+        // Add a "Try Again" action that properly triggers loading
+        alert.addAction(UIAlertAction(title: "Try Again", style: .default) { [weak self] _ in
+            print("🔁 DEBUG: Try Again tapped from alert")
+            self?.loadProjects()
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
         present(alert, animated: true)
     }
     
