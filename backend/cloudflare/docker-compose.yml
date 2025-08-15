@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Claude Code Backend
+  backend:
+    build:
+      context: ../
+      dockerfile: cloudflare/Dockerfile.backend
+    container_name: claude-code-backend
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - ALLOWED_ORIGINS=http://localhost:3001,http://localhost:3004,https://*.trycloudflare.com
+    volumes:
+      - ../:/app
+      - /app/node_modules
+      - claude-projects:/root/Documents/claude-projects
+      - claude-data:/app/data
+    networks:
+      - claude-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # CloudFlare Tunnel
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: claude-code-tunnel
+    command: tunnel --no-autoupdate --url http://backend:3004
+    depends_on:
+      - backend
+    networks:
+      - claude-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Tunnel with authentication (uncomment to use)
+  # cloudflared-auth:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: claude-code-tunnel-auth
+  #   command: tunnel run
+  #   volumes:
+  #     - ~/.cloudflared:/home/nonroot/.cloudflared
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - claude-network
+  #   restart: unless-stopped
+
+networks:
+  claude-network:
+    driver: bridge
+
+volumes:
+  claude-projects:
+    driver: local
+  claude-data:
+    driver: local
