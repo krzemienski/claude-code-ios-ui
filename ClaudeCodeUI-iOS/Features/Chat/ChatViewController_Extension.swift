@@ -72,7 +72,13 @@ extension ChatViewController {
         
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alert.addAction(UIAlertAction(title: "Abort", style: .destructive) { [weak self] _ in
-            self?.webSocketManager.sendRawMessage(["type": "abort-session"])
+            // Get the current session ID if available
+            if let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(self?.project.id ?? "")") {
+                self?.webSocketManager.abortSession(sessionId: sessionId)
+            } else {
+                // Fallback to raw message without session ID
+                self?.webSocketManager.sendRawMessage(["type": "abort-session"])
+            }
             self?.stopTypingIndicator()
         })
         

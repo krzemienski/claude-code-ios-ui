@@ -589,8 +589,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     private func connectWebSocket() {
         webSocketManager.delegate = self
-        // Use correct WebSocket path that backend expects - just /ws not /api/chat/ws
-        let wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/ws"
+        // Use correct WebSocket path from AppConfig
+        let wsURL = AppConfig.websocketURL
         
         // Don't add token here - WebSocketManager.connect() will add it
         
@@ -830,8 +830,56 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - Missing Methods (Stubs for building)
     
     @objc private func sendMessage() {
-        // TODO: Implement message sending
-        print("Send message tapped")
+        guard let text = inputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !text.isEmpty else { return }
+        
+        // Create user message with unique ID
+        let messageId = UUID().uuidString
+        let userMessage = EnhancedChatMessage(
+            id: messageId,
+            content: text,
+            isUser: true,
+            timestamp: Date(),
+            status: .sending
+        )
+        
+        // Add to messages array
+        messages.append(userMessage)
+        tableView.reloadData()
+        scrollToBottom()
+        
+        // Clear input
+        inputTextView.text = ""
+        placeholderLabel.isHidden = false
+        sendButton.isEnabled = false
+        
+        // Adjust text view height back to default
+        inputTextViewHeightConstraint.constant = 44
+        view.layoutIfNeeded()
+        
+        // Send via WebSocket with project path and session ID
+        var payload: [String: Any] = [
+            "content": text,
+            "projectPath": project.path,
+            "messageId": messageId
+        ]
+        
+        // Include session ID if available
+        if let sessionId = currentSessionId ?? UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)") {
+            payload["sessionId"] = sessionId
+        }
+        
+        // Send the message
+        webSocketManager.sendMessage(text, projectId: project.id, projectPath: project.path)
+        
+        // Show typing indicator after a brief delay (Claude is processing)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+            guard let self = self else { return }
+            // Only show typing if we haven't received a response yet
+            if userMessage.status == .sending {
+                self.showTypingIndicator()
+            }
+        }
     }
     
     @objc private func showAttachmentOptions() {
@@ -850,8 +898,43 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     @objc private func abortSession() {
-        // TODO: Implement session abort
-        print("Abort session tapped")
+        // Show confirmation alert
+        let alert = UIAlertController(
+            title: "Abort Session?",
+            message: "This will stop the current Claude session. Are you sure?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Abort", style: .destructive) { [weak self] _ in
+            guard let self = self else { return }
+            
+            // Hide typing indicator immediately
+            self.hideTypingIndicator()
+            
+            // Send abort message via WebSocket
+            if let sessionId = self.currentSession?.id ?? UserDefaults.standard.string(forKey: "currentSessionId_\(self.project.id)") {
+                self.webSocketManager.abortSession(sessionId: sessionId)
+                
+                // Update any pending messages to failed
+                self.updatePendingMessagesToFailed()
+                
+                // Add system message to chat
+                let abortMessage = EnhancedChatMessage(
+                    id: UUID().uuidString,
+                    content: "⚠️ Session aborted by user",
+                    isUser: false,
+                    timestamp: Date(),
+                    status: .delivered
+                )
+                abortMessage.messageType = .error
+                self.messages.append(abortMessage)
+                self.tableView.reloadData()
+                self.scrollToBottom()
+            }
+        })
+        
+        present(alert, animated: true)
     }
     
     private func scrollToBottom(animated: Bool = true) {
@@ -905,22 +988,35 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             let content = message.payload?["content"] as? String ?? ""
             
             switch message.type {
-            case .claudeResponse, .claudeOutput:
-                // Handle Claude responses
-                let chatMessage = EnhancedChatMessage(
+            case .claudeOutput:
+                // Handle streaming Claude output (partial responses)
+                self.handleClaudeStreamingOutput(content: content)
+                
+            case .claudeResponse:
+                // Handle complete Claude response
+                self.handleClaudeCompleteResponse(content: content)
+                
+            case .tool_use:
+                // Handle tool use messages with enhanced formatting
+                self.handleToolUseMessage(message: message)
+                
+            case .tool_result:
+                // Handle tool result messages
+                let resultMessage = EnhancedChatMessage(
                     id: UUID().uuidString,
-                    content: content,
-                    isUser: false,  // Claude's message
+                    content: "Tool Result:\n\(content)",
+                    isUser: false,
                     timestamp: Date(),
                     status: .delivered
                 )
-                chatMessage.messageType = .claudeResponse
-                self.messages.append(chatMessage)
+                resultMessage.messageType = .toolResult
+                self.messages.append(resultMessage)
                 self.tableView.reloadData()
                 self.scrollToBottom()
                 
             case .error:
-                // Handle errors
+                // Handle errors and hide typing indicator
+                self.hideTypingIndicator()
                 let errorMessage = message.payload?["error"] as? String ?? "Unknown error"
                 print("WebSocket error: \(errorMessage)")
                 // Add error message to chat
@@ -934,25 +1030,40 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 errorChatMessage.messageType = .error
                 self.messages.append(errorChatMessage)
                 self.tableView.reloadData()
+                // Update any pending user messages to failed state
+                self.updatePendingMessagesToFailed()
                 
             case .sessionCreated:
-                // Handle session creation
-                if let sessionId = message.payload?["sessionId"] as? String {
-                    print("Session created with ID: \(sessionId)")
-                    // Store the session ID
-                    self.currentSession = Session(
-                        id: sessionId,
-                        projectId: self.project.id,
-                        summary: "New Session",
-                        messageCount: 0,
-                        lastActivity: Date(),
-                        status: .active
-                    )
-                }
+                // Handle session creation and extract sessionId
+                self.handleSessionCreated(message: message)
                 
-            case .streamStart, .streamChunk, .streamEnd:
-                // Handle streaming responses
+            case .streamStart:
+                // Start of streaming response - show typing indicator
+                self.showTypingIndicator()
                 self.handleStreamingMessage(message)
+                
+            case .streamChunk:
+                // Continue streaming - keep typing indicator visible
+                self.handleStreamingMessage(message)
+                
+            case .streamEnd:
+                // End of streaming - hide typing indicator
+                self.hideTypingIndicator()
+                self.handleStreamingMessage(message)
+                
+            case .sessionAborted:
+                // Handle session abort
+                self.hideTypingIndicator()
+                let abortMessage = EnhancedChatMessage(
+                    id: UUID().uuidString,
+                    content: "Session aborted",
+                    isUser: false,
+                    timestamp: Date(),
+                    status: .delivered
+                )
+                abortMessage.messageType = .error
+                self.messages.append(abortMessage)
+                self.tableView.reloadData()
                 
             default:
                 print("Unhandled message type: \(message.type)")
@@ -960,46 +1071,284 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         }
     }
     
+    // MARK: - Claude Response Handlers
+    
+    private func handleClaudeStreamingOutput(content: String) {
+        // Check if we have an active streaming message
+        if let lastMessage = messages.last,
+           !lastMessage.isUser,
+           lastMessage.messageType == .claudeResponse,
+           lastMessage.status == .sending {
+            // Append to existing streaming message
+            lastMessage.content += content
+            
+            // Update only the last cell for performance
+            let indexPath = IndexPath(row: messages.count - 1, section: 0)
+            if let cell = tableView.cellForRow(at: indexPath) as? EnhancedMessageCell {
+                cell.configure(with: lastMessage)
+            }
+            
+            // Keep typing indicator visible
+            if !isShowingTypingIndicator {
+                showTypingIndicator()
+            }
+        } else {
+            // Create new streaming message
+            showTypingIndicator()
+            let chatMessage = EnhancedChatMessage(
+                id: UUID().uuidString,
+                content: content,
+                isUser: false,
+                timestamp: Date(),
+                status: .sending // Mark as sending during streaming
+            )
+            chatMessage.messageType = .claudeResponse
+            messages.append(chatMessage)
+            tableView.reloadData()
+            scrollToBottom()
+        }
+    }
+    
+    private func handleClaudeCompleteResponse(content: String) {
+        // Hide typing indicator
+        hideTypingIndicator()
+        
+        // Check if we have a streaming message to complete
+        if let lastMessage = messages.last,
+           !lastMessage.isUser,
+           lastMessage.messageType == .claudeResponse,
+           lastMessage.status == .sending {
+            // Complete the streaming message
+            if !content.isEmpty {
+                lastMessage.content = content // Replace with complete content
+            }
+            lastMessage.status = .delivered
+            
+            // Update the cell
+            let indexPath = IndexPath(row: messages.count - 1, section: 0)
+            if let cell = tableView.cellForRow(at: indexPath) as? EnhancedMessageCell {
+                cell.configure(with: lastMessage)
+            }
+        } else {
+            // Create new complete message
+            let chatMessage = EnhancedChatMessage(
+                id: UUID().uuidString,
+                content: content,
+                isUser: false,
+                timestamp: Date(),
+                status: .delivered
+            )
+            chatMessage.messageType = .claudeResponse
+            messages.append(chatMessage)
+            tableView.reloadData()
+            scrollToBottom()
+        }
+        
+        // Update user message status to delivered
+        updateUserMessageStatus(to: .delivered)
+    }
+    
+    private func handleToolUseMessage(message: WebSocketMessage) {
+        let payload = message.payload ?? [:]
+        let toolName = payload["name"] as? String ?? "Unknown Tool"
+        let toolParams = payload["parameters"] as? [String: Any] ?? [:]
+        let toolInput = payload["input"] as? String ?? ""
+        
+        // Format tool use content
+        var toolContent = "🔧 Using tool: \(toolName)"
+        if !toolInput.isEmpty {
+            toolContent += "\n\nInput:\n\(toolInput)"
+        }
+        if !toolParams.isEmpty {
+            let paramsString = toolParams.map { "\($0.key): \($0.value)" }.joined(separator: "\n")
+            toolContent += "\n\nParameters:\n\(paramsString)"
+        }
+        
+        let toolMessage = EnhancedChatMessage(
+            id: UUID().uuidString,
+            content: toolContent,
+            isUser: false,
+            timestamp: Date(),
+            status: .delivered
+        )
+        toolMessage.messageType = .toolUse
+        
+        // Store tool data for enhanced display
+        // Convert [String: Any] to [String: String] for ToolUseData
+        var stringParams: [String: String]? = nil
+        if !toolParams.isEmpty {
+            stringParams = [:]
+            for (key, value) in toolParams {
+                stringParams?[key] = String(describing: value)
+            }
+        }
+        
+        let toolData = ToolUseData(
+            name: toolName,
+            parameters: stringParams,
+            result: nil,
+            status: "executing"
+        )
+        toolMessage.toolUseData = toolData
+        
+        messages.append(toolMessage)
+        tableView.reloadData()
+        scrollToBottom()
+    }
+    
+    private func handleSessionCreated(message: WebSocketMessage) {
+        if let sessionId = message.payload?["sessionId"] as? String {
+            print("✅ Session created with ID: \(sessionId)")
+            
+            // Store the session ID
+            self.currentSessionId = sessionId
+            UserDefaults.standard.set(sessionId, forKey: "currentSessionId_\(self.project.id)")
+            
+            // Create or update session object
+            if currentSession == nil {
+                self.currentSession = Session(
+                    id: sessionId,
+                    projectId: self.project.id,
+                    summary: "Chat Session",
+                    messageCount: 0,
+                    lastActivity: Date(),
+                    status: .active
+                )
+            } else {
+                currentSession?.id = sessionId
+                currentSession?.status = .active
+            }
+            
+            // Update any pending user messages to sent
+            updateUserMessageStatus(to: .sent)
+        }
+    }
+    
+    // MARK: - Typing Indicator Management
+    
+    private func showTypingIndicator() {
+        guard !isShowingTypingIndicator else { return }
+        isShowingTypingIndicator = true
+        
+        // Insert typing indicator row
+        let indexPath = IndexPath(row: messages.count, section: 0)
+        tableView.insertRows(at: [indexPath], with: .fade)
+        
+        // Scroll to show typing indicator
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.scrollToBottom(animated: true)
+        }
+    }
+    
+    private func hideTypingIndicator() {
+        guard isShowingTypingIndicator else { return }
+        isShowingTypingIndicator = false
+        
+        // Remove typing indicator row
+        let indexPath = IndexPath(row: messages.count, section: 0)
+        tableView.deleteRows(at: [indexPath], with: .fade)
+    }
+    
+    // MARK: - Message Status Updates
+    
+    private func updateUserMessageStatus(to status: MessageStatus) {
+        // Find the most recent user message that's in sending state
+        for message in messages.reversed() where message.isUser && message.status == .sending {
+            message.status = status
+            
+            // Update the cell if visible
+            if let index = messages.firstIndex(where: { $0.id == message.id }) {
+                let indexPath = IndexPath(row: index, section: 0)
+                if let cell = tableView.cellForRow(at: indexPath) as? EnhancedMessageCell {
+                    cell.configure(with: message)
+                }
+            }
+            break // Only update the most recent one
+        }
+    }
+    
+    private func updatePendingMessagesToFailed() {
+        // Update all pending messages to failed state
+        for message in messages where message.status == .sending {
+            message.status = .failed
+        }
+        tableView.reloadData()
+    }
+    
     private func handleStreamingMessage(_ message: WebSocketMessage) {
-        // Handle streaming messages
+        // Handle streaming messages with proper typing indicator management
         let content = message.payload?["content"] as? String ?? ""
+        let messageId = message.payload?["messageId"] as? String
         
         switch message.type {
         case .streamStart:
-            // Start a new streaming message
+            // Start a new streaming message with unique ID
             let chatMessage = EnhancedChatMessage(
-                id: UUID().uuidString,
-                content: "",
-                isUser: false,  // Claude's message
+                id: messageId ?? UUID().uuidString,
+                content: content.isEmpty ? "" : content,
+                isUser: false,
                 timestamp: Date(),
                 status: .sending
             )
             chatMessage.messageType = .claudeResponse
             self.messages.append(chatMessage)
             self.tableView.reloadData()
+            self.scrollToBottom()
             
         case .streamChunk:
-            // Append to the last message
-            if let lastMessage = self.messages.last, !lastMessage.isUser {
+            // Append to the streaming message
+            if let lastMessage = self.messages.last,
+               !lastMessage.isUser,
+               lastMessage.status == .sending {
+                // Append content to existing message
                 lastMessage.content += content
                 
                 // Update only the last cell for performance
                 let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
-                if let cell = self.tableView.cellForRow(at: indexPath) as? ChatMessageCell {
+                if let cell = self.tableView.cellForRow(at: indexPath) as? EnhancedMessageCell {
                     cell.configure(with: lastMessage)
+                }
+                
+                // Auto-scroll if near bottom
+                if self.isNearBottom() {
+                    self.scrollToBottom(animated: false)
                 }
             }
             
         case .streamEnd:
-            // Mark the message as delivered
-            if let lastMessage = self.messages.last, !lastMessage.isUser {
+            // Complete the streaming message
+            if let lastMessage = self.messages.last,
+               !lastMessage.isUser,
+               lastMessage.status == .sending {
+                // Add final content if provided
+                if !content.isEmpty {
+                    lastMessage.content += content
+                }
                 lastMessage.status = .delivered
-                self.tableView.reloadData()
+                
+                // Update the cell
+                let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                if let cell = self.tableView.cellForRow(at: indexPath) as? EnhancedMessageCell {
+                    cell.configure(with: lastMessage)
+                }
+                
+                // Update user message status
+                self.updateUserMessageStatus(to: .delivered)
             }
             
         default:
             break
         }
+    }
+    
+    // Helper method to check if scrolled near bottom
+    private func isNearBottom() -> Bool {
+        let contentHeight = tableView.contentSize.height
+        let tableHeight = tableView.frame.height
+        let scrollOffset = tableView.contentOffset.y
+        
+        // Consider "near bottom" if within 100 points of the bottom
+        return scrollOffset >= (contentHeight - tableHeight - 100)
     }
     
     // MARK: - UITableViewDataSource

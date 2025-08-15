@@ -102,10 +102,11 @@ final class DIContainer {
     }
     
     func updateServicesWithSettings(_ settings: Settings) {
-        // Update API client with saved URL
-        apiClient = APIClient(baseURL: settings.apiBaseURL)
+        // Since services are lazy-loaded and use shared instances,
+        // we only need to update configurations, not recreate services
         
-        // Update WebSocket manager with settings
+        // Update WebSocket manager configuration without losing connection
+        // This preserves the existing connection state
         webSocketManager.configure(
             enableAutoReconnect: true,
             reconnectDelay: TimeInterval(settings.webSocketReconnectDelay),
@@ -115,19 +116,9 @@ final class DIContainer {
         // Update logger debug mode
         logger.isDebugEnabled = settings.enableDebugLogging
         
-        // Re-initialize services that depend on updated settings
-        projectService = ProjectService(
-            apiClient: apiClient,
-            dataContainer: dataContainer,
-            cacheManager: cacheManager
-        )
-        
-        fileService = FileService(
-            apiClient: apiClient,
-            cacheManager: cacheManager
-        )
-        
-        terminalService = TerminalService(apiClient: apiClient)
+        // Note: APIClient is a singleton (APIClient.shared) and manages its own state
+        // CacheManager is also a singleton (CacheManager.shared) and preserves cached data
+        // Services that depend on these will automatically use the updated configurations
     }
     
     // MARK: - Service Registration (for testing)
@@ -296,7 +287,17 @@ final class ChatService: ChatServiceProtocol {
         )
         
         // Send via WebSocket
-        try await webSocketManager.send(chatMessage)
+        let payload: [String: Any] = [
+            "content": message,
+            "projectPath": session.cwd ?? "/Users/nick",  // Use current working directory or fallback
+            "sessionId": session.id
+        ]
+        let wsMessage = WebSocketMessage(
+            type: .claudeCommand,
+            payload: payload,
+            sessionId: session.id
+        )
+        webSocketManager.send(wsMessage)
         
         // Save to database
         if let dataContainer = dataContainer {

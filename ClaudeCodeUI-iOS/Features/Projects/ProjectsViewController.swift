@@ -81,6 +81,9 @@ public class ProjectsViewController: BaseViewController {
     private let errorHandler: ErrorHandlingService
     private let refreshControl = UIRefreshControl()
     
+    // Track if initial load has been performed
+    private var hasPerformedInitialLoad = false
+    
     // Callback for project selection
     public var onProjectSelected: ((Project) -> Void)?
     
@@ -103,12 +106,15 @@ public class ProjectsViewController: BaseViewController {
         super.viewDidLoad()
         setupUI()
         setupNavigationBar()
-        loadProjects()
+        performInitialLoad()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        refreshProjects()
+        // Only refresh if we've already done initial load and not currently loading
+        if hasPerformedInitialLoad && !isLoading {
+            refreshProjectsIfNeeded()
+        }
     }
     
     // MARK: - UI Setup
@@ -194,37 +200,47 @@ public class ProjectsViewController: BaseViewController {
     
     // MARK: - Data Loading
     
-    private func loadProjects() {
-        guard !isLoading else { return }
+    private func performInitialLoad() {
+        guard !hasPerformedInitialLoad else { 
+            print("⚠️ DEBUG: performInitialLoad() skipped - already performed")
+            return 
+        }
         
-        print("🚀 DEBUG: loadProjects() called on thread: \(Thread.isMainThread ? "Main" : "Background")")
+        print("🚀 DEBUG: performInitialLoad() called on thread: \(Thread.isMainThread ? "Main" : "Background")")
         
-        // Show the beautiful loading indicator with message
-        showLoading(message: "Loading projects...")
+        // Mark that we're performing initial load
+        hasPerformedInitialLoad = true
         
-        print("📱 Loading projects...")
-        print("🚀 DEBUG: After showLoading, isLoading = \(isLoading)")
+        // Show loading indicator on main thread
+        DispatchQueue.main.async { [weak self] in
+            self?.showLoading(message: "Loading projects...")
+        }
         
-        Task {
+        print("📱 Starting initial project load...")
+        print("🚀 DEBUG: isLoading = \(isLoading)")
+        
+        Task { @MainActor in
             do {
                 // Use the shared APIClient instance which already has auth configured
                 print("🔧 Using backend URL: \(AppConfig.backendURL)")
                 print("📱 Attempting to fetch projects from API...")
+                print("🔑 Auth token present: \(UserDefaults.standard.string(forKey: "authToken") != nil)")
                 
                 // The shared APIClient already has the development token configured
                 let remoteProjects = try await APIClient.shared.fetchProjects()
                 print("✅ Successfully fetched \(remoteProjects.count) projects from API")
                 
-                await MainActor.run {
-                    self.projects = remoteProjects
-                    self.updateUI()
-                    self.hideLoading()  // Hide the beautiful loading indicator
-                    print("🎨 UI updated with \(self.projects.count) projects")
-                    
-                    // Log success message
-                    if !remoteProjects.isEmpty {
-                        print("✅ Successfully loaded \(remoteProjects.count) projects in UI")
-                    }
+                // Already on main thread due to @MainActor
+                self.projects = remoteProjects
+                self.updateUI()
+                self.hideLoading()
+                print("🎨 UI updated with \(self.projects.count) projects")
+                
+                // Log success message
+                if !remoteProjects.isEmpty {
+                    print("✅ Successfully loaded \(remoteProjects.count) projects in UI")
+                } else {
+                    print("ℹ️ No projects found - showing empty state")
                 }
             } catch {
                 print("❌ Failed to fetch from API: \(error)")
@@ -234,6 +250,12 @@ public class ProjectsViewController: BaseViewController {
                 // Print more detailed error information
                 if let apiError = error as? APIError {
                     print("❌ API Error: \(apiError.errorDescription ?? "Unknown")")
+                    if case .httpError(let statusCode, let data) = apiError {
+                        print("❌ HTTP Status: \(statusCode)")
+                        if let responseString = String(data: data, encoding: .utf8) {
+                            print("❌ Response: \(responseString)")
+                        }
+                    }
                 }
                 
                 // Fall back to local data if available
@@ -241,26 +263,32 @@ public class ProjectsViewController: BaseViewController {
                     do {
                         let localProjects = try await dataContainer.fetchProjects()
                         print("📦 Loaded \(localProjects.count) projects from local storage")
-                        await MainActor.run {
-                            self.projects = localProjects
-                            self.updateUI()
-                            self.hideLoading()  // Hide the beautiful loading indicator
-                        }
-                    } catch {
-                        print("❌ Failed to load from local storage: \(error)")
-                        await MainActor.run {
-                            self.hideLoading()  // Hide the beautiful loading indicator
-                            self.showError("Failed to load projects: \(error.localizedDescription)")
-                        }
-                    }
-                } else {
-                    await MainActor.run {
-                        self.hideLoading()  // Hide the beautiful loading indicator
+                        // Already on main thread
+                        self.projects = localProjects
+                        self.updateUI()
+                        self.hideLoading()
+                    } catch localError {
+                        print("❌ Failed to load from local storage: \(localError)")
+                        self.hideLoading()
                         self.showError("Failed to load projects: \(error.localizedDescription)")
                     }
+                } else {
+                    self.hideLoading()
+                    self.showError("Failed to load projects: \(error.localizedDescription)")
                 }
             }
         }
+    }
+    
+    private func refreshProjectsIfNeeded() {
+        guard !isLoading else { 
+            print("⚠️ DEBUG: refreshProjectsIfNeeded() skipped - already loading")
+            return 
+        }
+        
+        print("🔄 DEBUG: refreshProjectsIfNeeded() called")
+        // Don't show loading indicator for background refresh
+        refreshProjectsInBackground()
     }
     
     private func refreshProjects() {
@@ -269,42 +297,66 @@ public class ProjectsViewController: BaseViewController {
             return 
         }
         
-        print("🔄 DEBUG: refreshProjects() called on thread: \(Thread.isMainThread ? "Main" : "Background")")
+        print("🔄 DEBUG: refreshProjects() called - manual refresh")
         
-        // Show loading indicator during refresh
-        showLoading(message: "Refreshing projects...")
+        // Show loading indicator for manual refresh
+        DispatchQueue.main.async { [weak self] in
+            self?.showLoading(message: "Refreshing projects...")
+        }
         
-        print("🔄 DEBUG: After showLoading in refresh, isLoading = \(isLoading)")
-        
-        Task {
+        Task { @MainActor in
             do {
-                // Use the shared APIClient instance which already has auth configured
-                // Don't override with database settings - the shared instance has the correct config
-                print("🔧 Using shared APIClient with backend URL: \(AppConfig.backendURL)")
+                print("🔧 Refreshing projects from backend...")
                 
                 // Fetch from API using the shared instance
                 let remoteProjects = try await APIClient.shared.fetchProjects()
+                print("✅ Refresh successful: \(remoteProjects.count) projects")
                 
-                await MainActor.run {
-                    self.projects = remoteProjects
-                    self.updateUI()
-                    self.hideLoading()  // Hide the beautiful loading indicator
-                    self.refreshControl.endRefreshing()
-                }
+                // Already on main thread
+                self.projects = remoteProjects
+                self.updateUI()
+                self.hideLoading()
+                self.refreshControl.endRefreshing()
                 
                 // Update local cache in background
                 if let dataContainer = dataContainer {
-                    for project in remoteProjects {
-                        try? await dataContainer.saveProject(project)
+                    Task.detached {
+                        for project in remoteProjects {
+                            try? await dataContainer.saveProject(project)
+                        }
                     }
                 }
             } catch {
-                await MainActor.run {
-                    self.hideLoading()  // Hide the beautiful loading indicator
-                    self.refreshControl.endRefreshing()
-                    // Don't show error on refresh, just keep existing data
-                    Logger.shared.error("Failed to refresh projects: \(error)")
+                print("⚠️ Refresh failed: \(error)")
+                self.hideLoading()
+                self.refreshControl.endRefreshing()
+                // Don't show error on refresh, just keep existing data
+                Logger.shared.error("Failed to refresh projects: \(error)")
+            }
+        }
+    }
+    
+    private func refreshProjectsInBackground() {
+        Task { @MainActor in
+            do {
+                print("🔄 Background refresh starting...")
+                let remoteProjects = try await APIClient.shared.fetchProjects()
+                print("✅ Background refresh successful: \(remoteProjects.count) projects")
+                
+                self.projects = remoteProjects
+                self.updateUI()
+                
+                // Update local cache
+                if let dataContainer = dataContainer {
+                    Task.detached {
+                        for project in remoteProjects {
+                            try? await dataContainer.saveProject(project)
+                        }
+                    }
                 }
+            } catch {
+                print("⚠️ Background refresh failed: \(error)")
+                // Silent failure for background refresh
             }
         }
     }
@@ -362,6 +414,14 @@ public class ProjectsViewController: BaseViewController {
         print("❌ DEBUG: showError called with message: \(message)")
         print("❌ DEBUG: Current isLoading state: \(isLoading)")
         
+        // Ensure we're on main thread
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.showError(message)
+            }
+            return
+        }
+        
         let alert = UIAlertController(
             title: "Error",
             message: message,
@@ -371,7 +431,7 @@ public class ProjectsViewController: BaseViewController {
         // Add a "Try Again" action that properly triggers loading
         alert.addAction(UIAlertAction(title: "Try Again", style: .default) { [weak self] _ in
             print("🔁 DEBUG: Try Again tapped from alert")
-            self?.loadProjects()
+            self?.refreshProjects()
         })
         
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))

@@ -141,8 +141,19 @@ actor APIClient: APIClientProtocol {
             path: "/api/projects/\(projectName)/sessions/\(sessionId)/messages?limit=\(limit)&offset=\(offset)",
             method: .get
         )
-        let messages: [MessageDTO] = try await request(endpoint)
-        return messages.map { dto in
+        
+        // Backend returns: {"messages": [...], "total": 5, "hasMore": false, "offset": 0, "limit": 50}
+        // We need to extract just the messages array
+        struct MessagesResponse: Codable {
+            let messages: [MessageDTO]
+            let total: Int
+            let hasMore: Bool
+            let offset: Int
+            let limit: Int
+        }
+        
+        let response: MessagesResponse = try await request(endpoint)
+        return response.messages.map { dto in
             let message = Message(
                 id: dto.id ?? UUID().uuidString,
                 role: MessageRole(rawValue: dto.role) ?? .user,

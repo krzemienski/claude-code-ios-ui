@@ -24,6 +24,8 @@ enum WebSocketMessageType: String, Codable {
     case sessionMessage = "session:message"
     case sessionEnd = "session:end"
     case sessionCreated = "session-created"
+    case claudeCommand = "claude-command"
+    case cursorCommand = "cursor-command"
     case claudeOutput = "claude-output"
     case claudeResponse = "claude-response"
     case sessionAborted = "session-aborted"
@@ -39,9 +41,6 @@ enum WebSocketMessageType: String, Codable {
     case streamEnd = "stream:end"
     case tool_use = "tool_use"
     case tool_result = "tool_result"
-    
-    // Client to server
-    case claudeCommand = "claude-command"
     case abortSession = "abort-session"
     case message = "message"
     case typing = "typing"
@@ -64,6 +63,15 @@ protocol WebSocketManagerDelegate: AnyObject {
     func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage)
     func webSocket(_ manager: WebSocketManager, didReceiveData data: Data)
     func webSocketConnectionStateChanged(_ state: WebSocketConnectionState)
+    // Optional method for raw text messages (shell WebSocket)
+    func webSocket(_ manager: WebSocketManager, didReceiveText text: String)
+}
+
+// Provide default implementation for optional method
+extension WebSocketManagerDelegate {
+    func webSocket(_ manager: WebSocketManager, didReceiveText text: String) {
+        // Default implementation - do nothing
+    }
 }
 
 // MARK: - WebSocket Manager
@@ -75,6 +83,9 @@ final class WebSocketManager {
     private let session = URLSession(configuration: .default)
     private var pingTimer: Timer?
     private var reconnectTimer: Timer?
+    
+    // Thread safety for connection management (serial queue by default)
+    private let connectionQueue = DispatchQueue(label: "com.claudecode.websocket.connection")
     
     // Connection properties
     private var url: URL?
@@ -125,105 +136,130 @@ final class WebSocketManager {
     // MARK: - Connection Management
     
     func connect(to urlString: String) {
-        // Prevent multiple simultaneous connection attempts
-        guard connectionState == .disconnected || connectionState == .failed else {
-            logInfo("WebSocket already connecting/connected, ignoring connect request", category: "WebSocket")
-            return
-        }
-        
-        // Reset intentional disconnect flag when manually connecting
-        intentionalDisconnect = false
-        
-        // Store the original URL for reconnection
-        self.originalURLString = urlString
-        
-        // Add JWT token to URL if available
-        var finalUrlString = urlString
-        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
-            // Add token as query parameter for WebSocket connection
-            let separator = urlString.contains("?") ? "&" : "?"
-            finalUrlString = "\(urlString)\(separator)token=\(authToken)"
-        }
-        
-        guard let url = URL(string: finalUrlString) else {
-            logError("Invalid WebSocket URL: \(finalUrlString)", category: "WebSocket")
-            connectionState = .failed
-            return
-        }
-        
-        // Clean up any existing connection
-        if webSocketTask != nil {
-            disconnect() // Ensure clean state
-        }
-        
-        self.url = url
-        connectionState = .connecting
-        
-        var request = URLRequest(url: url)
-        
-        // Also add authentication token in header for compatibility
-        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
-            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        }
-        
-        webSocketTask = session.webSocketTask(with: request)
-        webSocketTask?.resume()
-        
-        // Send a test ping to verify connection before marking as connected
-        webSocketTask?.sendPing { [weak self] error in
+        connectionQueue.async { [weak self] in
             guard let self = self else { return }
             
-            if let error = error {
-                logError("WebSocket initial ping failed: \(error)", category: "WebSocket")
-                self.handleError(error)
-            } else {
-                // Connection is truly established
-                self.connectionState = .connected
-                self.reconnectAttempts = 0
-                self.intentionalDisconnect = false // Reset on successful connection
-                self.delegate?.webSocketDidConnect(self)
-                self.flushMessageQueue()
-                logInfo("WebSocket connected and verified: \(finalUrlString)", category: "WebSocket")
+            // Prevent multiple simultaneous connection attempts
+            guard self.connectionState == .disconnected || self.connectionState == .failed else {
+                logInfo("WebSocket already connecting/connected, ignoring connect request", category: "WebSocket")
+                return
+            }
+            
+            // Reset intentional disconnect flag when manually connecting
+            self.intentionalDisconnect = false
+            
+            // Store the original URL for reconnection
+            self.originalURLString = urlString
+            
+            // Add JWT token to URL if available
+            var finalUrlString = urlString
+            if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+                // Add token as query parameter for WebSocket connection
+                let separator = urlString.contains("?") ? "&" : "?"
+                finalUrlString = "\(urlString)\(separator)token=\(authToken)"
+            }
+            
+            guard let url = URL(string: finalUrlString) else {
+                logError("Invalid WebSocket URL: \(finalUrlString)", category: "WebSocket")
+                self.connectionState = .failed
+                return
+            }
+            
+            // Clean up any existing connection
+            if self.webSocketTask != nil {
+                self.webSocketTask?.cancel(with: .goingAway, reason: nil)
+                self.webSocketTask = nil
+            }
+            
+            self.url = url
+            self.connectionState = .connecting
+            
+            var request = URLRequest(url: url)
+            
+            // Also add authentication token in header for compatibility
+            if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            }
+            
+            self.webSocketTask = self.session.webSocketTask(with: request)
+            self.webSocketTask?.resume()
+            
+            // Send a test ping to verify connection before marking as connected
+            self.webSocketTask?.sendPing { [weak self] error in
+                guard let self = self else { return }
                 
-                // Start receiving messages ONLY after successful connection
-                self.receiveMessage()
-                
-                // Start ping timer after successful connection
-                self.startPingTimer()
+                if let error = error {
+                    logError("WebSocket initial ping failed: \(error)", category: "WebSocket")
+                    self.handleError(error)
+                } else {
+                    // Connection is truly established
+                    self.connectionState = .connected
+                    self.reconnectAttempts = 0
+                    self.intentionalDisconnect = false // Reset on successful connection
+                    self.delegate?.webSocketDidConnect(self)
+                    self.flushMessageQueue()
+                    logInfo("WebSocket connected and verified: \(finalUrlString)", category: "WebSocket")
+                    
+                    // Start receiving messages ONLY after successful connection
+                    self.receiveMessage()
+                    
+                    // Start ping timer after successful connection
+                    self.startPingTimer()
+                }
             }
         }
     }
     
     func disconnect() {
-        stopPingTimer()
-        stopReconnectTimer()
-        
-        // Mark this as an intentional disconnect to prevent auto-reconnect
-        intentionalDisconnect = true
-        
-        if let task = webSocketTask {
-            task.cancel(with: .goingAway, reason: nil)
-        }
-        webSocketTask = nil
-        
-        if connectionState != .disconnected {
-            connectionState = .disconnected
-            delegate?.webSocketDidDisconnect(self, error: nil)
+        connectionQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            self.stopPingTimer()
+            self.stopReconnectTimer()
+            
+            // Mark this as an intentional disconnect to prevent auto-reconnect
+            self.intentionalDisconnect = true
+            
+            if let task = self.webSocketTask {
+                task.cancel(with: .goingAway, reason: nil)
+            }
+            self.webSocketTask = nil
+            
+            if self.connectionState != .disconnected {
+                self.connectionState = .disconnected
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.delegate?.webSocketDidDisconnect(self, error: nil)
+                }
+            }
         }
     }
     
     // MARK: - Message Handling
     
-    func sendMessage(_ text: String, projectId: String, projectPath: String? = nil) {
-        // Send Claude command through WebSocket
+    func sendMessage(_ text: String, projectId: String, projectPath: String? = nil, messageType: WebSocketMessageType = .claudeCommand) {
+        // Send command through WebSocket with specified type
         let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(projectId)")
         
         // Use projectPath if provided, otherwise use projectId as fallback
         let actualProjectPath = projectPath ?? projectId
         
+        // Determine the correct message type string
+        let typeString: String
+        switch messageType {
+        case .claudeCommand:
+            typeString = "claude-command"
+        case .cursorCommand:
+            typeString = "cursor-command"
+        case .abortSession:
+            typeString = "abort-session"
+        default:
+            typeString = messageType.rawValue
+        }
+        
         // Backend expects a flat JSON structure with type and other fields at root level
         let messageData: [String: Any] = [
-            "type": "claude-command",
+            "type": typeString,
             "content": text,
             "projectPath": actualProjectPath,
             "sessionId": sessionId as Any,
@@ -235,7 +271,7 @@ final class WebSocketManager {
         sendRawMessage(messageData)
     }
     
-    func send(_ message: Message) async throws {
+    func send(_ message: Message, projectPath: String) async throws {
         // Use claudeCommand type for all messages to Claude
         let wsMessage = WebSocketMessage(
             type: .claudeCommand,
@@ -243,8 +279,8 @@ final class WebSocketManager {
                 "id": message.id,
                 "content": message.content,
                 "role": message.role.rawValue,
+                "projectPath": projectPath,  // Include project path
                 "timestamp": ISO8601DateFormatter.shared.string(from: message.timestamp)
-                // Note: projectPath should be passed via sendMessage method which already handles it
             ]
         )
         
@@ -316,6 +352,31 @@ final class WebSocketManager {
         }
     }
     
+    /// Send a raw text string directly without any JSON encoding
+    /// Used for shell WebSocket which expects specific JSON format
+    func sendRawText(_ text: String) {
+        guard isConnected else {
+            // Attempt reconnection if enabled
+            if enableAutoReconnect && connectionState != .reconnecting {
+                attemptReconnection()
+            }
+            return
+        }
+        
+        guard let webSocketTask = webSocketTask else { return }
+        
+        let wsMessage = URLSessionWebSocketTask.Message.string(text)
+        
+        webSocketTask.send(wsMessage) { [weak self] error in
+            if let error = error {
+                logError("WebSocket send error: \(error)", category: "WebSocket")
+                self?.handleError(error)
+            } else {
+                logInfo("Successfully sent raw text message", category: "WebSocket")
+            }
+        }
+    }
+    
     func sendTypingIndicator(for sessionId: String) {
         let message = WebSocketMessage(
             type: .typing,
@@ -328,31 +389,52 @@ final class WebSocketManager {
     // MARK: - Claude Command Support
     
     func sendClaudeCommand(content: String, projectPath: String, sessionId: String? = nil) {
-        var payload: [String: Any] = [
+        // Create message data with claude-command type in flat JSON format
+        var messageData: [String: Any] = [
+            "type": "claude-command",
             "content": content,
-            "projectPath": projectPath
+            "projectPath": projectPath,
+            "timestamp": ISO8601DateFormatter.shared.string(from: Date())
         ]
         
         if let sessionId = sessionId {
-            payload["sessionId"] = sessionId
+            messageData["sessionId"] = sessionId
+            messageData["resume"] = true
         }
         
-        let message = WebSocketMessage(
-            type: .claudeCommand,
-            payload: payload,
-            sessionId: sessionId
-        )
+        // Send raw message to match backend expectations
+        sendRawMessage(messageData)
+    }
+    
+    // MARK: - Cursor Command Support
+    
+    func sendCursorCommand(content: String, projectPath: String, sessionId: String? = nil) {
+        // Create message data with cursor-command type
+        var messageData: [String: Any] = [
+            "type": "cursor-command",
+            "content": content,
+            "projectPath": projectPath,
+            "timestamp": ISO8601DateFormatter.shared.string(from: Date())
+        ]
         
-        send(message)
+        if let sessionId = sessionId {
+            messageData["sessionId"] = sessionId
+            messageData["resume"] = true
+        }
+        
+        // Send raw message to match backend expectations
+        sendRawMessage(messageData)
     }
     
     func abortSession(sessionId: String) {
-        let message = WebSocketMessage(
-            type: .abortSession,
-            payload: ["sessionId": sessionId],
-            sessionId: sessionId
-        )
-        send(message)
+        // Send abort-session message directly in flat JSON format
+        let messageData: [String: Any] = [
+            "type": "abort-session",
+            "sessionId": sessionId,
+            "timestamp": ISO8601DateFormatter.shared.string(from: Date())
+        ]
+        
+        sendRawMessage(messageData)
     }
     
     private func receiveMessage() {
@@ -389,6 +471,12 @@ final class WebSocketManager {
     }
     
     private func handleTextMessage(_ text: String) {
+        // First, notify delegate of raw text for shell WebSocket handling
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.webSocket(self, didReceiveText: text)
+        }
+        
         guard let data = text.data(using: .utf8) else { return }
         
         // First try to parse as flat JSON from backend
@@ -464,34 +552,45 @@ final class WebSocketManager {
     // MARK: - Reconnection Logic
     
     private func attemptReconnection() {
-        // Prevent multiple reconnection attempts
-        guard connectionState != .reconnecting else {
-            logInfo("Already attempting reconnection, skipping duplicate attempt", category: "WebSocket")
-            return
-        }
-        
-        guard enableAutoReconnect,
-              reconnectAttempts < maxReconnectAttempts,
-              let urlString = originalURLString else {
-            connectionState = .failed
-            return
-        }
-        
-        connectionState = .reconnecting
-        reconnectAttempts += 1
-        
-        // Calculate delay with exponential backoff
-        let delay = min(reconnectDelay * pow(2.0, Double(reconnectAttempts - 1)), maxReconnectDelay)
-        
-        logInfo("Attempting reconnection #\(reconnectAttempts) in \(delay)s", category: "WebSocket")
-        
-        stopReconnectTimer()
-        reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+        connectionQueue.async { [weak self] in
             guard let self = self else { return }
-            // Reset state before attempting to connect
-            self.connectionState = .disconnected
-            // Use the original URL string to get a fresh token
-            self.connect(to: urlString)
+            
+            // Prevent multiple reconnection attempts
+            guard self.connectionState != .reconnecting else {
+                logInfo("Already attempting reconnection, skipping duplicate attempt", category: "WebSocket")
+                return
+            }
+            
+            guard self.enableAutoReconnect,
+                  self.reconnectAttempts < self.maxReconnectAttempts,
+                  let urlString = self.originalURLString else {
+                self.connectionState = .failed
+                return
+            }
+            
+            self.connectionState = .reconnecting
+            self.reconnectAttempts += 1
+            
+            // Calculate delay with exponential backoff
+            let delay = min(self.reconnectDelay * pow(2.0, Double(self.reconnectAttempts - 1)), self.maxReconnectDelay)
+            
+            logInfo("Attempting reconnection #\(self.reconnectAttempts) in \(delay)s", category: "WebSocket")
+            
+            self.stopReconnectTimer()
+            
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+                    guard let self = self else { return }
+                    // Reset state before attempting to connect
+                    self.connectionQueue.async { [weak self] in
+                        guard let self = self else { return }
+                        self.connectionState = .disconnected
+                    }
+                    // Use the original URL string to get a fresh token
+                    self.connect(to: urlString)
+                }
+            }
         }
     }
     

@@ -240,6 +240,7 @@ public class SessionListViewController: BaseViewController {
     }
     
     private func updateEmptyStateVisibility() {
+        // Use the isLoading property from BaseViewController
         let shouldShowEmpty = sessions.isEmpty && !isLoading
         emptyStateView.isHidden = !shouldShowEmpty
         tableView.isHidden = shouldShowEmpty
@@ -267,9 +268,12 @@ public class SessionListViewController: BaseViewController {
         if !append {
             currentOffset = 0
             hasMoreSessions = true
+            // Show loading indicator only for initial load
+            showLoading(message: "Loading sessions...")
+        } else {
+            // For pagination, just set the flag
+            isLoadingMore = true
         }
-        
-        isLoading = true  // Fixed: Use isLoading to show the loading overlay
         
         Task {
             do {
@@ -290,7 +294,8 @@ public class SessionListViewController: BaseViewController {
                     
                     self.hasMoreSessions = fetchedSessions.count == self.pageSize
                     self.currentOffset += fetchedSessions.count
-                    self.isLoading = false  // Fixed: Use isLoading
+                    self.isLoadingMore = false
+                    self.hideLoading()  // Hide loading indicator
                     self.refreshControl.endRefreshing()
                     self.tableView.reloadData()
                     self.updateEmptyStateVisibility()
@@ -308,7 +313,8 @@ public class SessionListViewController: BaseViewController {
                 }
             } catch {
                 await MainActor.run {
-                    self.isLoading = false  // Fixed: Use isLoading
+                    self.isLoadingMore = false
+                    self.hideLoading()  // Hide loading indicator
                     self.refreshControl.endRefreshing()
                     
                     // Try to load from cache if network fails
@@ -343,9 +349,8 @@ public class SessionListViewController: BaseViewController {
         // Prevent multiple simultaneous session creation
         guard !isLoading else { return }
         
-        // Show loading with a more descriptive message
-        isLoading = true
-        showLoadingOverlay(message: "Creating new session...")
+        // Show loading with a more descriptive message using BaseViewController method
+        showLoading(message: "Creating new session...")
         
         Task {
             do {
@@ -361,8 +366,8 @@ public class SessionListViewController: BaseViewController {
                         self.filteredSessions.insert(newSession, at: 0)
                     }
                     
-                    self.isLoading = false
-                    self.hideLoadingOverlay()
+                    // Hide loading indicator
+                    self.hideLoading()
                     
                     // Store session ID for persistence
                     self.persistenceService.setCurrentSession(newSession.id, for: self.project.name)
@@ -383,8 +388,8 @@ public class SessionListViewController: BaseViewController {
                 }
             } catch {
                 await MainActor.run {
-                    self.isLoading = false
-                    self.hideLoadingOverlay()
+                    // Hide loading indicator
+                    self.hideLoading()
                     
                     // Show more detailed error message
                     let errorMessage: String
@@ -420,97 +425,78 @@ public class SessionListViewController: BaseViewController {
         tableView.reloadData()
     }
     
-    // MARK: - Loading Overlay
-    
-    private func showLoadingOverlay(message: String = "Loading...") {
-        // Create loading overlay if needed
-        let overlayView = UIView(frame: view.bounds)
-        overlayView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        overlayView.tag = 999 // Tag for easy removal
-        
-        let activityIndicator = UIActivityIndicatorView(style: .large)
-        activityIndicator.color = .white
-        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-        activityIndicator.startAnimating()
-        
-        let label = UILabel()
-        label.text = message
-        label.textColor = .white
-        label.font = .systemFont(ofSize: 16)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        
-        overlayView.addSubview(activityIndicator)
-        overlayView.addSubview(label)
-        
-        NSLayoutConstraint.activate([
-            activityIndicator.centerXAnchor.constraint(equalTo: overlayView.centerXAnchor),
-            activityIndicator.centerYAnchor.constraint(equalTo: overlayView.centerYAnchor, constant: -20),
-            label.centerXAnchor.constraint(equalTo: overlayView.centerXAnchor),
-            label.topAnchor.constraint(equalTo: activityIndicator.bottomAnchor, constant: 10)
-        ])
-        
-        view.addSubview(overlayView)
-    }
-    
-    private func hideLoadingOverlay() {
-        // Remove loading overlay
-        view.subviews.first { $0.tag == 999 }?.removeFromSuperview()
-    }
-    
     // MARK: - Sorting & Filtering
     
     private func sortSessions() {
-        let sessionsToSort = isSearching ? filteredSessions : sessions
+        // Create defensive copies to prevent array mutation races
+        let sessionsToSort = isSearching ? Array(filteredSessions) : Array(sessions)
         
         switch SortOption(rawValue: sortSegmentedControl.selectedSegmentIndex) {
         case .recent:
-            if isSearching {
-                filteredSessions = sessionsToSort.sorted { 
-                    let date1 = $0.lastActivity ?? Date.distantPast
-                    let date2 = $1.lastActivity ?? Date.distantPast
-                    return date1 > date2
-                }
-            } else {
-                sessions = sessionsToSort.sorted { 
-                    let date1 = $0.lastActivity ?? Date.distantPast
-                    let date2 = $1.lastActivity ?? Date.distantPast
-                    return date1 > date2
-                }
+            let sortedSessions = sessionsToSort.sorted { 
+                let date1 = $0.lastActivity ?? Date.distantPast
+                let date2 = $1.lastActivity ?? Date.distantPast
+                return date1 > date2
             }
+            
+            // Atomic assignment on main thread
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if self.isSearching {
+                    self.filteredSessions = sortedSessions
+                } else {
+                    self.sessions = sortedSessions
+                }
+                self.tableView.reloadData()
+            }
+            
         case .messageCount:
-            if isSearching {
-                filteredSessions = sessionsToSort.sorted { 
-                    return $0.messageCount > $1.messageCount
-                }
-            } else {
-                sessions = sessionsToSort.sorted { 
-                    return $0.messageCount > $1.messageCount
-                }
+            let sortedSessions = sessionsToSort.sorted { 
+                return $0.messageCount > $1.messageCount
             }
+            
+            // Atomic assignment on main thread
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if self.isSearching {
+                    self.filteredSessions = sortedSessions
+                } else {
+                    self.sessions = sortedSessions
+                }
+                self.tableView.reloadData()
+            }
+            
         case .name:
-            if isSearching {
-                filteredSessions = sessionsToSort.sorted { 
-                    let summary1 = $0.summary ?? ""
-                    let summary2 = $1.summary ?? ""
-                    return summary1.localizedCaseInsensitiveCompare(summary2) == .orderedAscending
-                }
-            } else {
-                sessions = sessionsToSort.sorted { 
-                    let summary1 = $0.summary ?? ""
-                    let summary2 = $1.summary ?? ""
-                    return summary1.localizedCaseInsensitiveCompare(summary2) == .orderedAscending
-                }
+            let sortedSessions = sessionsToSort.sorted { 
+                let summary1 = $0.summary ?? ""
+                let summary2 = $1.summary ?? ""
+                return summary1.localizedCaseInsensitiveCompare(summary2) == .orderedAscending
             }
+            
+            // Atomic assignment on main thread
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if self.isSearching {
+                    self.filteredSessions = sortedSessions
+                } else {
+                    self.sessions = sortedSessions
+                }
+                self.tableView.reloadData()
+            }
+            
         default:
             break
         }
     }
     
     private func filterSessions(searchText: String) {
+        // Create defensive copy to prevent race conditions
+        let sessionsCopy = Array(sessions)
+        
         if searchText.isEmpty {
-            filteredSessions = sessions
+            filteredSessions = sessionsCopy
         } else {
-            filteredSessions = sessions.filter { session in
+            filteredSessions = sessionsCopy.filter { session in
                 let summary = session.summary
                 let sessionId = session.id
                 let summaryMatch = summary?.localizedCaseInsensitiveContains(searchText) ?? false
