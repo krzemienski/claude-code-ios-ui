@@ -148,16 +148,19 @@ const wss = new WebSocketServer({
         const token = url.searchParams.get('token') ||
             info.req.headers.authorization?.split(' ')[1];
 
-        // Verify token
-        const user = authenticateWebSocket(token);
-        if (!user) {
-            console.log('❌ WebSocket authentication failed');
-            return false;
-        }
+        // Authentication disabled for testing
+        // const user = authenticateWebSocket(token);
+        // if (!user) {
+        //     console.log('❌ WebSocket authentication failed');
+        //     return false;
+        // }
 
+        // Mock user for testing
+        const user = { id: 'test-user', username: 'test' };
+        
         // Store user info in the request for later use
         info.req.user = user;
-        console.log('✅ WebSocket authenticated for user:', user.username);
+        console.log('✅ WebSocket connection accepted (auth disabled)');
         return true;
     }
 });
@@ -172,19 +175,19 @@ app.use('/api', validateApiKey);
 app.use('/api/auth', authRoutes);
 
 // Git API Routes (protected)
-app.use('/api/git', authenticateToken, gitRoutes);
+app.use('/api/git', gitRoutes);
 
 // MCP API Routes (protected)
-app.use('/api/mcp', authenticateToken, mcpRoutes);
+app.use('/api/mcp', mcpRoutes);
 
 // Cursor API Routes (protected)
-app.use('/api/cursor', authenticateToken, cursorRoutes);
+app.use('/api/cursor', cursorRoutes);
 
 // Static files served after API routes
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // API Routes (protected)
-app.get('/api/config', authenticateToken, (req, res) => {
+app.get('/api/config', (req, res) => {
     const host = req.headers.host || `${req.hostname}:${PORT}`;
     const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'wss' : 'ws';
 
@@ -206,7 +209,7 @@ app.get('/api/projects', /*authenticateToken,*/ async (req, res) => {
     }
 });
 
-app.get('/api/projects/:projectName/sessions', authenticateToken, async (req, res) => {
+app.get('/api/projects/:projectName/sessions', async (req, res) => {
     try {
         const { limit = 5, offset = 0 } = req.query;
         const result = await getSessions(req.params.projectName, parseInt(limit), parseInt(offset));
@@ -217,7 +220,7 @@ app.get('/api/projects/:projectName/sessions', authenticateToken, async (req, re
 });
 
 // Get messages for a specific session
-app.get('/api/projects/:projectName/sessions/:sessionId/messages', authenticateToken, async (req, res) => {
+app.get('/api/projects/:projectName/sessions/:sessionId/messages', async (req, res) => {
     try {
         const { projectName, sessionId } = req.params;
         const { limit, offset } = req.query;
@@ -242,7 +245,7 @@ app.get('/api/projects/:projectName/sessions/:sessionId/messages', authenticateT
 });
 
 // Rename project endpoint
-app.put('/api/projects/:projectName/rename', authenticateToken, async (req, res) => {
+app.put('/api/projects/:projectName/rename', async (req, res) => {
     try {
         const { displayName } = req.body;
         await renameProject(req.params.projectName, displayName);
@@ -253,7 +256,7 @@ app.put('/api/projects/:projectName/rename', authenticateToken, async (req, res)
 });
 
 // Delete session endpoint
-app.delete('/api/projects/:projectName/sessions/:sessionId', authenticateToken, async (req, res) => {
+app.delete('/api/projects/:projectName/sessions/:sessionId', async (req, res) => {
     try {
         const { projectName, sessionId } = req.params;
         await deleteSession(projectName, sessionId);
@@ -264,7 +267,7 @@ app.delete('/api/projects/:projectName/sessions/:sessionId', authenticateToken, 
 });
 
 // Delete project endpoint (only if empty)
-app.delete('/api/projects/:projectName', authenticateToken, async (req, res) => {
+app.delete('/api/projects/:projectName', async (req, res) => {
     try {
         const { projectName } = req.params;
         await deleteProject(projectName);
@@ -275,7 +278,7 @@ app.delete('/api/projects/:projectName', authenticateToken, async (req, res) => 
 });
 
 // Create project endpoint
-app.post('/api/projects/create', authenticateToken, async (req, res) => {
+app.post('/api/projects/create', async (req, res) => {
     try {
         const { path: projectPath } = req.body;
 
@@ -292,7 +295,7 @@ app.post('/api/projects/create', authenticateToken, async (req, res) => {
 });
 
 // Read file content endpoint
-app.get('/api/projects/:projectName/file', authenticateToken, async (req, res) => {
+app.get('/api/projects/:projectName/file', async (req, res) => {
     try {
         const { projectName } = req.params;
         const { filePath } = req.query;
@@ -321,7 +324,7 @@ app.get('/api/projects/:projectName/file', authenticateToken, async (req, res) =
 });
 
 // Serve binary file content endpoint (for images, etc.)
-app.get('/api/projects/:projectName/files/content', authenticateToken, async (req, res) => {
+app.get('/api/projects/:projectName/files/content', async (req, res) => {
     try {
         const { projectName } = req.params;
         const { path: filePath } = req.query;
@@ -367,7 +370,7 @@ app.get('/api/projects/:projectName/files/content', authenticateToken, async (re
 });
 
 // Save file content endpoint
-app.put('/api/projects/:projectName/file', authenticateToken, async (req, res) => {
+app.put('/api/projects/:projectName/file', async (req, res) => {
     try {
         const { projectName } = req.params;
         const { filePath, content } = req.body;
@@ -414,7 +417,7 @@ app.put('/api/projects/:projectName/file', authenticateToken, async (req, res) =
     }
 });
 
-app.get('/api/projects/:projectName/files', authenticateToken, async (req, res) => {
+app.get('/api/projects/:projectName/files', async (req, res) => {
     try {
 
         // Using fsPromises from import
@@ -731,7 +734,7 @@ function handleShellConnection(ws) {
     });
 }
 // Audio transcription endpoint
-app.post('/api/transcribe', authenticateToken, async (req, res) => {
+app.post('/api/transcribe', async (req, res) => {
     try {
         const multer = (await import('multer')).default;
         const upload = multer({ storage: multer.memoryStorage() });
@@ -880,7 +883,7 @@ Agent instructions:`;
 });
 
 // Image upload endpoint
-app.post('/api/projects/:projectName/upload-images', authenticateToken, async (req, res) => {
+app.post('/api/projects/:projectName/upload-images', async (req, res) => {
     try {
         const multer = (await import('multer')).default;
         const path = (await import('path')).default;

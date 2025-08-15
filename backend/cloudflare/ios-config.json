@@ -1,0 +1,66 @@
+{
+  "production": {
+    "apiBaseURL": "https://claude-code-api.YOURDOMAIN.com",
+    "wsBaseURL": "wss://claude-code-api.YOURDOMAIN.com",
+    "endpoints": {
+      "auth": "/api/auth",
+      "projects": "/api/projects",
+      "sessions": "/api/projects/:projectName/sessions",
+      "messages": "/api/projects/:projectName/sessions/:sessionId/messages",
+      "files": "/api/projects/:projectName/files",
+      "git": "/api/git",
+      "mcp": "/api/mcp",
+      "cursor": "/api/cursor",
+      "websocket": "/ws",
+      "shell": "/shell"
+    },
+    "features": {
+      "enableWebSocket": true,
+      "enableShell": true,
+      "enableGit": true,
+      "enableMCP": true,
+      "enableCursor": true,
+      "autoReconnect": true,
+      "reconnectInterval": 3000,
+      "maxReconnectAttempts": 10
+    },
+    "security": {
+      "requireAuth": true,
+      "tokenExpiry": 86400,
+      "refreshTokenExpiry": 604800,
+      "pinCertificate": false
+    }
+  },
+  "development": {
+    "apiBaseURL": "http://localhost:3004",
+    "wsBaseURL": "ws://localhost:3004",
+    "endpoints": {
+      "auth": "/api/auth",
+      "projects": "/api/projects",
+      "sessions": "/api/projects/:projectName/sessions",
+      "messages": "/api/projects/:projectName/sessions/:sessionId/messages",
+      "files": "/api/projects/:projectName/files",
+      "git": "/api/git",
+      "mcp": "/api/mcp",
+      "cursor": "/api/cursor",
+      "websocket": "/ws",
+      "shell": "/shell"
+    },
+    "features": {
+      "enableWebSocket": true,
+      "enableShell": true,
+      "enableGit": true,
+      "enableMCP": true,
+      "enableCursor": true,
+      "autoReconnect": true,
+      "reconnectInterval": 1000,
+      "maxReconnectAttempts": 5
+    },
+    "security": {
+      "requireAuth": false,
+      "tokenExpiry": 86400,
+      "refreshTokenExpiry": 604800,
+      "pinCertificate": false
+    }
+  }
+}
