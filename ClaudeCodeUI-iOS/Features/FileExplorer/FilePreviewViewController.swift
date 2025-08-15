@@ -32,6 +32,8 @@ class FilePreviewViewController: BaseViewController {
         // Add syntax highlighting colors for common keywords
         textView.tintColor = CyberpunkTheme.primaryCyan
         
+        textView.accessibilityIdentifier = "filePreviewTextView"
+        
         return textView
     }()
     

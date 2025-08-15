@@ -212,6 +212,32 @@ struct TodoItem: Codable {
     }
 }
 
+// MARK: - Message Status
+enum MessageStatus: String, Codable {
+    case sending = "sending"
+    case sent = "sent"
+    case delivered = "delivered"
+    case failed = "failed"
+    case read = "read"
+}
+
+// MARK: - Base Chat Message
+class ChatMessage {
+    let id: String
+    var content: String
+    let isUser: Bool
+    let timestamp: Date
+    var status: MessageStatus
+    
+    init(id: String, content: String, isUser: Bool, timestamp: Date, status: MessageStatus = .sent) {
+        self.id = id
+        self.content = content
+        self.isUser = isUser
+        self.timestamp = timestamp
+        self.status = status
+    }
+}
+
 // MARK: - Enhanced Chat Message
 class EnhancedChatMessage: ChatMessage {
     var messageType: MessageType = .text

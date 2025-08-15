@@ -399,6 +399,8 @@ extension FileExplorerViewController: UITableViewDataSource {
             cell.configure(with: node, isExpanded: isExpanded, isSelected: isSelected)
         }
         
+        cell.accessibilityIdentifier = "fileCell_\(indexPath.row)"
+        
         return cell
     }
 }

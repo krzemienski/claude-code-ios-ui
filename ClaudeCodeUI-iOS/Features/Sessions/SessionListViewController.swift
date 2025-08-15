@@ -67,6 +67,7 @@ public class SessionListViewController: BaseViewController {
             action: #selector(createNewSession)
         )
         navigationItem.rightBarButtonItem?.tintColor = CyberpunkTheme.primaryCyan
+        navigationItem.rightBarButtonItem?.accessibilityIdentifier = "addSessionButton"
         
         // Setup search controller
         searchController.searchResultsUpdater = self
@@ -182,6 +183,7 @@ public class SessionListViewController: BaseViewController {
         createButton.layer.cornerRadius = 12
         createButton.addTarget(self, action: #selector(createNewSession), for: .touchUpInside)
         createButton.translatesAutoresizingMaskIntoConstraints = false
+        createButton.accessibilityIdentifier = "addSessionButton"
         
         // Add glow effect to button
         createButton.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
@@ -540,6 +542,7 @@ extension SessionListViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: "SessionCell", for: indexPath) as! SessionTableViewCell
         let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
         cell.configure(with: session)
+        cell.accessibilityIdentifier = "sessionCell_\(indexPath.row)"
         
         // Load more when approaching end (only when not searching)
         if !isSearching && indexPath.row == sessions.count - 5 && hasMoreSessions && !isLoadingMore {
@@ -647,3 +650,4 @@ extension SessionListViewController: UITableViewDelegate {
         present(alert, animated: true)
     }
 }
+

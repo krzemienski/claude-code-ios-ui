@@ -223,6 +223,13 @@ class AppCoordinator: NSObject, Coordinator {
         private var projects: [Project] = []
         private let tableView = UITableView()
         
+        // UI elements for adding project (if any)
+        private let addProjectButton = UIButton(type: .system)
+        private let projectNameField = UITextField()
+        private let projectPathField = UITextField()
+        private let createProjectConfirmButton = UIButton(type: .system)
+        private let deleteProjectButton = UIButton(type: .system)
+        
         override func viewDidLoad() {
             super.viewDidLoad()
             setupUI()
@@ -246,6 +253,28 @@ class AppCoordinator: NSObject, Coordinator {
                 tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                 tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
             ])
+            
+            // Setup addProjectButton if it's part of UI
+            addProjectButton.setTitle("Add Project", for: .normal)
+            addProjectButton.accessibilityIdentifier = "addProjectButton"
+            
+            // Setup projectNameField
+            projectNameField.placeholder = "Project Name"
+            projectNameField.borderStyle = .roundedRect
+            projectNameField.accessibilityIdentifier = "projectNameField"
+            
+            // Setup projectPathField
+            projectPathField.placeholder = "Project Path"
+            projectPathField.borderStyle = .roundedRect
+            projectPathField.accessibilityIdentifier = "projectPathField"
+            
+            // Setup createProjectConfirmButton
+            createProjectConfirmButton.setTitle("Create", for: .normal)
+            createProjectConfirmButton.accessibilityIdentifier = "createProjectConfirmButton"
+            
+            // Setup deleteProjectButton if applicable
+            deleteProjectButton.setTitle("Delete", for: .normal)
+            deleteProjectButton.accessibilityIdentifier = "deleteProjectButton"
         }
         
         private func loadProjects() {
@@ -272,6 +301,7 @@ class AppCoordinator: NSObject, Coordinator {
             let cell = tableView.dequeueReusableCell(withIdentifier: "ProjectCell", for: indexPath)
             let project = projects[indexPath.row]
             cell.textLabel?.text = project.displayName
+            cell.accessibilityIdentifier = "projectCell_\(indexPath.row)"
             cell.textLabel?.textColor = CyberpunkTheme.primaryText
             cell.backgroundColor = CyberpunkTheme.surface
             return cell
@@ -528,3 +558,5 @@ private extension AppCoordinator {
 
 // The ProjectsListViewController has been removed since we're using 
 // the actual ProjectsViewController from Features/Projects/ProjectsViewController.swift
+
+
