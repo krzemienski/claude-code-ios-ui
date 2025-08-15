@@ -14,12 +14,15 @@ let package = Package(
             targets: ["ClaudeCodeUI"]),
     ],
     dependencies: [
-        // Dependencies will be added as needed
+        // WebSocket library for improved reliability and features
+        .package(url: "https://github.com/daltoniam/Starscream.git", exact: "4.0.6")
     ],
     targets: [
         .target(
             name: "ClaudeCodeUI",
-            dependencies: [],
+            dependencies: [
+                .product(name: "Starscream", package: "Starscream")
+            ],
             path: ".",
             exclude: [
                 "Info.plist",
