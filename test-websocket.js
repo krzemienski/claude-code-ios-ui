@@ -1,64 +1,66 @@
 #!/usr/bin/env node
 
+// Test WebSocket real-time JSON streaming with real backend
 const WebSocket = require('ws');
 
-console.log('Testing WebSocket connection to backend...');
+console.log('🚀 WEBSOCKET REAL-TIME JSON STREAMING TEST');
+console.log('='.repeat(50));
+console.log('Backend: http://localhost:3004');
+console.log('WebSocket: ws://localhost:3004/ws');
+console.log('='.repeat(50));
 
 const ws = new WebSocket('ws://localhost:3004/ws');
 
-ws.on('open', function open() {
-  console.log('✅ Connected to WebSocket server');
-  
-  // Send a test message
-  const testMessage = {
-    type: 'status',
-    content: 'Test message from Node.js client',
-    timestamp: new Date().toISOString()
-  };
-  
-  ws.send(JSON.stringify(testMessage));
-  console.log('📤 Sent test message:', testMessage);
+ws.on('open', () => {
+    console.log('\n✅ WebSocket connected successfully!');
+    console.log('Sending test Claude command...\n');
+    
+    const testMessage = {
+        type: 'claude-command',
+        content: 'Say "Hello from iOS WebSocket Test" and explain what 2+2 equals in one sentence.',
+        projectPath: '/Users/nick/Documents/claude-code-ios-ui',
+        timestamp: new Date().toISOString()
+    };
+    
+    console.log('📤 Sending:', JSON.stringify(testMessage, null, 2));
+    ws.send(JSON.stringify(testMessage));
+    
+    // Set timeout to close after 10 seconds
+    setTimeout(() => {
+        console.log('\n⏱️ Test complete. Closing connection...');
+        ws.close();
+        process.exit(0);
+    }, 10000);
 });
 
-ws.on('message', function message(data) {
-  console.log('📨 Received:', data.toString());
-  
-  // Parse and display the message
-  try {
-    const msg = JSON.parse(data.toString());
-    console.log('📊 Parsed message:', msg);
-  } catch (e) {
-    console.log('Raw message:', data.toString());
-  }
+ws.on('message', (data) => {
+    try {
+        const message = JSON.parse(data.toString());
+        console.log('\n📥 Received message:');
+        console.log('  Type:', message.type);
+        
+        if (message.content) {
+            // For streaming messages, just show the content
+            if (message.type === 'claude-output' || message.type === 'claude-response') {
+                process.stdout.write(message.content);
+            } else {
+                console.log('  Content:', message.content.substring(0, 100) + '...');
+            }
+        }
+        
+        if (message.sessionId) {
+            console.log('  Session ID:', message.sessionId);
+        }
+    } catch (e) {
+        console.log('📥 Raw message:', data.toString());
+    }
 });
 
-ws.on('error', function error(err) {
-  console.error('❌ WebSocket error:', err);
+ws.on('error', (error) => {
+    console.error('❌ WebSocket error:', error.message);
+    process.exit(1);
 });
 
-ws.on('close', function close() {
-  console.log('🔌 Disconnected from WebSocket server');
+ws.on('close', () => {
+    console.log('\n🔌 WebSocket disconnected');
 });
-
-// Send a chat message after 2 seconds
-setTimeout(() => {
-  const chatMessage = {
-    type: 'session:message',
-    payload: {
-      projectId: 'test-project-123',
-      content: 'Hello from test client!',
-      sender: 'user'
-    },
-    timestamp: new Date().toISOString()
-  };
-  
-  ws.send(JSON.stringify(chatMessage));
-  console.log('💬 Sent chat message:', chatMessage);
-}, 2000);
-
-// Close connection after 5 seconds
-setTimeout(() => {
-  console.log('Closing connection...');
-  ws.close();
-  process.exit(0);
-}, 5000);

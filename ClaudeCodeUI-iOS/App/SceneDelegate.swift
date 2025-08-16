@@ -39,6 +39,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             let token = UserDefaults.standard.string(forKey: "authToken")
             webSocketManager.connect(to: AppConfig.websocketURL, with: token)
         }
+        
+        // Run WebSocket streaming test (only for testing - remove in production)
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["RUN_WEBSOCKET_TEST"] == "1" {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                print("🚀 Running WebSocket Streaming Test...")
+                WebSocketStreamingTest.runLiveTest()
+            }
+        }
+        #endif
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
