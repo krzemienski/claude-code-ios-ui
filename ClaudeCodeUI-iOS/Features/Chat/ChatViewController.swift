@@ -333,6 +333,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     // MARK: - Properties
     
+    // Debug mode - shows raw JSON responses inline
+    private let showRawJSON = true // Set to false in production
+    
     private let project: Project
     private var currentSession: Session?
     private var messages: [EnhancedChatMessage] = []
@@ -569,6 +572,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         navigationItem.rightBarButtonItems = [abortButton, terminalButton, fileButton]
     }
     
+    // Removed setupConnectionStatusView() - we now use messages to show connection status
+    // private func setupConnectionStatusView() {
+    //     // Moved to message-based status display
+    // }
+    
     private func setupKeyboardObservers() {
         NotificationCenter.default.addObserver(
             self,
@@ -666,14 +674,23 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     print("✅ Loaded \(backendMessages.count) messages for session \(sessionId)")
                 }
             } catch {
-                print("❌ Failed to load from backend, creating test messages: \(error)")
+                print("❌ Failed to load messages from backend: \(error)")
                 await MainActor.run {
-                    // Create comprehensive test messages to demonstrate all types
+                    // Show error message instead of fake data
+                    let errorMessage = EnhancedChatMessage(
+                        id: UUID().uuidString,
+                        content: "Failed to load messages: \(error.localizedDescription)\n\nPlease ensure the backend server is running on http://localhost:3004",
+                        isUser: false,
+                        timestamp: Date(),
+                        status: .failed
+                    )
+                    errorMessage.messageType = .error
+                    
                     if !append {
-                        self.messages = self.createTestMessages()
+                        self.messages = [errorMessage]
                     }
                     self.isLoadingMore = false
-                    self.isLoading = false  // Hide loading indicator on error
+                    self.isLoading = false
                     self.tableView.reloadData()
                     
                     if !self.messages.isEmpty {
@@ -684,148 +701,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         }
     }
     
-    private func createTestMessages() -> [EnhancedChatMessage] {
-        var testMessages: [EnhancedChatMessage] = []
-        let baseTime = Date().addingTimeInterval(-3600) // Start 1 hour ago
-        
-        // Create 100+ diverse test messages
-        for i in 0..<120 {
-            let time = baseTime.addingTimeInterval(TimeInterval(i * 30)) // 30 seconds apart
-            
-            switch i % 10 {
-            case 0:
-                // User message
-                let msg = EnhancedChatMessage(
-                    id: "msg-\(i)",
-                    content: "Can you help me implement a REST API with authentication? Message #\(i)",
-                    isUser: true,
-                    timestamp: time,
-                    status: .sent
-                )
-                testMessages.append(msg)
-                
-            case 1:
-                // Claude thinking
-                let msg = EnhancedChatMessage(
-                    id: "msg-\(i)",
-                    content: "I'll help you implement a REST API with authentication. Let me break this down into steps...",
-                    isUser: false,
-                    timestamp: time,
-                    status: .sent
-                )
-                msg.messageType = .thinking
-                testMessages.append(msg)
-                
-            case 2:
-                // Tool use message
-                let msg = EnhancedChatMessage(
-                    id: "msg-\(i)",
-                    content: "Using tool to analyze project structure",
-                    isUser: false,
-                    timestamp: time,
-                    status: .sent
-                )
-                msg.messageType = .toolUse
-                msg.toolUseData = ToolUseData(
-                    name: "Read",
-                    parameters: ["file": "package.json", "lines": "1-50"],
-                    result: "Successfully read package.json",
-                    status: "success"
-                )
-                testMessages.append(msg)
-                
-            case 3:
-                // Todo update message
-                let msg = EnhancedChatMessage(
-                    id: "msg-\(i)",
-                    content: "Updated project tasks",
-                    isUser: false,
-                    timestamp: time,
-                    status: .sent
-                )
-                msg.messageType = .todoUpdate
-                msg.todos = [
-                    TodoItem(
-                        id: "todo-1",
-                        title: "Set up Express server",
-                        description: "Initialize Express with middleware",
-                        status: .completed,
-                        priority: .high
-                    ),
-                    TodoItem(
-                        id: "todo-2",
-                        title: "Implement JWT authentication",
-                        description: "Add JWT token generation and validation",
-                        status: .inProgress,
-                        priority: .high
-                    ),
-                    TodoItem(
-                        id: "todo-3",
-                        title: "Create user endpoints",
-                        description: "CRUD operations for users",
-                        status: .pending,
-                        priority: .medium
-                    ),
-                    TodoItem(
-                        id: "todo-4",
-                        title: "Add input validation",
-                        description: "Validate request data",
-                        status: .pending,
-                        priority: .low
-                    )
-                ]
-                testMessages.append(msg)
-                
-            case 4:
-                // Code message
-                let msg = EnhancedChatMessage(
-                    id: "msg-\(i)",
-                    content: """
-                    Here's the authentication middleware:
-                    
-                    ```javascript
-                    const jwt = require('jsonwebtoken');
-                    
-                    const authenticateToken = (req, res, next) => {
-                        const authHeader = req.headers['authorization'];
-                        const token = authHeader && authHeader.split(' ')[1];
-                        
-                        if (!token) {
-                            return res.status(401).json({ error: 'Access denied' });
-                        }
-                        
-                        try {
-                            const verified = jwt.verify(token, process.env.JWT_SECRET);
-                            req.user = verified;
-                            next();
-                        } catch (error) {
-                            res.status(403).json({ error: 'Invalid token' });
-                        }
-                    };
-                    
-                    module.exports = { authenticateToken };
-                    ```
-                    """,
-                    isUser: false,
-                    timestamp: time,
-                    status: .sent
-                )
-                testMessages.append(msg)                
-            default:
-                // Standard message
-                let msg = EnhancedChatMessage(
-                    id: "msg-\(i)",
-                    content: "This is test message #\(i)",
-                    isUser: i % 3 == 0,
-                    timestamp: time,
-                    status: .sent
-                )
-                testMessages.append(msg)
-            }
-        }
-        
-        return testMessages
-    }
+    // REMOVED: createTestMessages() function - no longer using mock data
     
     // MARK: - Missing Methods (Stubs for building)
     
@@ -879,7 +755,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 "projectPath": project.path ?? project.id,
                 "sessionId": sessionId as Any,
                 "resume": sessionId != nil,
-                "cwd": project.path ?? project.id
+                "cwd": project.path
             ] as [String: Any]
         ]
         
@@ -971,13 +847,47 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - WebSocketManagerDelegate
     
     func webSocketDidConnect(_ manager: any WebSocketProtocol) {
-        print("WebSocket connected")
+        print("✅ WebSocket connected successfully")
         updateConnectionStatus("Connected", color: UIColor.systemGreen)
+        
+        // Update connection status view
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            // Connection successful - add a system message
+            let connectionMessage = EnhancedChatMessage(
+                id: "connection-success-\(Date().timeIntervalSince1970)",
+                content: "🟢 Connected to backend (ws://localhost:3004/ws)",
+                isUser: false,
+                timestamp: Date()
+            )
+            self.messages.append(connectionMessage)
+            self.tableView.reloadData()
+            
+            // Remove any connection error messages
+            self.messages.removeAll { $0.id == "connection-status" || $0.id == "websocket-warning" }
+            self.tableView.reloadData()
+        }
     }
     
     func webSocketDidDisconnect(_ manager: any WebSocketProtocol, error: Error?) {
-        print("WebSocket disconnected: \(error?.localizedDescription ?? "No error")")
-        updateConnectionStatus("Disconnected", color: UIColor.systemRed)
+        let errorMessage = error?.localizedDescription ?? "Connection closed"
+        print("❌ WebSocket disconnected: \(errorMessage)")
+        updateConnectionStatus("Disconnected: \(errorMessage)", color: UIColor.systemRed)
+        
+        // Update connection status view
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Show disconnection status as a message
+            let disconnectionMessage = EnhancedChatMessage(
+                id: "connection-error-\(Date().timeIntervalSince1970)",
+                content: "🔴 Disconnected - Check backend on localhost:3004",
+                isUser: false,
+                timestamp: Date()
+            )
+            self.messages.append(disconnectionMessage)
+            self.tableView.reloadData()
+        }
     }
     
     func webSocket(_ manager: any WebSocketProtocol, didReceiveMessage message: WebSocketMessage) {
@@ -998,9 +908,29 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     private func updateConnectionStatus(_ text: String, color: UIColor) {
         DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
             // Update UI to show connection status
             print("Connection status: \(text)")
-            // TODO: Update status label or other UI element
+            
+            // Create or update status message
+            let statusMessage = EnhancedChatMessage(
+                id: "connection-status",
+                content: "🔄 WebSocket Status: \(text)",
+                isUser: false,
+                timestamp: Date(),
+                status: text == "Connected" ? .delivered : .failed
+            )
+            statusMessage.messageType = text == "Connected" ? .system : .error
+            
+            // Remove any existing connection status message
+            self.messages.removeAll { $0.id == "connection-status" }
+            
+            // Add new status at the beginning if disconnected
+            if text != "Connected" {
+                self.messages.insert(statusMessage, at: 0)
+                self.tableView.reloadData()
+            }
         }
     }
     
@@ -1009,17 +939,42 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
+            // Log raw message for debugging
+            print("📦 Raw WebSocket message type: \(message.type)")
+            if let payload = message.payload,
+               let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                print("📋 Raw JSON payload:\n\(jsonString)")
+            }
+            
             // Extract content from payload
             let content = message.payload?["content"] as? String ?? ""
             
             switch message.type {
             case .claudeOutput:
                 // Handle streaming Claude output (partial responses)
-                self.handleClaudeStreamingOutput(content: content)
+                let streamContent = content
+                
+                // In debug mode, show what type of stream we're getting
+                if self.showRawJSON && !content.isEmpty {
+                    print("🌊 Streaming chunk: \(content)")
+                }
+                
+                self.handleClaudeStreamingOutput(content: streamContent)
                 
             case .claudeResponse:
                 // Handle complete Claude response
-                self.handleClaudeCompleteResponse(content: content)
+                var displayContent = content
+                
+                // Add raw JSON in debug mode
+                if self.showRawJSON,
+                   let payload = message.payload,
+                   let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted),
+                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                    displayContent = "\(content)\n\n🔍 Debug - Raw Response JSON:\n```json\n\(jsonString)\n```"
+                }
+                
+                self.handleClaudeCompleteResponse(content: displayContent)
                 
             case .tool_use:
                 // Handle tool use messages with enhanced formatting
@@ -1072,9 +1027,28 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 self.handleStreamingMessage(message)
                 
             case .streamEnd:
-                // End of streaming - hide typing indicator
+                // End of streaming - hide typing indicator and mark as delivered
                 self.hideTypingIndicator()
                 self.handleStreamingMessage(message)
+                
+                // Mark the streaming message as delivered
+                if let lastMessage = self.messages.last,
+                   !lastMessage.isUser,
+                   lastMessage.status == .sending {
+                    lastMessage.status = .delivered
+                    
+                    // Add a note about the raw JSON if in debug mode
+                    if let payload = message.payload,
+                       let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted),
+                       let jsonString = String(data: jsonData, encoding: .utf8) {
+                        lastMessage.content += "\n\n🔍 Debug - Raw JSON:\n```json\n\(jsonString)\n```"
+                    }
+                    
+                    let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                    if let cell = self.tableView.cellForRow(at: indexPath) as? EnhancedMessageCell {
+                        cell.configure(with: lastMessage)
+                    }
+                }
                 
             case .sessionAborted:
                 // Handle session abort
@@ -1099,6 +1073,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - Claude Response Handlers
     
     private func handleClaudeStreamingOutput(content: String) {
+        // Log incoming streaming content
+        print("🔄 Claude streaming output: \(content)")
+        
         // Check if we have an active streaming message
         if let lastMessage = messages.last,
            !lastMessage.isUser,
@@ -1122,7 +1099,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             showTypingIndicator()
             let chatMessage = EnhancedChatMessage(
                 id: UUID().uuidString,
-                content: content,
+                content: content.isEmpty ? "[Receiving response...]\n\(content)" : content,
                 isUser: false,
                 timestamp: Date(),
                 status: .sending // Mark as sending during streaming
@@ -1305,12 +1282,24 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         let content = message.payload?["content"] as? String ?? ""
         let messageId = message.payload?["messageId"] as? String
         
+        // Log the raw message for debugging
+        print("📡 Streaming message type: \(message.type), content: \(content)")
+        
+        // For debugging: show the raw JSON if available
+        if let payload = message.payload {
+            if let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                print("📋 Raw JSON payload:\n\(jsonString)")
+            }
+        }
+        
         switch message.type {
         case .streamStart:
             // Start a new streaming message with unique ID
+            let initialContent = content.isEmpty ? "[Streaming response...]" : content
             let chatMessage = EnhancedChatMessage(
                 id: messageId ?? UUID().uuidString,
-                content: content.isEmpty ? "" : content,
+                content: initialContent,
                 isUser: false,
                 timestamp: Date(),
                 status: .sending

@@ -44,8 +44,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         #if DEBUG
         if ProcessInfo.processInfo.environment["RUN_WEBSOCKET_TEST"] == "1" {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                print("🚀 Running WebSocket Streaming Test...")
-                WebSocketStreamingTest.runLiveTest()
+                print("🚀 WebSocket test would run here if enabled")
+                // Test class is in Tests folder, not accessible from main app
+                // To run tests, use: RUN_WEBSOCKET_TEST=1 xcodebuild test
             }
         }
         #endif

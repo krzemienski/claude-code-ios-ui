@@ -361,9 +361,8 @@ actor APIClient: APIClientProtocol {
         // Backend expects: GET /api/projects/:projectName/file?path=:filePath
         let encodedPath = filePath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? filePath
         let endpoint = APIEndpoint(
-            path: "/api/projects/\(projectName)/file",
-            method: .get,
-            queryItems: [URLQueryItem(name: "path", value: filePath)]
+            path: "/api/projects/\(projectName)/file?path=\(encodedPath)",
+            method: .get
         )
         
         struct FileResponse: Codable {
@@ -1077,11 +1076,4 @@ struct CursorSession: Codable {
     let updatedAt: Date
     let messageCount: Int
     let projectPath: String?
-}
-
-// MARK: - Terminal Output Model
-struct TerminalOutput: Codable {
-    let output: String
-    let exitCode: Int
-    let error: String?
 }

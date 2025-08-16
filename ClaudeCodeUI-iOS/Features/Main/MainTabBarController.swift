@@ -13,6 +13,7 @@ public class MainTabBarController: UITabBarController {
     // MARK: - Properties
     private let projectsVC = ProjectsViewController()
     private let settingsVC = SettingsViewController()
+    private let transcriptionVC = TranscriptionViewController()
     private var currentProject: Project?
     
     // MARK: - Lifecycle
@@ -59,6 +60,15 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "folder.fill.badge.plus")
         )
         
+        // Transcription Tab - Voice to text functionality
+        transcriptionVC.title = "Transcribe"
+        let transcriptionNav = UINavigationController(rootViewController: transcriptionVC)
+        transcriptionNav.tabBarItem = UITabBarItem(
+            title: "Transcribe",
+            image: createTabIcon(systemName: "mic.fill"),
+            selectedImage: createTabIcon(systemName: "mic.fill.badge.plus")
+        )
+        
         // SwiftUI Demo Tab - FIXED: Ensure it's visible
         let swiftUIView = SwiftUIDemoView()
         let swiftUIVC = UIHostingController(rootView: swiftUIView)
@@ -79,9 +89,9 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "gearshape.2.fill")
         )
         
-        // Set initial view controllers (projects, demo, and settings)
-        // IMPORTANT: Make sure all three are added
-        viewControllers = [projectsNav, swiftUINav, settingsNav]
+        // Set initial view controllers (projects, transcription, demo, and settings)
+        // IMPORTANT: Make sure all four are added
+        viewControllers = [projectsNav, transcriptionNav, swiftUINav, settingsNav]
         
         // Debug: Log tab count
         print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
