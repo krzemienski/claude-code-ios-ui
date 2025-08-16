@@ -16,6 +16,7 @@ enum SessionStatus: String, Codable {
 }
 
 // MARK: - Session Model
+@available(iOS 17.0, *)
 @Model
 final class Session {
     // MARK: - Properties

@@ -336,7 +336,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private let project: Project
     private var currentSession: Session?
     private var messages: [EnhancedChatMessage] = []
-    private let webSocketManager: WebSocketManager
+    private let webSocketManager: any WebSocketProtocol
     private var isTyping = false
     private var isShowingTypingIndicator = false
     private var keyboardHeight: CGFloat = 0
@@ -592,9 +592,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // Use correct WebSocket path from AppConfig
         let wsURL = AppConfig.websocketURL
         
-        // Don't add token here - WebSocketManager.connect() will add it
-        
-        webSocketManager.connect(to: wsURL)
+        // Connect with token parameter (WebSocketProtocol requires both parameters)
+        let token = UserDefaults.standard.string(forKey: "authToken")
+        webSocketManager.connect(to: wsURL, with: token)
         print("🔌 Connecting to WebSocket at: \(wsURL)")
     }
     
@@ -869,8 +869,24 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             payload["sessionId"] = sessionId
         }
         
-        // Send the message
-        webSocketManager.sendMessage(text, projectId: project.id, projectPath: project.path)
+        // Send the message with correct format matching backend expectations
+        // Backend expects 'command' field for the message content and 'options' object
+        let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)")
+        let messageData: [String: Any] = [
+            "type": "claude-command",
+            "command": text,  // Changed from "content" to "command"
+            "options": [      // Added options object
+                "projectPath": project.path ?? project.id,
+                "sessionId": sessionId as Any,
+                "resume": sessionId != nil,
+                "cwd": project.path ?? project.id
+            ] as [String: Any]
+        ]
+        
+        if let jsonData = try? JSONSerialization.data(withJSONObject: messageData, options: []),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            webSocketManager.send(jsonString)
+        }
         
         // Show typing indicator after a brief delay (Claude is processing)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
@@ -912,9 +928,18 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             // Hide typing indicator immediately
             self.hideTypingIndicator()
             
-            // Send abort message via WebSocket
+            // Send abort message via WebSocket using protocol's send method
             if let sessionId = self.currentSession?.id ?? UserDefaults.standard.string(forKey: "currentSessionId_\(self.project.id)") {
-                self.webSocketManager.abortSession(sessionId: sessionId)
+                let abortData: [String: Any] = [
+                    "type": "abort-session",
+                    "sessionId": sessionId,
+                    "timestamp": ISO8601DateFormatter().string(from: Date())
+                ]
+                
+                if let jsonData = try? JSONSerialization.data(withJSONObject: abortData, options: []),
+                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                    self.webSocketManager.send(jsonString)
+                }
                 
                 // Update any pending messages to failed
                 self.updatePendingMessagesToFailed()
@@ -945,23 +970,23 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     // MARK: - WebSocketManagerDelegate
     
-    func webSocketDidConnect(_ manager: WebSocketManager) {
+    func webSocketDidConnect(_ manager: any WebSocketProtocol) {
         print("WebSocket connected")
         updateConnectionStatus("Connected", color: UIColor.systemGreen)
     }
     
-    func webSocketDidDisconnect(_ manager: WebSocketManager, error: Error?) {
+    func webSocketDidDisconnect(_ manager: any WebSocketProtocol, error: Error?) {
         print("WebSocket disconnected: \(error?.localizedDescription ?? "No error")")
         updateConnectionStatus("Disconnected", color: UIColor.systemRed)
     }
     
-    func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage) {
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveMessage message: WebSocketMessage) {
         print("WebSocket received message: \(message)")
         // Handle the message based on its type
         handleWebSocketMessage(message)
     }
     
-    func webSocket(_ manager: WebSocketManager, didReceiveData data: Data) {
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveData data: Data) {
         print("WebSocket received data: \(data.count) bytes")
         // Handle raw data if needed
     }

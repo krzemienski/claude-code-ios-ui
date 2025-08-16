@@ -36,7 +36,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Restart any paused WebSocket connections
         let webSocketManager = DIContainer.shared.webSocketManager
         if !webSocketManager.isConnected {
-            webSocketManager.connect(to: AppConfig.websocketURL)
+            let token = UserDefaults.standard.string(forKey: "authToken")
+            webSocketManager.connect(to: AppConfig.websocketURL, with: token)
         }
     }
 

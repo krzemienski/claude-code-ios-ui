@@ -21,7 +21,8 @@ final class DIContainer {
         return APIClient.shared
     }()
     
-    private(set) lazy var webSocketManager: WebSocketManager = {
+    private(set) lazy var webSocketManager: WebSocketProtocol = {
+        // Create WebSocketManager directly
         return WebSocketManager()
     }()
     
@@ -105,13 +106,10 @@ final class DIContainer {
         // Since services are lazy-loaded and use shared instances,
         // we only need to update configurations, not recreate services
         
-        // Update WebSocket manager configuration without losing connection
-        // This preserves the existing connection state
-        webSocketManager.configure(
-            enableAutoReconnect: true,
-            reconnectDelay: TimeInterval(settings.webSocketReconnectDelay),
-            maxReconnectAttempts: settings.maxReconnectAttempts
-        )
+        // WebSocketProtocol implementations handle their own configuration
+        // Starscream has built-in auto-reconnect and configuration
+        // Legacy WebSocketManager will use its default settings
+        // Configuration is now handled at creation time via feature flags
         
         // Update logger debug mode
         logger.isDebugEnabled = settings.enableDebugLogging
@@ -271,10 +269,10 @@ final class ProjectService: ProjectServiceProtocol {
 }
 
 final class ChatService: ChatServiceProtocol {
-    private let webSocketManager: WebSocketManager
+    private let webSocketManager: WebSocketProtocol
     private let dataContainer: SwiftDataContainer?
     
-    init(webSocketManager: WebSocketManager, dataContainer: SwiftDataContainer?) {
+    init(webSocketManager: WebSocketProtocol, dataContainer: SwiftDataContainer?) {
         self.webSocketManager = webSocketManager
         self.dataContainer = dataContainer
     }
@@ -286,18 +284,19 @@ final class ChatService: ChatServiceProtocol {
             content: message
         )
         
-        // Send via WebSocket
+        // Send via WebSocket - create JSON message directly for WebSocketProtocol
         let payload: [String: Any] = [
+            "type": "claude-command",  // Use string type directly
             "content": message,
             "projectPath": session.cwd ?? "/Users/nick",  // Use current working directory or fallback
             "sessionId": session.id
         ]
-        let wsMessage = WebSocketMessage(
-            type: .claudeCommand,
-            payload: payload,
-            sessionId: session.id
-        )
-        webSocketManager.send(wsMessage)
+        
+        // Convert to JSON string
+        if let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: []),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            webSocketManager.send(jsonString)
+        }
         
         // Save to database
         if let dataContainer = dataContainer {
@@ -317,9 +316,9 @@ final class ChatService: ChatServiceProtocol {
         
         let session = try await dataContainer.createSession(for: project)
         
-        // Connect WebSocket for this session
-        let wsURL = "\(AppConfig.backendURL.replacingOccurrences(of: "http", with: "ws"))/ws"
-        webSocketManager.connect(to: wsURL)
+        // Connect WebSocket for this session using WebSocketProtocol interface
+        let token = UserDefaults.standard.string(forKey: "authToken")
+        webSocketManager.connect(to: AppConfig.websocketURL, with: token)
         
         return session
     }

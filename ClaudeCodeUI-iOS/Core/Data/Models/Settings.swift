@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import UIKit
 
+@available(iOS 17.0, *)
 @Model
 final class Settings {
     @Attribute(.unique) var id: String = "default"
@@ -105,6 +106,7 @@ enum SessionStatus: String, Codable {
 }
 
 // MARK: - Session Model
+@available(iOS 17.0, *)
 @Model
 final class Session {
     // MARK: - Properties

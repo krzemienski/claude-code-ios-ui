@@ -10,16 +10,6 @@
 import Foundation
 import Starscream
 
-// MARK: - WebSocket Protocol
-protocol WebSocketProtocol: AnyObject {
-    func connect(to endpoint: String, with token: String?)
-    func disconnect()
-    func send(_ message: String)
-    func sendData(_ data: Data)
-    var delegate: WebSocketManagerDelegate? { get set }
-    var isConnected: Bool { get }
-}
-
 // MARK: - Starscream WebSocket Manager
 final class StarscreamWebSocketManager: NSObject, WebSocketProtocol {
     
@@ -77,7 +67,7 @@ final class StarscreamWebSocketManager: NSObject, WebSocketProtocol {
         guard let url = URL(string: "\(baseURL)\(fixedEndpoint)") else {
             logError("Invalid WebSocket URL: \(baseURL)\(fixedEndpoint)", category: "StarscreamWS")
             connectionState = .failed
-            delegate?.webSocketDidDisconnect(self as! WebSocketManager, error: WebSocketError.invalidURL)
+            delegate?.webSocketDidDisconnect(self as WebSocketProtocol, error: WebSocketError.invalidURL)
             return
         }
         
@@ -258,9 +248,7 @@ final class StarscreamWebSocketManager: NSObject, WebSocketProtocol {
         }
         
         // Notify delegate
-        if let manager = self as? WebSocketManager {
-            delegate?.webSocketDidConnect(manager)
-        }
+        delegate?.webSocketDidConnect(self as WebSocketProtocol)
         
         logInfo("WebSocket connected successfully", category: "StarscreamWS")
     }
@@ -270,9 +258,7 @@ final class StarscreamWebSocketManager: NSObject, WebSocketProtocol {
         connectionState = .disconnected
         
         // Notify delegate
-        if let manager = self as? WebSocketManager {
-            delegate?.webSocketDidDisconnect(manager, error: nil)
-        }
+        delegate?.webSocketDidDisconnect(self as WebSocketProtocol, error: nil)
         
         // Attempt reconnection if it was an unexpected disconnect
         if wasConnected && reconnectionManager.shouldReconnect {
@@ -284,9 +270,7 @@ final class StarscreamWebSocketManager: NSObject, WebSocketProtocol {
     
     private func handleTextMessage(_ text: String) {
         // First notify delegate of raw text (for terminal)
-        if let manager = self as? WebSocketManager {
-            delegate?.webSocket(manager, didReceiveText: text)
-        }
+        delegate?.webSocket(self as WebSocketProtocol, didReceiveText: text)
         
         // Parse JSON message
         guard let data = text.data(using: .utf8) else { return }
@@ -309,9 +293,7 @@ final class StarscreamWebSocketManager: NSObject, WebSocketProtocol {
                     sessionId: json["sessionId"] as? String
                 )
                 
-                if let manager = self as? WebSocketManager {
-                    delegate?.webSocket(manager, didReceiveMessage: message)
-                }
+                delegate?.webSocket(self as WebSocketProtocol, didReceiveMessage: message)
             }
         } catch {
             logError("Failed to parse WebSocket message: \(error)", category: "StarscreamWS")
@@ -321,9 +303,7 @@ final class StarscreamWebSocketManager: NSObject, WebSocketProtocol {
     private func handleError(_ error: Error?) {
         connectionState = .failed
         
-        if let manager = self as? WebSocketManager {
-            delegate?.webSocketDidDisconnect(manager, error: error)
-        }
+        delegate?.webSocketDidDisconnect(self as WebSocketProtocol, error: error)
         
         // Attempt reconnection
         if reconnectionManager.shouldReconnect {
@@ -393,9 +373,7 @@ extension StarscreamWebSocketManager: WebSocketDelegate {
             handleTextMessage(text)
             
         case .binary(let data):
-            if let manager = self as? WebSocketManager {
-                delegate?.webSocket(manager, didReceiveData: data)
-            }
+            delegate?.webSocket(self as WebSocketProtocol, didReceiveData: data)
             
         case .pong(_):
             logInfo("Received pong", category: "StarscreamWS")

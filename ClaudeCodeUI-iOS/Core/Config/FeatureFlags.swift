@@ -42,8 +42,8 @@ enum FeatureFlag: String, CaseIterable {
     var defaultValue: Bool {
         switch self {
         case .useStarscreamWebSocket:
-            // Start with 10% rollout
-            return FeatureFlagManager.shared.isInRolloutGroup(percentage: 10)
+            // Force enable Starscream for all users
+            return true
         case .enableWebSocketCompression:
             return true  // Enable by default
         case .enableAutoReconnect:

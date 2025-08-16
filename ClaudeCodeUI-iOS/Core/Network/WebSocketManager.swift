@@ -8,8 +8,30 @@
 import Foundation
 import UIKit
 
+// MARK: - WebSocket Protocol
+/// Protocol for WebSocket implementations to ensure consistency across different WebSocket libraries
+public protocol WebSocketProtocol: AnyObject {
+    /// Connect to WebSocket endpoint with optional authentication token
+    func connect(to endpoint: String, with token: String?)
+    
+    /// Disconnect from WebSocket
+    func disconnect()
+    
+    /// Send a string message
+    func send(_ message: String)
+    
+    /// Send raw data
+    func sendData(_ data: Data)
+    
+    /// WebSocket delegate for handling events
+    var delegate: WebSocketManagerDelegate? { get set }
+    
+    /// Check if WebSocket is currently connected
+    var isConnected: Bool { get }
+}
+
 // MARK: - WebSocket Connection State
-enum WebSocketConnectionState {
+public enum WebSocketConnectionState {
     case disconnected
     case connecting
     case connected
@@ -17,8 +39,72 @@ enum WebSocketConnectionState {
     case failed
 }
 
+// MARK: - WebSocket Manager Delegate
+public protocol WebSocketManagerDelegate: AnyObject {
+    func webSocketDidConnect(_ manager: any WebSocketProtocol)
+    func webSocketDidDisconnect(_ manager: any WebSocketProtocol, error: Error?)
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveMessage message: WebSocketMessage)
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveData data: Data)
+    func webSocketConnectionStateChanged(_ state: WebSocketConnectionState)
+    // Optional method for raw text messages (shell WebSocket)
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveText text: String)
+}
+
+// Provide default implementation for optional method
+public extension WebSocketManagerDelegate {
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveText text: String) {
+        // Default implementation - do nothing
+    }
+}
+
+// MARK: - WebSocket Message Model
+public struct WebSocketMessage: Codable {
+    public let type: WebSocketMessageType
+    public let payload: [String: Any]?
+    public let timestamp: Date
+    public let sessionId: String?
+    
+    public init(type: WebSocketMessageType, payload: [String: Any]? = nil, timestamp: Date = Date(), sessionId: String? = nil) {
+        self.type = type
+        self.payload = payload
+        self.timestamp = timestamp
+        self.sessionId = sessionId
+    }
+    
+    // Custom encoding/decoding for payload
+    enum CodingKeys: String, CodingKey {
+        case type, payload, timestamp, sessionId
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decode(WebSocketMessageType.self, forKey: .type)
+        timestamp = try container.decodeIfPresent(Date.self, forKey: .timestamp) ?? Date()
+        sessionId = try container.decodeIfPresent(String.self, forKey: .sessionId)
+        
+        // Decode payload as AnyCodable dictionary
+        if let anyPayload = try? container.decode([String: AnyCodable].self, forKey: .payload) {
+            payload = anyPayload.mapValues { $0.value }
+        } else {
+            payload = nil
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        try container.encode(timestamp, forKey: .timestamp)
+        try container.encodeIfPresent(sessionId, forKey: .sessionId)
+        
+        if let payload = payload {
+            let anyPayload = payload.mapValues { AnyCodable($0) }
+            try container.encode(anyPayload, forKey: .payload)
+        }
+    }
+}
+
 // MARK: - WebSocket Message Types
-enum WebSocketMessageType: String, Codable {
+public enum WebSocketMessageType: String, Codable {
     case connection = "connection"
     case sessionStart = "session:start"
     case sessionMessage = "session:message"
@@ -56,26 +142,62 @@ enum WebSocketMessageType: String, Codable {
     case urlOpen = "url_open"
 }
 
-// MARK: - WebSocket Manager Protocol
-protocol WebSocketManagerDelegate: AnyObject {
-    func webSocketDidConnect(_ manager: WebSocketManager)
-    func webSocketDidDisconnect(_ manager: WebSocketManager, error: Error?)
-    func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage)
-    func webSocket(_ manager: WebSocketManager, didReceiveData data: Data)
-    func webSocketConnectionStateChanged(_ state: WebSocketConnectionState)
-    // Optional method for raw text messages (shell WebSocket)
-    func webSocket(_ manager: WebSocketManager, didReceiveText text: String)
-}
-
-// Provide default implementation for optional method
-extension WebSocketManagerDelegate {
-    func webSocket(_ manager: WebSocketManager, didReceiveText text: String) {
-        // Default implementation - do nothing
+// MARK: - AnyCodable Helper
+public struct AnyCodable: Codable {
+    public let value: Any
+    
+    public init(_ value: Any) {
+        self.value = value
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        if let intValue = try? container.decode(Int.self) {
+            value = intValue
+        } else if let doubleValue = try? container.decode(Double.self) {
+            value = doubleValue
+        } else if let boolValue = try? container.decode(Bool.self) {
+            value = boolValue
+        } else if let stringValue = try? container.decode(String.self) {
+            value = stringValue
+        } else if let arrayValue = try? container.decode([AnyCodable].self) {
+            value = arrayValue.map { $0.value }
+        } else if let dictValue = try? container.decode([String: AnyCodable].self) {
+            value = dictValue.mapValues { $0.value }
+        } else if container.decodeNil() {
+            value = NSNull()
+        } else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unable to decode AnyCodable")
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        
+        switch value {
+        case let intValue as Int:
+            try container.encode(intValue)
+        case let doubleValue as Double:
+            try container.encode(doubleValue)
+        case let boolValue as Bool:
+            try container.encode(boolValue)
+        case let stringValue as String:
+            try container.encode(stringValue)
+        case is NSNull:
+            try container.encodeNil()
+        case let arrayValue as [Any]:
+            try container.encode(arrayValue.map { AnyCodable($0) })
+        case let dictValue as [String: Any]:
+            try container.encode(dictValue.mapValues { AnyCodable($0) })
+        default:
+            throw EncodingError.invalidValue(value, EncodingError.Context(codingPath: [], debugDescription: "Unable to encode AnyCodable"))
+        }
     }
 }
 
 // MARK: - WebSocket Manager
-final class WebSocketManager {
+final class WebSocketManager: NSObject, WebSocketProtocol {
     
     // MARK: - Properties
     weak var delegate: WebSocketManagerDelegate?
@@ -116,7 +238,8 @@ final class WebSocketManager {
     }
     
     // MARK: - Initialization
-    init() {
+    override init() {
+        super.init()
         setupNotifications()
     }
     
@@ -134,6 +257,19 @@ final class WebSocketManager {
     }
     
     // MARK: - Connection Management
+    
+    /// Connect with separate endpoint and token parameters to match WebSocketProtocol
+    func connect(to endpoint: String, with token: String?) {
+        // Construct the full URL with token if provided
+        var fullUrlString = endpoint
+        if let token = token, !token.isEmpty {
+            let separator = endpoint.contains("?") ? "&" : "?"
+            fullUrlString = "\(endpoint)\(separator)token=\(token)"
+        }
+        
+        // Call the existing connect method
+        connect(to: fullUrlString)
+    }
     
     func connect(to urlString: String) {
         connectionQueue.async { [weak self] in
@@ -196,7 +332,7 @@ final class WebSocketManager {
                     self.connectionState = .connected
                     self.reconnectAttempts = 0
                     self.intentionalDisconnect = false // Reset on successful connection
-                    self.delegate?.webSocketDidConnect(self)
+                    self.delegate?.webSocketDidConnect(self as WebSocketProtocol)
                     self.flushMessageQueue()
                     logInfo("WebSocket connected and verified: \(finalUrlString)", category: "WebSocket")
                     
@@ -229,7 +365,7 @@ final class WebSocketManager {
                 self.connectionState = .disconnected
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
-                    self.delegate?.webSocketDidDisconnect(self, error: nil)
+                    self.delegate?.webSocketDidDisconnect(self as WebSocketProtocol, error: nil)
                 }
             }
         }
@@ -244,7 +380,7 @@ final class WebSocketManager {
         // Use projectPath if provided, otherwise use projectId as fallback
         let actualProjectPath = projectPath ?? projectId
         
-        // Determine the correct message type string
+        // Determine the correct message type string - CRITICAL FIX: Always use explicit type strings
         let typeString: String
         switch messageType {
         case .claudeCommand:
@@ -253,18 +389,25 @@ final class WebSocketManager {
             typeString = "cursor-command"
         case .abortSession:
             typeString = "abort-session"
+        case .message:
+            // FIX: Default message type should be claude-command for chat
+            typeString = "claude-command"
         default:
-            typeString = messageType.rawValue
+            // FIX: For any other type, default to claude-command to ensure backend compatibility
+            typeString = "claude-command"
         }
         
-        // Backend expects a flat JSON structure with type and other fields at root level
+        // Backend expects 'command' field for the message content and 'options' object
+        // Structure that matches server/index.js line 481-485
         let messageData: [String: Any] = [
             "type": typeString,
-            "content": text,
-            "projectPath": actualProjectPath,
-            "sessionId": sessionId as Any,
-            "resume": sessionId != nil,
-            "timestamp": ISO8601DateFormatter.shared.string(from: Date())
+            "command": text,  // Changed from "content" to "command"
+            "options": [      // Added options object
+                "projectPath": actualProjectPath,
+                "sessionId": sessionId as Any,
+                "resume": sessionId != nil,
+                "cwd": actualProjectPath  // Working directory for Claude
+            ] as [String: Any]
         ]
         
         // Send the raw message directly
@@ -287,7 +430,7 @@ final class WebSocketManager {
         send(wsMessage)
     }
     
-    func send(_ message: WebSocketMessage) {
+    private func send(_ message: WebSocketMessage) {
         guard isConnected else {
             // Queue message if not connected
             if messageQueue.count < messageQueueLimit {
@@ -319,6 +462,39 @@ final class WebSocketManager {
         } catch {
             logError("Failed to encode message: \(error)", category: "WebSocket")
         }
+    }
+    
+    // MARK: - Protocol Conformance Methods
+    /// Alias method to satisfy WebSocketProtocol conformance
+    func sendMessage(_ message: WebSocketMessage) {
+        send(message)
+    }
+    
+    /// Send raw data to satisfy WebSocketProtocol conformance
+    func sendData(_ data: Data) {
+        guard isConnected else {
+            // Attempt reconnection if enabled
+            if enableAutoReconnect && connectionState != .reconnecting {
+                attemptReconnection()
+            }
+            return
+        }
+        
+        guard let webSocketTask = webSocketTask else { return }
+        
+        let wsMessage = URLSessionWebSocketTask.Message.data(data)
+        
+        webSocketTask.send(wsMessage) { [weak self] error in
+            if let error = error {
+                logError("WebSocket send data error: \(error)", category: "WebSocket")
+                self?.handleError(error)
+            }
+        }
+    }
+    
+    /// Send a string message to satisfy WebSocketProtocol conformance
+    func send(_ message: String) {
+        sendRawText(message)
     }
     
     /// Send a raw message dictionary directly without WebSocketMessage wrapper
@@ -453,7 +629,7 @@ final class WebSocketManager {
                 case .string(let text):
                     self.handleTextMessage(text)
                 case .data(let data):
-                    self.delegate?.webSocket(self, didReceiveData: data)
+                    self.delegate?.webSocket(self as WebSocketProtocol, didReceiveData: data)
                 @unknown default:
                     break
                 }
@@ -474,7 +650,7 @@ final class WebSocketManager {
         // First, notify delegate of raw text for shell WebSocket handling
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.delegate?.webSocket(self, didReceiveText: text)
+            self.delegate?.webSocket(self as WebSocketProtocol, didReceiveText: text)
         }
         
         guard let data = text.data(using: .utf8) else { return }
@@ -504,7 +680,7 @@ final class WebSocketManager {
                 
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
-                    self.delegate?.webSocket(self, didReceiveMessage: message)
+                    self.delegate?.webSocket(self as WebSocketProtocol, didReceiveMessage: message)
                 }
                 return
             }
@@ -530,7 +706,7 @@ final class WebSocketManager {
                 
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
-                    self.delegate?.webSocket(self, didReceiveMessage: message)
+                    self.delegate?.webSocket(self as WebSocketProtocol, didReceiveMessage: message)
                 }
             } else {
                 logError("Failed to decode WebSocket message: \(error) - Raw: \(text)", category: "WebSocket")
@@ -650,7 +826,7 @@ final class WebSocketManager {
         
         // Only notify delegate if we were actually connected or connecting
         if previousState != .disconnected && previousState != .failed {
-            delegate?.webSocketDidDisconnect(self, error: error)
+            delegate?.webSocketDidDisconnect(self as WebSocketProtocol, error: error)
         }
         
         // Attempt reconnection only if:
@@ -701,52 +877,6 @@ final class WebSocketManager {
     }
 }
 
-// MARK: - WebSocket Message Model
-struct WebSocketMessage: Codable {
-    let type: WebSocketMessageType
-    let payload: [String: Any]?
-    let timestamp: Date
-    let sessionId: String?
-    
-    init(type: WebSocketMessageType, payload: [String: Any]? = nil, timestamp: Date = Date(), sessionId: String? = nil) {
-        self.type = type
-        self.payload = payload
-        self.timestamp = timestamp
-        self.sessionId = sessionId
-    }
-    
-    // Custom encoding/decoding for payload
-    enum CodingKeys: String, CodingKey {
-        case type, payload, timestamp, sessionId
-    }
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        type = try container.decode(WebSocketMessageType.self, forKey: .type)
-        timestamp = try container.decodeIfPresent(Date.self, forKey: .timestamp) ?? Date()
-        sessionId = try container.decodeIfPresent(String.self, forKey: .sessionId)
-        
-        // Decode payload as AnyCodable dictionary
-        if let anyPayload = try? container.decode([String: AnyCodable].self, forKey: .payload) {
-            payload = anyPayload.mapValues { $0.value }
-        } else {
-            payload = nil
-        }
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(type, forKey: .type)
-        try container.encode(timestamp, forKey: .timestamp)
-        try container.encodeIfPresent(sessionId, forKey: .sessionId)
-        
-        if let payload = payload {
-            let anyPayload = payload.mapValues { AnyCodable($0) }
-            try container.encode(anyPayload, forKey: .payload)
-        }
-    }
-}
-
 // MARK: - WebSocket Errors
 enum WebSocketError: LocalizedError {
     case invalidURL
@@ -789,60 +919,6 @@ enum WebSocketError: LocalizedError {
             return false
         case .connectionFailed, .authenticationFailed:
             return true
-        }
-    }
-}
-
-// MARK: - AnyCodable Helper
-struct AnyCodable: Codable {
-    let value: Any
-    
-    init(_ value: Any) {
-        self.value = value
-    }
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        
-        if let intValue = try? container.decode(Int.self) {
-            value = intValue
-        } else if let doubleValue = try? container.decode(Double.self) {
-            value = doubleValue
-        } else if let boolValue = try? container.decode(Bool.self) {
-            value = boolValue
-        } else if let stringValue = try? container.decode(String.self) {
-            value = stringValue
-        } else if let arrayValue = try? container.decode([AnyCodable].self) {
-            value = arrayValue.map { $0.value }
-        } else if let dictValue = try? container.decode([String: AnyCodable].self) {
-            value = dictValue.mapValues { $0.value }
-        } else if container.decodeNil() {
-            value = NSNull()
-        } else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unable to decode AnyCodable")
-        }
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        
-        switch value {
-        case let intValue as Int:
-            try container.encode(intValue)
-        case let doubleValue as Double:
-            try container.encode(doubleValue)
-        case let boolValue as Bool:
-            try container.encode(boolValue)
-        case let stringValue as String:
-            try container.encode(stringValue)
-        case is NSNull:
-            try container.encodeNil()
-        case let arrayValue as [Any]:
-            try container.encode(arrayValue.map { AnyCodable($0) })
-        case let dictValue as [String: Any]:
-            try container.encode(dictValue.mapValues { AnyCodable($0) })
-        default:
-            throw EncodingError.invalidValue(value, EncodingError.Context(codingPath: [], debugDescription: "Unable to encode AnyCodable"))
         }
     }
 }
