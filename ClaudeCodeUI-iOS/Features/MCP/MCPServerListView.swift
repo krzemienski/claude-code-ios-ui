@@ -46,10 +46,19 @@ struct MCPServerListView: View {
                     .padding(.horizontal)
                     .padding(.bottom, 8)
                 
+                // Error message if any
+                if let errorMessage = viewModel.errorMessage {
+                    errorBanner(message: errorMessage)
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                }
+                
                 // Server list or empty state
                 if viewModel.isLoading {
                     loadingView
-                } else if filteredServers.isEmpty {
+                } else if filteredServers.isEmpty && !searchText.isEmpty {
+                    noSearchResultsView
+                } else if viewModel.servers.isEmpty {
                     emptyStateView
                 } else {
                     serverList
@@ -195,6 +204,54 @@ struct MCPServerListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+    }
+    
+    private var noSearchResultsView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 48))
+                .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+            
+            Text("No servers found")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+            
+            Text("Try a different search term")
+                .font(.system(size: 14))
+                .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+    }
+    
+    private func errorBanner(message: String) -> some View {
+        HStack {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(Color(UIColor.CyberpunkTheme.error))
+            
+            Text(message)
+                .font(.system(size: 14))
+                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                .lineLimit(2)
+            
+            Spacer()
+            
+            Button(action: {
+                viewModel.errorMessage = nil
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(UIColor.CyberpunkTheme.error).opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(UIColor.CyberpunkTheme.error).opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 }
 

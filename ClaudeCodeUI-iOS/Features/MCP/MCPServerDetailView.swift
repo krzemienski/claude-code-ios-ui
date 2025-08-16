@@ -16,6 +16,9 @@ struct MCPServerDetailView: View {
     @State private var showingDeleteAlert = false
     @State private var testingConnection = false
     @State private var connectionTestResult: ConnectionTestResult?
+    @State private var showingErrorAlert = false
+    @State private var errorMessage = ""
+    @State private var isSaving = false
     
     // Editing states
     @State private var editedName: String
@@ -86,10 +89,16 @@ struct MCPServerDetailView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if isEditing {
-                        Button("Save") {
-                            saveChanges()
+                        if isSaving {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: Color(UIColor.CyberpunkTheme.primaryCyan)))
+                                .scaleEffect(0.8)
+                        } else {
+                            Button("Save") {
+                                saveChanges()
+                            }
+                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
                         }
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
                     } else {
                         Button("Edit") {
                             isEditing = true
@@ -106,6 +115,11 @@ struct MCPServerDetailView: View {
                 }
             } message: {
                 Text("Are you sure you want to delete this MCP server? This action cannot be undone.")
+            }
+            .alert("Error", isPresented: $showingErrorAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
             }
         }
     }
@@ -376,18 +390,18 @@ struct MCPServerDetailView: View {
         testingConnection = true
         connectionTestResult = nil
         
-        // Simulate connection test
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            testingConnection = false
-            connectionTestResult = ConnectionTestResult(
-                success: Bool.random(),
-                message: Bool.random() ? "Connection successful" : "Connection failed: Timeout",
-                latency: Double.random(in: 20...200)
-            )
+        Task {
+            let result = await viewModel.testConnection(for: server)
+            await MainActor.run {
+                testingConnection = false
+                connectionTestResult = result
+            }
         }
     }
     
     private func saveChanges() {
+        isSaving = true
+        
         var updatedServer = server
         updatedServer.name = editedName
         updatedServer.url = editedUrl
@@ -395,8 +409,22 @@ struct MCPServerDetailView: View {
         updatedServer.apiKey = editedApiKey.isEmpty ? nil : editedApiKey
         updatedServer.isDefault = editedIsDefault
         
-        viewModel.updateServer(updatedServer)
-        isEditing = false
+        Task {
+            do {
+                // Use async method to update server
+                await viewModel.updateServerAsync(updatedServer)
+                await MainActor.run {
+                    isSaving = false
+                    isEditing = false
+                }
+            } catch {
+                await MainActor.run {
+                    isSaving = false
+                    errorMessage = "Failed to save server: \(error.localizedDescription)"
+                    showingErrorAlert = true
+                }
+            }
+        }
     }
 }
 

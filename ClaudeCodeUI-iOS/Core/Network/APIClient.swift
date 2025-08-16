@@ -198,27 +198,54 @@ actor APIClient: APIClientProtocol {
     // MARK: - MCP Server Methods
     
     func getMCPServers() async throws -> [MCPServer] {
-        struct MCPServersResponse: Codable {
-            let servers: [MCPServer]
+        // Backend likely returns array directly, not wrapped in object
+        // Try direct array first, fall back to wrapped response if needed
+        do {
+            // First try: backend returns array directly
+            let servers: [MCPServer] = try await request(.getMCPServers())
+            return servers
+        } catch {
+            // Fallback: backend returns wrapped response
+            struct MCPServersResponse: Codable {
+                let servers: [MCPServer]
+            }
+            let response: MCPServersResponse = try await request(.getMCPServers())
+            return response.servers
         }
-        let response: MCPServersResponse = try await request(.getMCPServers())
-        return response.servers
     }
     
     func addMCPServer(_ server: MCPServer) async throws -> MCPServer {
-        struct MCPServerResponse: Codable {
-            let server: MCPServer
+        // Backend likely returns the server directly, not wrapped
+        // Try direct server first, fall back to wrapped response if needed
+        do {
+            // First try: backend returns server directly
+            let savedServer: MCPServer = try await request(.addMCPServer(server))
+            return savedServer
+        } catch {
+            // Fallback: backend returns wrapped response
+            struct MCPServerResponse: Codable {
+                let server: MCPServer
+            }
+            let response: MCPServerResponse = try await request(.addMCPServer(server))
+            return response.server
         }
-        let response: MCPServerResponse = try await request(.addMCPServer(server))
-        return response.server
     }
     
     func updateMCPServer(_ server: MCPServer) async throws -> MCPServer {
-        struct MCPServerResponse: Codable {
-            let server: MCPServer
+        // Backend likely returns the server directly, not wrapped
+        // Try direct server first, fall back to wrapped response if needed
+        do {
+            // First try: backend returns server directly
+            let updatedServer: MCPServer = try await request(.updateMCPServer(server))
+            return updatedServer
+        } catch {
+            // Fallback: backend returns wrapped response
+            struct MCPServerResponse: Codable {
+                let server: MCPServer
+            }
+            let response: MCPServerResponse = try await request(.updateMCPServer(server))
+            return response.server
         }
-        let response: MCPServerResponse = try await request(.updateMCPServer(server))
-        return response.server
     }
     
     func deleteMCPServer(id: String) async throws {
@@ -226,17 +253,28 @@ actor APIClient: APIClientProtocol {
     }
     
     func testMCPServer(id: String) async throws -> ConnectionTestResult {
+        // Test endpoint likely needs special handling for connection testing
         struct TestResponse: Codable {
             let success: Bool
             let message: String
             let latency: Double?
         }
-        let response: TestResponse = try await request(.testMCPServer(id: id))
-        return ConnectionTestResult(
-            success: response.success,
-            message: response.message,
-            latency: response.latency
-        )
+        
+        do {
+            let response: TestResponse = try await request(.testMCPServer(id: id))
+            return ConnectionTestResult(
+                success: response.success,
+                message: response.message,
+                latency: response.latency
+            )
+        } catch {
+            // If test fails at network level, return failure result
+            return ConnectionTestResult(
+                success: false,
+                message: "Connection test failed: \(error.localizedDescription)",
+                latency: nil
+            )
+        }
     }
     
     func executeMCPCommand(command: String, args: [String]? = nil) async throws -> String {

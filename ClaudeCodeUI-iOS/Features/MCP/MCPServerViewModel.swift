@@ -80,6 +80,30 @@ class MCPServerViewModel: ObservableObject {
         }
     }
     
+    func updateServerAsync(_ server: MCPServer) async throws {
+        // First update locally
+        if let index = servers.firstIndex(where: { $0.id == server.id }) {
+            // If this is set as default, unset other defaults
+            if server.isDefault && !servers[index].isDefault {
+                for i in servers.indices where i != index {
+                    servers[i].isDefault = false
+                }
+            }
+            
+            servers[index] = server
+            saveServersToStorage()
+        }
+        
+        // Then update on backend (will throw if fails)
+        let updatedServer = try await APIClient.shared.updateMCPServer(server)
+        
+        // Update local server with response
+        if let index = servers.firstIndex(where: { $0.id == server.id }) {
+            servers[index] = updatedServer
+            saveServersToStorage()
+        }
+    }
+    
     func deleteServer(_ server: MCPServer) {
         servers.removeAll { $0.id == server.id }
         saveServersToStorage()
