@@ -195,6 +195,62 @@ actor APIClient: APIClientProtocol {
         }
     }
     
+    // MARK: - MCP Server Methods
+    
+    func getMCPServers() async throws -> [MCPServer] {
+        struct MCPServersResponse: Codable {
+            let servers: [MCPServer]
+        }
+        let response: MCPServersResponse = try await request(.getMCPServers())
+        return response.servers
+    }
+    
+    func addMCPServer(_ server: MCPServer) async throws -> MCPServer {
+        struct MCPServerResponse: Codable {
+            let server: MCPServer
+        }
+        let response: MCPServerResponse = try await request(.addMCPServer(server))
+        return response.server
+    }
+    
+    func updateMCPServer(_ server: MCPServer) async throws -> MCPServer {
+        struct MCPServerResponse: Codable {
+            let server: MCPServer
+        }
+        let response: MCPServerResponse = try await request(.updateMCPServer(server))
+        return response.server
+    }
+    
+    func deleteMCPServer(id: String) async throws {
+        try await requestVoid(.deleteMCPServer(id: id))
+    }
+    
+    func testMCPServer(id: String) async throws -> ConnectionTestResult {
+        struct TestResponse: Codable {
+            let success: Bool
+            let message: String
+            let latency: Double?
+        }
+        let response: TestResponse = try await request(.testMCPServer(id: id))
+        return ConnectionTestResult(
+            success: response.success,
+            message: response.message,
+            latency: response.latency
+        )
+    }
+    
+    func executeMCPCommand(command: String, args: [String]? = nil) async throws -> String {
+        struct CommandResponse: Codable {
+            let output: String
+            let success: Bool
+        }
+        let response: CommandResponse = try await request(.executeMCPCommand(command: command, args: args))
+        if !response.success {
+            throw APIError.serverError("Command execution failed: \(response.output)")
+        }
+        return response.output
+    }
+    
     // MARK: - Git Methods
     
     func getGitStatus(projectPath: String) async throws -> GitStatusResponse {
@@ -864,6 +920,38 @@ extension APIEndpoint {
     static func gitDeleteUntracked(projectPath: String) -> APIEndpoint {
         let body = try? JSONEncoder().encode(["projectPath": projectPath])
         return APIEndpoint(path: "/api/git/delete-untracked", method: .post, body: body)
+    }
+    
+    // MARK: - MCP Server Endpoints
+    static func getMCPServers() -> APIEndpoint {
+        return APIEndpoint(path: "/api/mcp/servers", method: .get)
+    }
+    
+    static func addMCPServer(_ server: MCPServer) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(server)
+        return APIEndpoint(path: "/api/mcp/servers", method: .post, body: body)
+    }
+    
+    static func updateMCPServer(_ server: MCPServer) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(server)
+        return APIEndpoint(path: "/api/mcp/servers/\(server.id)", method: .put, body: body)
+    }
+    
+    static func deleteMCPServer(id: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/mcp/servers/\(id)", method: .delete)
+    }
+    
+    static func testMCPServer(id: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/mcp/servers/\(id)/test", method: .post)
+    }
+    
+    static func executeMCPCommand(command: String, args: [String]? = nil) -> APIEndpoint {
+        var params = ["command": command]
+        if let args = args {
+            params["args"] = args.joined(separator: " ")
+        }
+        let body = try? JSONEncoder().encode(params)
+        return APIEndpoint(path: "/api/mcp/cli", method: .post, body: body)
     }
     
     // MARK: - Cursor Integration Endpoints

@@ -400,8 +400,4 @@ struct MCPServerDetailView: View {
     }
 }
 
-struct ConnectionTestResult {
-    let success: Bool
-    let message: String
-    let latency: Double?
-}
+// ConnectionTestResult moved to MCPServerViewModel.swift

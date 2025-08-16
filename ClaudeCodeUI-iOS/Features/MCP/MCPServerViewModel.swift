@@ -9,36 +9,6 @@ import Foundation
 import SwiftUI
 import Combine
 
-// MARK: - MCP Server Model
-struct MCPServer: Identifiable, Codable {
-    let id: String
-    var name: String
-    var url: String
-    var description: String
-    var type: MCPServerType
-    var apiKey: String?
-    var isDefault: Bool
-    var isConnected: Bool
-    var lastConnected: Date?
-    var configuration: [String: String]?
-}
-
-enum MCPServerType: String, CaseIterable, Codable {
-    case rest = "REST API"
-    case graphql = "GraphQL"
-    case websocket = "WebSocket"
-    case grpc = "gRPC"
-    
-    var icon: String {
-        switch self {
-        case .rest: return "cloud"
-        case .graphql: return "hexagon"
-        case .websocket: return "bolt"
-        case .grpc: return "cpu"
-        }
-    }
-}
-
 // MARK: - View Model
 @MainActor
 class MCPServerViewModel: ObservableObject {
@@ -61,13 +31,8 @@ class MCPServerViewModel: ObservableObject {
         
         Task {
             do {
-                // In production, this would call the API
-                // For now, we'll use mock data and local storage
-                try await Task.sleep(nanoseconds: 500_000_000) // Simulate network delay
-                
-                // Try to load from backend API
+                // Load from backend API
                 await loadServersFromAPI()
-                
                 isLoading = false
             } catch {
                 errorMessage = error.localizedDescription
@@ -126,19 +91,18 @@ class MCPServerViewModel: ObservableObject {
     }
     
     func testConnection(for server: MCPServer) async -> ConnectionTestResult {
-        // Simulate connection test
         do {
-            try await Task.sleep(nanoseconds: 1_000_000_000)
+            // Test the connection using the API
+            let result = try await APIClient.shared.testMCPServer(id: server.id)
             
-            // In production, actually test the connection
-            let success = Bool.random()
-            let latency = Double.random(in: 20...200)
+            // Update the server's connection status
+            if let index = servers.firstIndex(where: { $0.id == server.id }) {
+                servers[index].isConnected = result.success
+                servers[index].lastConnected = result.success ? Date() : servers[index].lastConnected
+                saveServersToStorage()
+            }
             
-            return ConnectionTestResult(
-                success: success,
-                message: success ? "Connection successful" : "Connection failed",
-                latency: success ? latency : nil
-            )
+            return result
         } catch {
             return ConnectionTestResult(
                 success: false,
@@ -201,65 +165,52 @@ class MCPServerViewModel: ObservableObject {
         ]
     }
     
-    // MARK: - API Methods (Placeholder for backend integration)
+    // MARK: - API Methods
     
     private func loadServersFromAPI() async {
-        // In production, this would call:
-        // GET /api/mcp/servers
-        
-        // For now, just use local storage
-        // The API implementation would look like:
-        /*
         do {
-            let response = try await APIClient.shared.request(.getMCPServers())
-            self.servers = response.servers
+            // Load servers from the backend API
+            let apiServers = try await APIClient.shared.getMCPServers()
+            self.servers = apiServers
             saveServersToStorage() // Cache locally
         } catch {
-            throw error
+            // If API fails, error is already handled in calling method
+            print("Failed to load MCP servers from API: \(error)")
         }
-        */
     }
     
     private func saveServerToAPI(_ server: MCPServer) async {
-        // In production, this would call:
-        // POST /api/mcp/servers
-        
-        // Implementation would look like:
-        /*
         do {
-            _ = try await APIClient.shared.request(.addMCPServer(server))
+            let savedServer = try await APIClient.shared.addMCPServer(server)
+            // Update local server with any backend-generated fields
+            if let index = servers.firstIndex(where: { $0.id == server.id }) {
+                servers[index] = savedServer
+                saveServersToStorage()
+            }
         } catch {
             errorMessage = "Failed to save server: \(error.localizedDescription)"
         }
-        */
     }
     
     private func updateServerOnAPI(_ server: MCPServer) async {
-        // In production, this would call:
-        // PUT /api/mcp/servers/:id
-        
-        // Implementation would look like:
-        /*
         do {
-            _ = try await APIClient.shared.request(.updateMCPServer(server))
+            let updatedServer = try await APIClient.shared.updateMCPServer(server)
+            // Update local server with response
+            if let index = servers.firstIndex(where: { $0.id == server.id }) {
+                servers[index] = updatedServer
+                saveServersToStorage()
+            }
         } catch {
             errorMessage = "Failed to update server: \(error.localizedDescription)"
         }
-        */
     }
     
     private func deleteServerFromAPI(_ server: MCPServer) async {
-        // In production, this would call:
-        // DELETE /api/mcp/servers/:id
-        
-        // Implementation would look like:
-        /*
         do {
-            _ = try await APIClient.shared.requestVoid(.deleteMCPServer(id: server.id))
+            try await APIClient.shared.deleteMCPServer(id: server.id)
         } catch {
             errorMessage = "Failed to delete server: \(error.localizedDescription)"
         }
-        */
     }
 }
 

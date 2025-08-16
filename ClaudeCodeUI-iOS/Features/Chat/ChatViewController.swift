@@ -334,7 +334,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - Properties
     
     // Debug mode - shows raw JSON responses inline
-    private let showRawJSON = true // Set to false in production
+    private let showRawJSON = false // Set to false in production
     
     private let project: Project
     private var currentSession: Session?
@@ -947,31 +947,85 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 print("📋 Raw JSON payload:\n\(jsonString)")
             }
             
-            // Extract content from payload
-            let content = message.payload?["content"] as? String ?? ""
+            // Filter out metadata messages that shouldn't be displayed
+            // Check if this is a metadata/status message
+            if message.type == .claudeResponse {
+                // Check if the content is just a status or ID
+                if let content = message.payload?["content"] as? String {
+                    let lowercased = content.lowercased()
+                    // Skip messages that are just status indicators or IDs
+                    if lowercased == "success" || 
+                       lowercased == "assistant" || 
+                       lowercased == "result" ||
+                       lowercased == "thinking" ||
+                       content.contains("-") && content.count == 36 || // UUID format
+                       content.hasPrefix("claude-") || // Model identifiers
+                       content.count < 3 { // Very short status messages
+                        print("🚫 Skipping metadata message: \(content)")
+                        return
+                    }
+                }
+            }
+            
+            // Extract content from payload based on message type
+            let content: String
+            
+            // Check multiple possible content locations based on backend response structure
+            if let directContent = message.payload?["content"] as? String, !directContent.isEmpty {
+                // Content is directly in payload (most common case)
+                content = directContent
+            } else if let data = message.payload?["data"] as? [String: Any] {
+                // Content might be nested in 'data' object
+                if let nestedContent = data["content"] as? String {
+                    content = nestedContent
+                } else if let nestedMessage = data["message"] as? String {
+                    content = nestedMessage
+                } else {
+                    // Try to extract any text field from data
+                    content = data.values.compactMap { $0 as? String }.first ?? ""
+                }
+            } else if let messageText = message.payload?["message"] as? String {
+                // Sometimes content comes as 'message' field
+                content = messageText
+            } else if let text = message.payload?["text"] as? String {
+                // Or as 'text' field
+                content = text
+            } else {
+                // Last resort - try to stringify the entire payload if it contains useful info
+                if let payload = message.payload,
+                   message.type == .claudeResponse || message.type == .claudeOutput {
+                    // For Claude responses, show the raw payload if we can't parse it properly
+                    if let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: []),
+                       let jsonString = String(data: jsonData, encoding: .utf8) {
+                        content = "⚠️ Unable to parse response. Raw data:\n\(jsonString)"
+                    } else {
+                        content = ""
+                    }
+                } else {
+                    content = ""
+                }
+            }
             
             switch message.type {
             case .claudeOutput:
                 // Handle streaming Claude output (partial responses)
-                let streamContent = content
-                
                 // In debug mode, show what type of stream we're getting
                 if self.showRawJSON && !content.isEmpty {
                     print("🌊 Streaming chunk: \(content)")
                 }
                 
-                self.handleClaudeStreamingOutput(content: streamContent)
+                self.handleClaudeStreamingOutput(content: content)
                 
             case .claudeResponse:
                 // Handle complete Claude response
                 var displayContent = content
                 
-                // Add raw JSON in debug mode
+                // Add raw JSON in debug mode (show the entire payload for debugging)
                 if self.showRawJSON,
                    let payload = message.payload,
                    let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted),
                    let jsonString = String(data: jsonData, encoding: .utf8) {
-                    displayContent = "\(content)\n\n🔍 Debug - Raw Response JSON:\n```json\n\(jsonString)\n```"
+                    displayContent = "\(content)\n\n🔍 Debug - Raw Response:\n```json\n\(jsonString)\n```"
                 }
                 
                 self.handleClaudeCompleteResponse(content: displayContent)
@@ -1279,7 +1333,14 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     private func handleStreamingMessage(_ message: WebSocketMessage) {
         // Handle streaming messages with proper typing indicator management
-        let content = message.payload?["content"] as? String ?? ""
+        // Check if content is nested in 'data' object (for streaming messages from backend)
+        let content: String
+        if let data = message.payload?["data"] as? [String: Any],
+           let nestedContent = data["content"] as? String {
+            content = nestedContent
+        } else {
+            content = message.payload?["content"] as? String ?? ""
+        }
         let messageId = message.payload?["messageId"] as? String
         
         // Log the raw message for debugging

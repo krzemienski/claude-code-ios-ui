@@ -160,44 +160,33 @@ class AppCoordinator: NSObject, Coordinator {
     }
     
     private func showMainInterface() {
-        // Create tab bar controller with delegate
+        // Create a basic tab bar controller temporarily
         let tabBarController = UITabBarController()
-        tabBarController.delegate = self
         
-        // Projects Tab
-        let projectsVC = createProjectsViewController()
-        let projectsNav = UINavigationController(rootViewController: projectsVC)
-        projectsNav.tabBarItem = UITabBarItem(
-            title: "Projects",
-            image: UIImage(systemName: "folder.fill"),
-            selectedImage: UIImage(systemName: "folder.fill.badge.plus")
-        )
-        
-        // Settings Tab
-        let settingsVC = createSettingsViewController()
-        let settingsNav = UINavigationController(rootViewController: settingsVC)
-        settingsNav.tabBarItem = UITabBarItem(
-            title: "Settings",
-            image: UIImage(systemName: "gearshape.fill"),
-            selectedImage: UIImage(systemName: "gearshape.2.fill")
-        )
-        
-        // Initial view controllers
-        tabBarController.viewControllers = [projectsNav, settingsNav]
-        
-        // Configure tab bar appearance
-        configureTabBarAppearance(tabBarController)
-        
-        // Configure navigation bars
-        [projectsNav, settingsNav].forEach { nav in
-            configureNavigationBar(nav)
+        // Create Projects tab
+        let projectsVC = ProjectsListViewController()
+        projectsVC.onProjectSelected = { [weak self] project in
+            self?.selectProject(project)
         }
+        let projectsNav = UINavigationController(rootViewController: projectsVC)
+        projectsNav.tabBarItem = UITabBarItem(title: "Projects", image: UIImage(systemName: "folder"), tag: 0)
+        
+        // Create Settings tab (placeholder for now)
+        let settingsVC = UIViewController()
+        settingsVC.title = "Settings"
+        settingsVC.view.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
+        let settingsNav = UINavigationController(rootViewController: settingsVC)
+        settingsNav.tabBarItem = UITabBarItem(title: "Settings", image: UIImage(systemName: "gear"), tag: 1)
+        
+        // Set view controllers
+        tabBarController.viewControllers = [projectsNav, settingsNav]
         
         // Store tab bar controller for later use
         self.mainTabBarController = tabBarController
         
-        // Handle project selection to add chat tab
-        setupProjectSelectionHandler(projectsVC: projectsVC, tabBarController: tabBarController)
+        // Apply theme
+        tabBarController.tabBar.tintColor = UIColor(red: 0, green: 0.85, blue: 1, alpha: 1.0)
+        tabBarController.tabBar.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
         
         // Animate transition
         UIView.transition(with: window, duration: 0.5, options: .transitionCrossDissolve, animations: {

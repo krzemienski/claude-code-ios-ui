@@ -14,6 +14,7 @@ public class MainTabBarController: UITabBarController {
     private let projectsVC = ProjectsViewController()
     private let settingsVC = SettingsViewController()
     private let transcriptionVC = TranscriptionViewController()
+    private let mcpServerVC = MCPServerListViewController()
     private var currentProject: Project?
     
     // MARK: - Lifecycle
@@ -69,6 +70,15 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "mic.fill.badge.plus")
         )
         
+        // MCP Servers Tab - Integrated MCP server management
+        mcpServerVC.title = "MCP Servers"
+        let mcpNav = UINavigationController(rootViewController: mcpServerVC)
+        mcpNav.tabBarItem = UITabBarItem(
+            title: "MCP",
+            image: createTabIcon(systemName: "server.rack"),
+            selectedImage: createTabIcon(systemName: "server.rack")
+        )
+        
         // SwiftUI Demo Tab - FIXED: Ensure it's visible
         let swiftUIView = SwiftUIDemoView()
         let swiftUIVC = UIHostingController(rootView: swiftUIView)
@@ -89,15 +99,15 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "gearshape.2.fill")
         )
         
-        // Set initial view controllers (projects, transcription, demo, and settings)
-        // IMPORTANT: Make sure all four are added
-        viewControllers = [projectsNav, transcriptionNav, swiftUINav, settingsNav]
+        // Set initial view controllers (projects, MCP, transcription, demo, and settings)
+        // IMPORTANT: Make sure all five are added
+        viewControllers = [projectsNav, mcpNav, transcriptionNav, swiftUINav, settingsNav]
         
         // Debug: Log tab count
         print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
         
         // Configure navigation bars
-        [projectsNav, swiftUINav, settingsNav].forEach { nav in
+        [projectsNav, mcpNav, transcriptionNav, swiftUINav, settingsNav].forEach { nav in
             nav.navigationBar.prefersLargeTitles = true
             nav.navigationBar.isTranslucent = false
             nav.navigationBar.backgroundColor = CyberpunkTheme.background
@@ -157,53 +167,16 @@ public class MainTabBarController: UITabBarController {
         // Store current project
         currentProject = project
         
-        // Create chat view controller for this project
-        let chatVC = ChatViewController(project: project)
-        let chatNav = UINavigationController(rootViewController: chatVC)
-        chatNav.tabBarItem = UITabBarItem(
-            title: "Chat",
-            image: createTabIcon(systemName: "message.fill"),
-            selectedImage: createTabIcon(systemName: "message.fill")
-        )
-        
-        // Configure navigation bar
-        chatNav.navigationBar.prefersLargeTitles = true
-        chatNav.navigationBar.isTranslucent = false
-        chatNav.navigationBar.backgroundColor = CyberpunkTheme.background
-        chatNav.navigationBar.tintColor = CyberpunkTheme.primaryCyan
-        chatNav.navigationBar.largeTitleTextAttributes = [
-            .foregroundColor: CyberpunkTheme.textPrimary,
-            .font: UIFont.systemFont(ofSize: 34, weight: .bold)
-        ]
-        chatNav.navigationBar.titleTextAttributes = [
-            .foregroundColor: CyberpunkTheme.textPrimary,
-            .font: UIFont.systemFont(ofSize: 17, weight: .semibold)
-        ]
-        
-        // Update tab bar with chat tab
-        if let projectsNav = viewControllers?[0] as? UINavigationController,
-           let settingsNav = viewControllers?.last as? UINavigationController {
-            viewControllers = [projectsNav, chatNav, settingsNav]
-            
-            // Switch to chat tab
-            selectedIndex = 1
-            
-            // Add animation
-            UIView.animate(withDuration: 0.3) {
-                self.tabBar.alpha = 0.8
-            } completion: { _ in
-                UIView.animate(withDuration: 0.2) {
-                    self.tabBar.alpha = 1.0
-                }
-            }
+        // Navigate to session list within the Projects tab instead of replacing tabs
+        if let projectsNav = viewControllers?[0] as? UINavigationController {
+            let sessionListVC = SessionListViewController(project: project)
+            projectsNav.pushViewController(sessionListVC, animated: true)
         }
     }
     
     // MARK: - Public Methods
-    func switchToChat() {
-        if viewControllers?.count ?? 0 >= 3 {
-            selectedIndex = 1
-        }
+    func switchToMCP() {
+        selectedIndex = 1  // MCP is at index 1
     }
     
     func switchToProjects() {
@@ -211,7 +184,7 @@ public class MainTabBarController: UITabBarController {
     }
     
     func switchToSettings() {
-        selectedIndex = viewControllers?.count == 3 ? 2 : (viewControllers?.count == 4 ? 3 : 1)
+        selectedIndex = 4  // Settings is always at index 4 (last tab)
     }
 }
 
