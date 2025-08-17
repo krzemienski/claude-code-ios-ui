@@ -17,6 +17,7 @@ public class MainTabBarController: UITabBarController {
     private let mcpServerVC = MCPServerListViewController()
     private lazy var searchVC = SearchViewController(project: currentProject)
     private lazy var terminalVC = TerminalViewController(project: currentProject)
+    private lazy var gitVC = GitViewController(project: currentProject)
     private var currentProject: Project?
     
     // MARK: - Lifecycle
@@ -81,6 +82,15 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "terminal.fill")
         )
         
+        // Git Tab - Version control management
+        gitVC.title = "Git"
+        let gitNav = UINavigationController(rootViewController: gitVC)
+        gitNav.tabBarItem = UITabBarItem(
+            title: "Git",
+            image: createTabIcon(systemName: "arrow.triangle.branch"),
+            selectedImage: createTabIcon(systemName: "arrow.triangle.branch")
+        )
+        
         // MCP Servers Tab - Integrated MCP server management
         mcpServerVC.title = "MCP Servers"
         let mcpNav = UINavigationController(rootViewController: mcpServerVC)
@@ -98,15 +108,15 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "gearshape.2.fill")
         )
         
-        // Set initial view controllers (projects, search, terminal, MCP, and settings)
-        // Removed Demo and Transcription tabs, replaced with Search and Terminal
-        viewControllers = [projectsNav, searchNav, terminalNav, mcpNav, settingsNav]
+        // Set initial view controllers (projects, search, terminal, Git, MCP, and settings)
+        // Now includes Git integration for version control
+        viewControllers = [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav]
         
         // Debug: Log tab count
         print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
         
         // Configure navigation bars
-        [projectsNav, searchNav, terminalNav, mcpNav, settingsNav].forEach { nav in
+        [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav].forEach { nav in
             nav.navigationBar.prefersLargeTitles = true
             nav.navigationBar.isTranslucent = false
             nav.navigationBar.backgroundColor = CyberpunkTheme.background
@@ -182,6 +192,14 @@ public class MainTabBarController: UITabBarController {
             terminalNav.setViewControllers([newTerminalVC], animated: false)
         }
         
+        // Update GitViewController with new project context
+        if let gitNav = viewControllers?[3] as? UINavigationController {
+            // Create new GitViewController with project context
+            let newGitVC = GitViewController(project: project)
+            newGitVC.title = "Git"
+            gitNav.setViewControllers([newGitVC], animated: false)
+        }
+        
         // Navigate to session list within the Projects tab instead of replacing tabs
         if let projectsNav = viewControllers?[0] as? UINavigationController {
             let sessionListVC = SessionListViewController(project: project)
@@ -202,12 +220,16 @@ public class MainTabBarController: UITabBarController {
         selectedIndex = 2  // Terminal is at index 2
     }
     
+    func switchToGit() {
+        selectedIndex = 3  // Git is at index 3
+    }
+    
     func switchToMCP() {
-        selectedIndex = 3  // MCP is at index 3
+        selectedIndex = 4  // MCP is at index 4
     }
     
     func switchToSettings() {
-        selectedIndex = 4  // Settings is always at index 4 (last tab)
+        selectedIndex = 5  // Settings is always at index 5 (last tab)
     }
 }
 
