@@ -42,6 +42,7 @@ import { spawnCursor, abortCursorSession } from './cursor-cli.js';
 import gitRoutes from './routes/git.js';
 import authRoutes from './routes/auth.js';
 import mcpRoutes from './routes/mcp.js';
+import mcpRestRoutes from './routes/mcp-rest.js';
 import cursorRoutes from './routes/cursor.js';
 import { initializeDatabase } from './database/db.js';
 import { validateApiKey, authenticateToken, authenticateWebSocket } from './middleware/auth.js';
@@ -178,7 +179,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/git', gitRoutes);
 
 // MCP API Routes (protected)
-app.use('/api/mcp', mcpRoutes);
+app.use('/api/mcp', mcpRestRoutes);  // Mount REST routes for iOS app
+app.use('/api/mcp', mcpRoutes);      // Keep CLI routes for compatibility
 
 // Cursor API Routes (protected)
 app.use('/api/cursor', cursorRoutes);

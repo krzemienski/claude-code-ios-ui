@@ -15,6 +15,8 @@ public class MainTabBarController: UITabBarController {
     private let settingsVC = SettingsViewController()
     private let transcriptionVC = TranscriptionViewController()
     private let mcpServerVC = MCPServerListViewController()
+    private let searchVC = SearchViewController()
+    private let terminalVC = TerminalViewController()
     private var currentProject: Project?
     
     // MARK: - Lifecycle
@@ -61,13 +63,22 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "folder.fill.badge.plus")
         )
         
-        // Transcription Tab - Voice to text functionality
-        transcriptionVC.title = "Transcribe"
-        let transcriptionNav = UINavigationController(rootViewController: transcriptionVC)
-        transcriptionNav.tabBarItem = UITabBarItem(
-            title: "Transcribe",
-            image: createTabIcon(systemName: "mic.fill"),
-            selectedImage: createTabIcon(systemName: "mic.fill.badge.plus")
+        // Search Tab - Project-wide search functionality
+        searchVC.title = "Search"
+        let searchNav = UINavigationController(rootViewController: searchVC)
+        searchNav.tabBarItem = UITabBarItem(
+            title: "Search",
+            image: createTabIcon(systemName: "magnifyingglass"),
+            selectedImage: createTabIcon(systemName: "magnifyingglass.circle.fill")
+        )
+        
+        // Terminal Tab - Command execution
+        terminalVC.title = "Terminal"
+        let terminalNav = UINavigationController(rootViewController: terminalVC)
+        terminalNav.tabBarItem = UITabBarItem(
+            title: "Terminal",
+            image: createTabIcon(systemName: "terminal"),
+            selectedImage: createTabIcon(systemName: "terminal.fill")
         )
         
         // MCP Servers Tab - Integrated MCP server management
@@ -79,18 +90,6 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "server.rack")
         )
         
-        // SwiftUI Demo Tab - FIXED: Ensure it's visible
-        let swiftUIView = SwiftUIDemoView()
-        let swiftUIVC = UIHostingController(rootView: swiftUIView)
-        swiftUIVC.title = "Demo"
-        swiftUIVC.view.backgroundColor = .black // Ensure view is initialized
-        let swiftUINav = UINavigationController(rootViewController: swiftUIVC)
-        swiftUINav.tabBarItem = UITabBarItem(
-            title: "Demo",
-            image: createTabIcon(systemName: "sparkles"),
-            selectedImage: createTabIcon(systemName: "sparkles")
-        )
-        
         // Settings Tab - Always available
         let settingsNav = UINavigationController(rootViewController: settingsVC)
         settingsNav.tabBarItem = UITabBarItem(
@@ -99,15 +98,15 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "gearshape.2.fill")
         )
         
-        // Set initial view controllers (projects, MCP, transcription, demo, and settings)
-        // IMPORTANT: Make sure all five are added
-        viewControllers = [projectsNav, mcpNav, transcriptionNav, swiftUINav, settingsNav]
+        // Set initial view controllers (projects, search, terminal, MCP, and settings)
+        // Removed Demo and Transcription tabs, replaced with Search and Terminal
+        viewControllers = [projectsNav, searchNav, terminalNav, mcpNav, settingsNav]
         
         // Debug: Log tab count
         print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
         
         // Configure navigation bars
-        [projectsNav, mcpNav, transcriptionNav, swiftUINav, settingsNav].forEach { nav in
+        [projectsNav, searchNav, terminalNav, mcpNav, settingsNav].forEach { nav in
             nav.navigationBar.prefersLargeTitles = true
             nav.navigationBar.isTranslucent = false
             nav.navigationBar.backgroundColor = CyberpunkTheme.background
@@ -175,12 +174,20 @@ public class MainTabBarController: UITabBarController {
     }
     
     // MARK: - Public Methods
-    func switchToMCP() {
-        selectedIndex = 1  // MCP is at index 1
-    }
-    
     func switchToProjects() {
         selectedIndex = 0
+    }
+    
+    func switchToSearch() {
+        selectedIndex = 1  // Search is at index 1
+    }
+    
+    func switchToTerminal() {
+        selectedIndex = 2  // Terminal is at index 2
+    }
+    
+    func switchToMCP() {
+        selectedIndex = 3  // MCP is at index 3
     }
     
     func switchToSettings() {

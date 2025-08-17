@@ -123,23 +123,99 @@ class SearchViewModel: ObservableObject {
     // MARK: - Private Methods
     
     private func performSearch(query: String, scope: SearchScope, fileTypes: [FileType]) async throws -> [SearchResult] {
-        // In production, this would call the backend API
-        // For now, we'll simulate with mock data
-        
-        // Simulate network delay
-        try await Task.sleep(nanoseconds: 1_000_000_000)
-        
         // Check if cancelled
         if Task.isCancelled {
             return []
         }
         
-        // In production, call API:
-        // POST /api/projects/:projectName/search
-        // with body: { query, scope, fileTypes }
+        // Ensure we have a project name
+        guard !currentProjectName.isEmpty else {
+            // If no project name, use mock data as fallback
+            print("⚠️ No project name set, using mock data")
+            return generateMockResults(query: query, scope: scope)
+        }
         
-        // Mock results for demonstration
-        return generateMockResults(query: query, scope: scope)
+        // Create the search request
+        let searchRequest: [String: Any] = [
+            "query": query,
+            "scope": scope.rawValue,
+            "fileTypes": fileTypes.map { $0.rawValue }
+        ]
+        
+        // Call the backend API
+        let endpoint = "/api/projects/\(currentProjectName)/search"
+        
+        do {
+            // Using APIClient's generic request method
+            let response = try await withCheckedThrowingContinuation { continuation in
+                APIClient.shared.request(
+                    endpoint: endpoint,
+                    method: "POST",
+                    body: searchRequest
+                ) { (result: Result<[String: Any], Error>) in
+                    continuation.resume(with: result)
+                }
+            }
+            
+            // Parse the response
+            if let searchResults = response["results"] as? [[String: Any]] {
+                return parseSearchResults(from: searchResults)
+            } else {
+                // If no results in response, return empty array
+                return []
+            }
+        } catch {
+            print("❌ Search API error: \(error)")
+            // On error, could fallback to mock data or rethrow
+            throw error
+        }
+    }
+    
+    private func parseSearchResults(from data: [[String: Any]]) -> [SearchResult] {
+        return data.compactMap { item in
+            guard let fileName = item["fileName"] as? String,
+                  let filePath = item["filePath"] as? String,
+                  let fileType = item["fileType"] as? String else {
+                return nil
+            }
+            
+            let matchCount = item["matchCount"] as? Int ?? 0
+            let matchPreview = item["matchPreview"] as? String
+            
+            // Parse matches if available
+            var matches: [SearchMatch] = []
+            if let matchesData = item["matches"] as? [[String: Any]] {
+                matches = matchesData.compactMap { matchItem in
+                    guard let lineNumber = matchItem["lineNumber"] as? Int,
+                          let lineContent = matchItem["lineContent"] as? String else {
+                        return nil
+                    }
+                    
+                    return SearchMatch(
+                        lineNumber: lineNumber,
+                        columnNumber: matchItem["columnNumber"] as? Int ?? 0,
+                        lineContent: lineContent,
+                        contextBefore: matchItem["contextBefore"] as? String,
+                        contextAfter: matchItem["contextAfter"] as? String
+                    )
+                }
+            }
+            
+            return SearchResult(
+                fileName: fileName,
+                filePath: filePath,
+                fileType: fileType,
+                matchCount: matchCount,
+                matches: matches,
+                matchPreview: matchPreview
+            )
+        }
+    }
+    
+    /// Sets the current project context for search
+    public func setProjectContext(name: String, path: String) {
+        currentProjectName = name
+        currentProjectPath = path
     }
     
     private func generateMockResults(query: String, scope: SearchScope) -> [SearchResult] {

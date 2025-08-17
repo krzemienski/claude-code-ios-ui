@@ -36,6 +36,9 @@ final class Session {
     var startedAt: Date?
     var lastActiveAt: Date?
     
+    // UI state
+    var isPinned: Bool? = false
+    
     // MARK: - Relationships
     @Relationship(deleteRule: .cascade)
     var messages: [Message]?

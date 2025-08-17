@@ -111,6 +111,10 @@ class EnhancedChatMessage: ChatMessage {
 class TypingIndicatorCell: UITableViewCell {
     static let identifier = "TypingIndicatorCell"
     
+    // TODO: Add when TypingIndicatorView is added to project
+    // private let typingIndicator = TypingIndicatorView()
+    private let typingIndicator = UIView() // Placeholder
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupCell()
@@ -123,8 +127,26 @@ class TypingIndicatorCell: UITableViewCell {
     private func setupCell() {
         backgroundColor = .clear
         selectionStyle = .none
-        textLabel?.text = "Claude is typing..."
-        textLabel?.textColor = .systemGray
+        
+        // TODO: Re-enable when TypingIndicatorView is added to project
+        // contentView.addSubview(typingIndicator)
+        // typingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        
+        // NSLayoutConstraint.activate([
+        //     typingIndicator.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+        //     typingIndicator.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+        //     typingIndicator.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
+        // ])
+    }
+    
+    func startAnimating() {
+        // typingIndicator.show()
+        typingIndicator.isHidden = false
+    }
+    
+    func stopAnimating() {
+        // typingIndicator.hide()
+        typingIndicator.isHidden = true
     }
 }
 
@@ -362,6 +384,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     // MARK: - UI Components
     
+    // Typing indicator for showing when Claude is responding
+    private let typingIndicator = TypingIndicatorView()
+    
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -372,7 +397,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         tableView.register(EnhancedMessageCell.self, forCellReuseIdentifier: EnhancedMessageCell.identifier)
         tableView.register(ChatMessageCell.self, forCellReuseIdentifier: ChatMessageCell.identifier)
         tableView.register(TypingIndicatorCell.self, forCellReuseIdentifier: TypingIndicatorCell.identifier)
-        // tableView.prefetchDataSource = self // TODO: Implement UITableViewDataSourcePrefetching
+        tableView.prefetchDataSource = self
         tableView.estimatedRowHeight = 100
         tableView.rowHeight = UITableView.automaticDimension
         tableView.keyboardDismissMode = .interactive
@@ -719,10 +744,33 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             status: .sending
         )
         
-        // Add to messages array
+        // Add to messages array with animation
         messages.append(userMessage)
-        tableView.reloadData()
-        scrollToBottom()
+        
+        // Insert with animation
+        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        tableView.insertRows(at: [indexPath], with: .fade)
+        
+        // Animate the message cell after insertion
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            if let cell = self?.tableView.cellForRow(at: indexPath) {
+                // TODO: Add animations when MessageAnimator is added to project
+                // MessageAnimator.animateSend(view: cell.contentView)
+                // MessageAnimator.addGlowEffect(to: cell.contentView, color: CyberpunkTheme.primaryCyan)
+            }
+        }
+        
+        // Smooth scroll to bottom with momentum
+        // MessageAnimator.scrollToBottom(tableView: tableView, animated: true)
+        // Fallback scroll to bottom
+        if tableView.numberOfSections > 0 {
+            let lastSection = tableView.numberOfSections - 1
+            let lastRow = tableView.numberOfRows(inSection: lastSection) - 1
+            if lastRow >= 0 {
+                let indexPath = IndexPath(row: lastRow, section: lastSection)
+                tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+            }
+        }
         
         // Clear input
         inputTextView.text = ""
@@ -775,18 +823,42 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     @objc private func showAttachmentOptions() {
-        // TODO: Implement attachment options
-        print("Attachment button tapped")
+        // Create action sheet for attachment options
+        let actionSheet = UIAlertController(title: "Add Attachment", message: nil, preferredStyle: .actionSheet)
+        
+        actionSheet.addAction(UIAlertAction(title: "Photo Library", style: .default) { [weak self] _ in
+            self?.presentPhotoPicker()
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Camera", style: .default) { [weak self] _ in
+            self?.presentCamera()
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Files", style: .default) { [weak self] _ in
+            self?.presentDocumentPicker()
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // For iPad
+        if let popover = actionSheet.popoverPresentationController {
+            popover.sourceView = attachButton
+            popover.sourceRect = attachButton.bounds
+        }
+        
+        present(actionSheet, animated: true)
     }
     
     @objc private func showFileExplorer() {
-        // TODO: Navigate to file explorer
-        print("File explorer tapped")
+        // Navigate to file explorer
+        let fileExplorerVC = FileExplorerViewController(project: project)
+        navigationController?.pushViewController(fileExplorerVC, animated: true)
     }
     
     @objc private func showTerminal() {
-        // TODO: Navigate to terminal
-        print("Terminal tapped")
+        // Navigate to terminal
+        let terminalVC = TerminalViewController(project: project)
+        navigationController?.pushViewController(terminalVC, animated: true)
     }
     
     @objc private func abortSession() {
@@ -1186,7 +1258,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 cell.configure(with: lastMessage)
             }
         } else {
-            // Create new complete message
+            // Create new complete message with animation
             let chatMessage = EnhancedChatMessage(
                 id: UUID().uuidString,
                 content: content,
@@ -1196,8 +1268,31 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             )
             chatMessage.messageType = .claudeResponse
             messages.append(chatMessage)
-            tableView.reloadData()
-            scrollToBottom()
+            
+            // Insert with animation
+            let indexPath = IndexPath(row: messages.count - 1, section: 0)
+            tableView.insertRows(at: [indexPath], with: .fade)
+            
+            // Animate the message cell after insertion
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                if let cell = self?.tableView.cellForRow(at: indexPath) {
+                    // TODO: Add animations when MessageAnimator is added to project
+                    // MessageAnimator.animateReceive(view: cell.contentView)
+                    // MessageAnimator.addGlowEffect(to: cell.contentView, color: CyberpunkTheme.accentPink)
+                }
+            }
+            
+            // Smooth scroll to bottom
+            // MessageAnimator.scrollToBottom(tableView: tableView, animated: true)
+        // Fallback scroll to bottom
+        if tableView.numberOfSections > 0 {
+            let lastSection = tableView.numberOfSections - 1
+            let lastRow = tableView.numberOfRows(inSection: lastSection) - 1
+            if lastRow >= 0 {
+                let indexPath = IndexPath(row: lastRow, section: lastSection)
+                tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+            }
+        }
         }
         
         // Update user message status to delivered

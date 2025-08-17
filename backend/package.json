@@ -55,6 +55,7 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "tailwind-merge": "^3.3.1",
+    "uuid": "^11.1.0",
     "ws": "^8.14.2",
     "xterm": "^5.3.0",
     "xterm-addon-fit": "^0.8.0"

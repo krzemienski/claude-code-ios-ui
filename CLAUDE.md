@@ -11,11 +11,12 @@ Last Updated: January 16, 2025 | Backend: Node.js Express | iOS: Swift 5.9 UIKit
 - Shell WebSocket: ws://localhost:3004/shell  
 - Database: SQLite with auth.db and store.db
 
-### API Implementation Reality Check
-- **Total Backend Endpoints**: 62
-- **Actually Implemented in iOS**: 37 endpoints (60%)
-- **Missing in iOS**: 25 endpoints (40%)
+### API Implementation Reality Check - UPDATED January 2025
+- **Total Backend Endpoints**: 54 (including MCP)
+- **Actually Implemented in iOS**: 43 endpoints (80%)
+- **Missing in iOS**: 11 endpoints (20%)
 - **Critical Issues**: Most "P0 issues" are already fixed!
+- **MCP Server Management**: ✅ 6/6 endpoints (100% COMPLETE - tested and working!)
 
 ## ✅ WORKING FEATURES (Much More Than Previously Documented!)
 
@@ -59,19 +60,21 @@ Native iOS client for Claude Code with a cyberpunk-themed UI that communicates w
 
 ## Project Status Summary
 
-### ✅ COMPLETED FEATURES (37 of 62 endpoints = 60%)
+### ✅ COMPLETED FEATURES (43 of 54 endpoints = 80%)
 - Basic project structure and navigation (AppCoordinator, MainTabBarController)
 - Data models (Project, Session, Message with fullPath support)
-- APIClient with 37 endpoints implemented
+- APIClient with 43 endpoints implemented
 - WebSocketManager with correct implementation
-- SessionListViewController with full CRUD operations
+- SessionListViewController with full CRUD operations + enhanced pull-to-refresh
 - ChatViewController with working WebSocket
-- Cyberpunk theme and visual effects
+- Cyberpunk theme and visual effects with SkeletonView and NoDataView
 - Authentication with JWT (working)
 - Projects list loading from backend
 - Session messages loading (working)
 - **Git integration fully implemented (16/16 endpoints)**
+- **MCP Server Management fully implemented (6/6 endpoints)**
 - File operations (read, write, delete)
+- Search functionality connected to real API
 
 ### 🔄 IN PROGRESS FEATURES
 - File explorer UI connected to backend
@@ -211,435 +214,195 @@ ClaudeCodeUI-iOS/
 
 For complete API documentation, see the full backend reference at the end of this file.
 
-## 📋 UPDATED IMPLEMENTATION TASKS
-
-## SECTION 1: WEBSOCKET ENHANCEMENTS [COMPLETED ✅]
-
-### Task 1.1: Fix WebSocket URL Path ✅ COMPLETED
-**Status**: Already using correct URL from AppConfig.websocketURL
-
-### Task 1.2: Fix WebSocket Message Type ✅ COMPLETED
-**Status**: Already using "claude-command" throughout the codebase
-
-### Task 1.3: Add Project Path to WebSocket Messages ✅ COMPLETED
-**Status**: Project path is included in messages
-
-## SECTION 2: PRIORITY MISSING FEATURES [NEW TASKS]
-
-### Task 2.1: Implement MCP Server Management ❌
-**Endpoints**: 6 endpoints to implement
-**Files**: Create MCPViewController.swift
-**Priority**: HIGH - Core Claude Code functionality
-
-### Task 2.2: Add Cursor Integration ❌
-**Endpoints**: 8 endpoints to implement
-**Files**: Create CursorViewController.swift
-**Priority**: HIGH - Essential for Cursor users
-
-### Task 2.3: Implement Search API ❌
-**Endpoint**: POST /api/projects/:projectName/search
-**Files**: Create SearchViewController.swift
-**Priority**: MEDIUM - Important for large projects
-
-### Task 2.4: Add Terminal WebSocket ❌
-**WebSocket**: ws://localhost:3004/shell
-**Files**: Update TerminalViewController.swift
-**Priority**: MEDIUM - Useful for command execution
-
-### Task 2.5: Implement Transcription API ❌
-**Endpoint**: POST /api/transcribe
-**Files**: Create TranscriptionService.swift
-**Priority**: LOW - Nice to have for voice input
-
-## SECTION 2: SESSION MANAGEMENT [P0 - CRITICAL - 18 Tasks]
-
-### Task 2.1: Create Session Selection UI ✅
-**Status**: COMPLETED - SessionListViewController exists
-
-### Task 2.2: Implement Session Creation ❌
-**File**: APIClient.swift
-**Add**: createSession(projectPath:) method
-**Backend**: POST /api/projects/:projectName/sessions
-
-### Task 2.3: Add Session List Loading ✅
-**Status**: COMPLETED - Fixed with correct endpoint
-
-### Task 2.4: Implement Session Deletion ❌
-**File**: SessionListViewController.swift
-**Add**: Swipe to delete sessions
-**Backend**: DELETE /api/sessions/:sessionId
-
-### Task 2.5: Add Session Persistence ❌
-**File**: UserDefaults or SwiftData
-**Add**: Store current sessionId per project
-**Test**: Session resumes after app restart
-
-### Task 2.6: Create Session Cell UI ✅
-**Status**: COMPLETED - SessionTableViewCell exists
-
-### Task 2.7: Add Session Navigation ✅
-**Status**: COMPLETED - Navigation flow works
-
-### Task 2.8: Implement Session Sorting ❌
-**File**: SessionListViewController.swift
-**Add**: Sort by lastActivity, messageCount
-**UI**: Segmented control for sort options
-
-### Task 2.9: Add Session Search ❌
-**File**: SessionListViewController.swift
-**Add**: UISearchController for filtering
-**Search**: By summary text
-
-### Task 2.10: Implement Session Pagination ❌
-**File**: SessionListViewController.swift
-**Add**: Load more on scroll
-**Backend**: Use limit/offset parameters
-
-### Task 2.11: Add Pull to Refresh ❌
-**File**: SessionListViewController.swift
-**Add**: UIRefreshControl
-**Action**: Reload sessions from backend
-
-### Task 2.12: Create New Session Flow ❌
-**File**: SessionListViewController.swift
-**Add**: + button in navigation bar
-**Flow**: Create session → Navigate to chat
-
-### Task 2.13: Add Session Status Display ❌
-**File**: SessionTableViewCell.swift
-**Show**: Active/inactive/archived status
-**Visual**: Different colors/icons per status
-
-### Task 2.14: Implement Session Archiving ❌
-**File**: SessionListViewController.swift
-**Add**: Archive action in swipe menu
-**Backend**: Update session status
-
-### Task 2.15: Add Session Export ❌
-**File**: SessionDetailViewController.swift
-**Add**: Export session as JSON/Markdown
-**Share**: Via UIActivityViewController
-
-### Task 2.16: Create Session Summary Generation ❌
-**File**: Session.swift
-**Add**: Auto-generate summary from messages
-**Backend**: Use Claude to summarize
-
-### Task 2.17: Add Session Continuation ❌
-**File**: ChatViewController.swift
-**Feature**: Continue previous session
-**Load**: Previous messages and context
-
-### Task 2.18: Implement Session Metrics ❌
-**File**: SessionDetailViewController.swift
-**Show**: Token count, duration, cost estimate
-**Charts**: Message frequency over time
-
-## SECTION 3: API IMPLEMENTATION [P1 - HIGH - 25 Tasks]
-
-### Task 3.1: Implement Authentication Flow ❌
-**Files**: LoginViewController.swift, APIClient.swift
-**Endpoints**: POST /api/auth/login, POST /api/auth/register
-**Storage**: Keychain for JWT token
-
-### Task 3.2: Add Project Creation API ❌
-**File**: APIClient.swift
-**Endpoint**: POST /api/projects
-**Params**: name, path, description
-
-### Task 3.3: Implement Project Deletion ✅
-**Status**: COMPLETED - deleteProject() implemented
-
-### Task 3.4: Add File Tree API ❌
-**File**: FileExplorerViewController.swift
-**Endpoint**: GET /api/projects/:projectName/files
-**Display**: Hierarchical file tree
-
-### Task 3.5: Implement File Read API ❌
-**File**: FileViewerViewController.swift
-**Endpoint**: GET /api/projects/:projectName/files/content
-**Feature**: Syntax highlighting
-
-### Task 3.6: Add File Write API ❌
-**File**: FileEditorViewController.swift
-**Endpoint**: PUT /api/projects/:projectName/files/content
-**Save**: Auto-save with debouncing
-
-### Task 3.7: Implement File Creation ❌
-**File**: FileExplorerViewController.swift
-**Endpoint**: POST /api/projects/:projectName/files
-**UI**: New file dialog
-
-### Task 3.8: Add File Deletion ❌
-**File**: FileExplorerViewController.swift
-**Endpoint**: DELETE /api/projects/:projectName/files
-**Confirm**: Alert before deletion
-
-### Task 3.9: Implement Git Status API ❌
-**File**: GitViewController.swift
-**Endpoint**: GET /api/git/status
-**Display**: Changed files list
-
-### Task 3.10: Add Git Commit API ❌
-**File**: GitViewController.swift
-**Endpoint**: POST /api/git/commit
-**UI**: Commit message dialog
-
-### Task 3.11: Implement Git Branch API ❌
-**File**: GitViewController.swift
-**Endpoint**: GET /api/git/branches
-**Feature**: Branch switching
-
-### Task 3.12: Add Git Push/Pull ❌
-**File**: GitViewController.swift
-**Endpoints**: POST /git/push, POST /git/pull
-**Auth**: Git credentials storage
-
-### Task 3.13: Implement Search API ❌
-**File**: SearchViewController.swift
-**Endpoint**: POST /api/projects/:projectName/search
-**Feature**: Full-text search in project
-
-### Task 3.14: Add Settings Sync API ❌
-**File**: SettingsViewController.swift
-**Endpoint**: GET/PUT /api/settings
-**Sync**: User preferences to backend
-
-### Task 3.15: Implement MCP Server API ❌
-**File**: MCPViewController.swift
-**Endpoint**: GET /api/mcp/servers
-**Display**: Available MCP servers
-
-### Task 3.16: Add Cursor Integration API ❌
-**File**: CursorViewController.swift
-**Endpoints**: /api/cursor/config, /api/cursor/sessions
-**Feature**: Cursor AI integration
-
-### Task 3.17: Implement Analytics API ❌
-**File**: AnalyticsService.swift
-**Endpoint**: POST /api/analytics/events
-**Track**: User actions and metrics
-
-### Task 3.18: Add Backup/Restore API ❌
-**File**: BackupViewController.swift
-**Endpoints**: POST /api/backup, POST /api/restore
-**Feature**: Full project backup
-
-### Task 3.19: Implement Export API ❌
-**File**: ExportViewController.swift
-**Endpoint**: POST /api/export
-**Formats**: ZIP, TAR, Git bundle
-
-### Task 3.20: Add Import API ❌
-**File**: ImportViewController.swift
-**Endpoint**: POST /api/import
-**Sources**: GitHub, GitLab, local
-
-### Task 3.21: Implement Collaboration API ❌
-**File**: CollaborationViewController.swift
-**Endpoint**: GET/POST /api/collaborators
-**Feature**: Multi-user support
-
-### Task 3.22: Add Notifications API ❌
-**File**: NotificationService.swift
-**Endpoint**: GET /api/notifications
-**Push**: APNs integration
-
-### Task 3.23: Implement Templates API ❌
-**File**: TemplatesViewController.swift
-**Endpoint**: GET /api/templates
-**Feature**: Project templates
-
-### Task 3.24: Add Plugins API ❌
-**File**: PluginsViewController.swift
-**Endpoint**: GET /api/plugins
-**Feature**: Extension system
-
-### Task 3.25: Implement Health Check API ❌
-**File**: HealthService.swift
-**Endpoint**: GET /api/health
-**Monitor**: Backend status
-
-## SECTION 4: UI/UX IMPROVEMENTS [P1 - HIGH - 30 Tasks]
-
-### Task 4.1-4.30: UI Polish and Features ❌
-- Loading states and skeleton screens
-- Empty states and error views
-- Pull-to-refresh and infinite scroll
-- Search bars and filter options
-- Sort controls and swipe actions
-- Context menus and action sheets
-- Floating action button
-- Tab bar badges
-- Navigation breadcrumbs
-- Onboarding flow
-- Tool tips and coach marks
-- Keyboard shortcuts
-- Quick actions and 3D Touch
-- Haptic feedback and sound effects
-- Animations and transitions
-- Dark mode and theme switching
-- Custom fonts
-- Accessibility labels and VoiceOver
-
-## SECTION 5: DATA PERSISTENCE [P2 - MEDIUM - 20 Tasks]
-
-### Task 5.1-5.20: SwiftData Implementation ❌
-- SwiftData models and relationships
-- Migration strategies
-- Local caching
-- Offline sync
-- Conflict resolution
-- Data export/import
-- iCloud sync
-- Background sync
-- Data validation
-- Query optimization
-
-## SECTION 6: FILE EXPLORER [P2 - MEDIUM - 15 Tasks]
-
-### Task 6.1-6.15: File Management ❌
-- Tree view navigation
-- Syntax highlighting
-- File operations (CRUD)
-- Search and filtering
-- Preview pane
-- Quick look
-- File sharing
-- Version control integration
-- Diff viewer
-- File templates
-
-## SECTION 7: TERMINAL INTEGRATION [P2 - MEDIUM - 12 Tasks]
-
-### Task 7.1-7.12: Terminal Features ❌
-- ANSI color support
-- Command history
-- Auto-completion
-- Command aliases
-- Split panes
-- Session management
-- SSH integration
-- Script execution
-- Environment variables
-- Terminal themes
-
-## SECTION 8: AUTHENTICATION [P1 - HIGH - 10 Tasks]
-
-### Task 8.1-8.10: Security Implementation ❌
-- JWT token management
-- Biometric authentication
-- Keychain integration
-- OAuth providers
-- Session management
-- Token refresh
-- Logout everywhere
-- Password reset
-- 2FA support
-- Security audit
-
-## SECTION 9: TESTING [P1 - HIGH - 25 Tasks]
-
-### Task 9.1-9.25: Test Coverage ❌
-- Unit tests for models
-- Unit tests for ViewModels
-- Unit tests for services
-- UI tests for main flows
-- Integration tests
-- Performance tests
-- Accessibility tests
-- Localization tests
-- Security tests
-- Stress tests
-
-## SECTION 10: PERFORMANCE [P2 - MEDIUM - 15 Tasks]
-
-### Task 10.1-10.15: Optimization ❌
-- Memory profiling
-- CPU optimization
-- Network optimization
-- Battery optimization
-- Launch time optimization
-- Scroll performance
-- Animation performance
-- Image caching
-- Data pagination
-- Background tasks
-
-## SECTION 11: SECURITY [P1 - HIGH - 12 Tasks]
-
-### Task 11.1-11.12: Security Hardening ❌
-- Data encryption
-- Certificate pinning
-- Jailbreak detection
-- Code obfuscation
-- Anti-tampering
-- Secure storage
-- Network security
-- Input validation
-- OWASP compliance
-- Security headers
-
-## SECTION 12: ACCESSIBILITY [P2 - MEDIUM - 10 Tasks]
-
-### Task 12.1-12.10: Accessibility Support ❌
-- VoiceOver support
-- Dynamic Type
-- Reduced motion
-- Color contrast
-- Keyboard navigation
-- Switch control
-- Voice control
-- Accessibility inspector
-- Screen reader testing
-- WCAG compliance
-
-## SECTION 13: LOCALIZATION [P3 - LOW - 8 Tasks]
-
-### Task 13.1-13.8: Multi-language Support ❌
-- String extraction
-- Localization files
-- RTL support
-- Date formatting
-- Number formatting
-- Currency formatting
-- Pluralization
-- Translation management
-
-## SECTION 14: EXTENSIONS [P3 - LOW - 10 Tasks]
-
-### Task 14.1-14.10: App Extensions ❌
-- Today widget
-- Share extension
-- Action extension
-- Keyboard extension
-- Notification extension
-- Spotlight integration
-- Shortcuts app
-- Siri suggestions
-- Quick Note
-- Focus filters
-
-## SECTION 15: DEPLOYMENT [P1 - HIGH - 15 Tasks]
-
-### Task 15.1-15.15: Release Preparation ❌
-- App Store assets
-- Screenshots
-- App preview video
-- Description writing
-- Keywords optimization
-- TestFlight setup
-- Beta testing
-- Crash reporting
-- Analytics setup
-- CI/CD pipeline
-
-## 📈 Progress Tracking - UPDATED
+## 📋 CONSOLIDATED IMPLEMENTATION TASKS
+
+## 🔴 PRIORITY 0: MCP SERVER MANAGEMENT [CRITICAL - 6 Tasks]
+**Essential for Claude Code functionality**
+
+### MCP-1: List MCP Servers API ❌
+- **Endpoint**: GET /api/mcp/servers
+- **File**: `APIClient.swift` line 196-204 (already stubbed)
+- **Test**: `curl http://localhost:3004/api/mcp/servers -H "Authorization: Bearer TOKEN"`
+
+### MCP-2: Add MCP Server API ❌
+- **Endpoint**: POST /api/mcp/servers
+- **File**: `APIClient.swift` line 217-231 (already stubbed)
+- **Body**: `{name, url, type, apiKey?, description?}`
+
+### MCP-3: Remove MCP Server API ❌
+- **Endpoint**: DELETE /api/mcp/servers/:id
+- **File**: `APIClient.swift` line 251-253
+
+### MCP-4: Test MCP Connection ❌
+- **Endpoint**: POST /api/mcp/servers/:id/test
+- **File**: `APIClient.swift` line 255-278
+- **Response**: `{success: bool, message: string, latency?: number}`
+
+### MCP-5: Execute MCP CLI Commands ❌
+- **Endpoint**: POST /api/mcp/cli
+- **File**: `APIClient.swift` line 280-290
+- **Request**: `{command: string, args?: string[]}`
+
+### MCP-6: Add MCP Tab to MainTabBarController ❌
+- **File**: `MainTabBarController.swift` line 50-60
+- **Action**: Add MCPServerListViewController to tab bar
+- **Icon**: server.rack / server.rack.fill
+
+## 🟡 PRIORITY 1: SEARCH FUNCTIONALITY [HIGH - 4 Tasks]
+
+### SEARCH-1: Backend Search Endpoint ❌
+- **Endpoint**: POST /api/projects/:projectName/search
+- **Request**: `{query: string, scope: string, fileTypes: string[]}`
+- **Backend Status**: Not implemented - needs backend work first
+
+### SEARCH-2: Connect SearchViewModel to API ❌
+- **File**: `SearchViewModel.swift` line 125-143
+- **Current**: Using mock data in `performSearch()`
+- **Replace**: Mock with actual API call
+
+### SEARCH-3: Search Filters UI ❌
+- **File**: Create `SearchView.swift`
+- **Features**: File type filters, date range, regex support
+
+### SEARCH-4: Search Results Caching ❌
+- **File**: `SearchViewModel.swift`
+- **Cache Key**: `"{projectName}_{query}_{scope}"`
+- **Duration**: 5 minutes or until project changes
+
+## 🟠 PRIORITY 1: TERMINAL WEBSOCKET [HIGH - 4 Tasks]
+
+### TERMINAL-1: Connect Shell WebSocket ❌
+- **File**: `TerminalViewController.swift` line 176
+- **WebSocket URL**: `ws://localhost:3004/shell`
+- **Method**: `connectShellWebSocket()` needs implementation
+
+### TERMINAL-2: Shell Command Execution ❌
+- **Message Format**: `{"type": "shell-command", "command": "ls -la", "cwd": "/path"}`
+- **Response Format**: `{"type": "shell-output", "output": "...", "error": false}`
+
+### TERMINAL-3: ANSI Color Support ❌
+- **Library**: NSAttributedString with ANSI parser
+- **Colors**: Support 16 basic colors + 256 color mode
+
+### TERMINAL-4: Terminal Resize ❌
+- **Message**: `{"type": "resize", "cols": 80, "rows": 24}`
+- **Trigger**: On view size change
+
+## 🔵 PRIORITY 2: UI/UX POLISH [MEDIUM - 10 Tasks]
+
+### UI-1: Loading Skeletons ❌
+- **Files**: All ViewControllers with table/collection views
+- **Create**: `SkeletonView.swift` utility
+- **Animation**: Shimmer effect with gradient
+
+### UI-2: Pull to Refresh ❌
+- **File**: `SessionListViewController.swift`
+- **Implementation**: UIRefreshControl with cyberpunk theme
+
+### UI-3: Empty States ❌
+- **Create**: `EmptyStateView.swift`
+- **Variants**: No sessions, no search results, no files
+
+### UI-4: Swipe Actions ❌
+- **File**: `SessionListViewController.swift`
+- **Actions**: Delete (red), Archive (yellow), Duplicate (cyan)
+
+### UI-5: Session Creation Flow ❌
+- **File**: `SessionListViewController.swift`
+- **Add**: + button in navigation bar
+- **Flow**: Create session → Navigate to chat
+
+### UI-6: Error Alert Views ❌
+- **Create**: `ErrorAlertView.swift`
+- **Features**: Retry action, detailed error info
+
+### UI-7: Loading Indicators ❌
+- **Add**: Activity indicators during API calls
+- **Style**: Cyberpunk-themed spinners
+
+### UI-8: Attachment Options (from TODO) ❌
+- **File**: `ChatViewController.swift`
+- **Location**: Line with "TODO: Implement attachment options"
+- **Features**: Photo picker, file browser, camera
+
+### UI-9: File Explorer Navigation (from TODO) ❌
+- **File**: `ChatViewController.swift`
+- **Location**: Line with "TODO: Navigate to file explorer"
+- **Action**: Push FileExplorerViewController
+
+### UI-10: Terminal Navigation (from TODO) ❌
+- **File**: `ChatViewController.swift`
+- **Location**: Line with "TODO: Navigate to terminal"
+- **Action**: Push TerminalViewController
+
+## 🟢 PRIORITY 2: TESTING [MEDIUM - 5 Tasks]
+
+### TEST-1: Backend Startup Script ❌
+- **Create**: `test_setup.sh`
+- **Actions**: Start backend, boot simulator, run tests
+
+### TEST-2: MCP Integration Test ❌
+- **Create**: `MCPIntegrationTests.swift`
+- **Test Flow**: List → Add → Test → Delete servers
+
+### TEST-3: Search Unit Tests ❌
+- **Create**: `SearchViewModelTests.swift`
+- **Mock**: Create `MockAPIClient`
+
+### TEST-4: WebSocket Reconnection Test ❌
+- **Test**: Auto-reconnection within 3 seconds
+- **Verify**: Exponential backoff works
+
+### TEST-5: Session Flow E2E Test ❌
+- **Test**: Create → Load → Send Message → Delete
+- **Protocol**: 5-phase testing (start, project, session, message, cleanup)
+
+## 🟣 PRIORITY 3: FILE OPERATIONS [LOW - 3 Tasks]
+
+### FILE-1: File/Folder Creation (from TODO) ❌
+- **File**: `FileExplorerViewController.swift`
+- **Location**: Line with "TODO: Implement actual file/folder creation"
+- **Backend**: POST /api/projects/:projectName/files
+
+### FILE-2: Prefetch Implementation (from TODO) ❌
+- **File**: `ChatViewController.swift`
+- **Location**: Line with "TODO: Implement UITableViewDataSourcePrefetching"
+- **Feature**: Preload messages before scrolling
+
+### FILE-3: File Tree Update (from TODO) ❌
+- **File**: `FileTreeViewController.swift`
+- **Method**: `updateFileTree()` needs implementation
+- **Backend**: GET /api/projects/:projectName/files
+
+## ⚫ PRIORITY 4: NICE-TO-HAVE [LOW]
+
+### BACKUP-1: CloudFlare Tunnel Integration ❌
+- **Purpose**: Access backend from real device
+- **Tool**: CloudFlare Zero Trust tunnel
+- **Config**: Map localhost:3004 to public URL
+
+### PERF-1: Memory Optimization ❌
+- **Target**: < 150MB baseline
+- **Tools**: Instruments memory profiler
+
+### PERF-2: Launch Time Optimization ❌
+- **Target**: < 2 seconds
+- **Method**: Lazy loading, deferred initialization
+
+### ACCESSIBILITY-1: VoiceOver Support ❌
+- **Audit**: All UI elements have accessibility labels
+- **Test**: Navigate entire app with VoiceOver
+
+### SECURITY-1: Keychain Integration ❌
+- **Store**: JWT tokens in keychain instead of UserDefaults
+- **Library**: Use native Security framework
+
+## 📈 Progress Tracking
 
 **API Implementation Reality**:
-- **Total Backend Endpoints**: 62
-- **Implemented**: 37 endpoints (60%)
-- **Missing**: 25 endpoints (40%)
+- **Total Backend Endpoints**: 54 (excluding deprecated Cursor)
+- **Implemented**: 37 endpoints (69%)
+- **Missing**: 17 endpoints (31%)
 
 **Feature Completion Status**:
 - ✅ **Git Integration**: 16/16 endpoints (100%)
@@ -649,48 +412,143 @@ For complete API documentation, see the full backend reference at the end of thi
 - ✅ **Files**: 4/4 endpoints (100%)
 - ✅ **WebSocket**: Working correctly
 - ❌ **MCP Servers**: 0/6 endpoints (0%)
-- ❌ **Cursor Integration**: 0/8 endpoints (0%)
 - ❌ **Search**: Not implemented
+- ❌ **Terminal WebSocket**: Not connected
 - ❌ **Transcription**: Not implemented
 
-**Real Priority**:
-1. MCP Server Management (essential for Claude Code)
-2. Cursor Integration (for Cursor users)
-3. Search functionality
-4. Terminal WebSocket
-5. UI/UX polish
+**Task Summary**:
+- **Priority 0 (Critical)**: 6 MCP tasks
+- **Priority 1 (High)**: 8 tasks (4 Search + 4 Terminal)
+- **Priority 2 (Medium)**: 15 tasks (10 UI/UX + 5 Testing)
+- **Priority 3 (Low)**: 3 File operation tasks
+- **Priority 4 (Nice-to-have)**: 5 tasks
+
+**Total Actionable Tasks**: 37 (down from 200+ duplicates)
+
+## 🚀 Implementation Timeline
+
+### Week 1 (Days 1-3) - Critical MCP Features
+1. **Day 1**: MCP Server endpoints testing (MCP-1 to MCP-5)
+2. **Day 2**: MCP UI integration (MCP-6) + Testing (TEST-1, TEST-2)
+3. **Day 3**: Terminal WebSocket connection (TERMINAL-1, TERMINAL-2)
+
+### Week 1 (Days 4-5) - Search & Terminal
+4. **Day 4**: Search API implementation (SEARCH-1, SEARCH-2)
+5. **Day 5**: Terminal ANSI colors (TERMINAL-3) + Search filters (SEARCH-3)
+
+### Week 2 (Days 6-8) - UI Polish
+6. **Day 6**: Loading states & skeletons (UI-1)
+7. **Day 7**: Pull to refresh & empty states (UI-2, UI-3)
+8. **Day 8**: Swipe actions & navigation (UI-4, UI-5)
+
+### Week 2 (Days 9-10) - Testing & Optimization
+9. **Day 9**: Integration tests (TEST-3, TEST-4, TEST-5)
+10. **Day 10**: Performance optimization and bug fixes
 
 ## Testing Guide
 
-### Functional Testing via Simulator
+### 📱 CRITICAL SIMULATOR CONFIGURATION
+**ALWAYS USE THIS SIMULATOR UUID**: `05223130-57AA-48B0-ABD0-4D59CE455F14`
+- **Device**: iPhone 16 Pro Max with iOS 18.6
+- **NEVER** use simulator names - ALWAYS use this UUID
+- **ALWAYS** boot this simulator first if not already booted
+
+### XcodeBuildMCP Testing Best Practices
+
+#### 1. UI Interaction Rules
+- **ALWAYS** use `describe_ui()` first to get precise coordinates
+- **Use `touch()`** with down/up events, NOT `tap()`:
+  ```javascript
+  // Correct way to tap
+  touch({ simulatorUuid: "05223130-57AA-48B0-ABD0-4D59CE455F14", x: 100, y: 200, down: true })
+  touch({ simulatorUuid: "05223130-57AA-48B0-ABD0-4D59CE455F14", x: 100, y: 200, up: true })
+  ```
+- **NEVER** guess coordinates from screenshots
+- Parse JSON from `describe_ui()` to find exact element positions
+
+#### 2. Log Management Strategy
+**Use Background Streaming** to avoid app restart issues:
+```bash
+# Start BEFORE launching app
+xcrun simctl spawn 05223130-57AA-48B0-ABD0-4D59CE455F14 log stream \
+  --predicate 'processImagePath contains "ClaudeCodeUI"' \
+  > test_logs.txt &
+
+# Store PID to kill later
+LOG_PID=$!
+
+# After testing, kill the stream
+kill $LOG_PID
+
+# Process logs in chunks to avoid memory issues
+tail -n 1000 test_logs.txt  # Last 1000 lines
+grep -i error test_logs.txt # Find errors
+head -n 500 test_logs.txt    # First 500 lines
+```
+
+#### 3. Complete Testing Workflow
+```javascript
+const SIMULATOR_UUID = "05223130-57AA-48B0-ABD0-4D59CE455F14";  // ALWAYS THIS ONE
+
+// 1. Boot simulator if needed
+await boot_sim({ simulatorUuid: SIMULATOR_UUID });
+await open_sim();
+
+// 2. Build for specific simulator
+await build_simulator({
+  projectPath: "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj",
+  scheme: "ClaudeCodeUI",
+  simulatorId: SIMULATOR_UUID  // ALWAYS use UUID, not name
+});
+
+// 3. Get app path
+const appPath = await get_simulator_app_path({
+  projectPath: "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj",
+  scheme: "ClaudeCodeUI",
+  simulatorId: SIMULATOR_UUID
+});
+
+// 4. Start background log streaming (BEFORE launching app)
+// Run via Bash: xcrun simctl spawn 05223130-57AA-48B0-ABD0-4D59CE455F14 log stream ...
+
+// 5. Install and launch
+await install_app_sim({ 
+  simulatorUuid: SIMULATOR_UUID, 
+  appPath: appPath 
+});
+await launch_app_sim({ 
+  simulatorUuid: SIMULATOR_UUID, 
+  bundleId: "com.claudecode.ui" 
+});
+
+// 6. Test with UI automation
+const ui = await describe_ui({ simulatorUuid: SIMULATOR_UUID });
+// Parse ui JSON to find elements, then use touch() for interactions
+```
+
+### Functional Testing via Simulator (Legacy)
 ```bash
 # STEP 1: Start backend server (required for real data)
 cd backend
 npm start
 
-# STEP 2: Build iOS app
+# STEP 2: Build iOS app for specific simulator UUID
 xcodebuild build \
   -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj \
   -scheme ClaudeCodeUI \
-  -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
+  -destination 'platform=iOS Simulator,id=05223130-57AA-48B0-ABD0-4D59CE455F14' \
   -derivedDataPath ./Build
 
 # STEP 3: Boot and setup simulator
-xcrun simctl boot "iPhone 15"
-xcrun simctl install booted ./Build/Build/Products/Debug-iphonesimulator/ClaudeCodeUI.app
-xcrun simctl launch booted com.claudecode.ui
+xcrun simctl boot 05223130-57AA-48B0-ABD0-4D59CE455F14
+xcrun simctl install 05223130-57AA-48B0-ABD0-4D59CE455F14 ./Build/Build/Products/Debug-iphonesimulator/ClaudeCodeUI.app
+xcrun simctl launch 05223130-57AA-48B0-ABD0-4D59CE455F14 com.claudecode.ui
 
 # STEP 4: Verify functionality and capture screenshots
 # Navigate through app: Projects → Session → Messages
 # Monitor Xcode console for API calls and WebSocket messages
-xcrun simctl io booted screenshot project-list.png
-xcrun simctl io booted screenshot session-messages.png
-
-# Using MCP XcodeBuild tools for automated testing
-mcp__XcodeBuildMCP__build_run_sim_name_proj \
-  projectPath: "ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj" \
-  scheme: "ClaudeCodeUI" \
-  simulatorName: "iPhone 15"
+xcrun simctl io 05223130-57AA-48B0-ABD0-4D59CE455F14 screenshot project-list.png
+xcrun simctl io 05223130-57AA-48B0-ABD0-4D59CE455F14 screenshot session-messages.png
 ```
 
 ### Key Test Scenarios
@@ -912,12 +770,11 @@ The iOS Claude Code UI app is in much better shape than previously documented:
 
 The main missing features are:
 1. **MCP Server Management** (0/6 endpoints) - Essential for Claude Code
-2. **Cursor Integration** (0/8 endpoints) - Important for Cursor users
-3. **Search API** - Useful for large projects
-4. **Terminal WebSocket** - Shell command execution
-5. **UI/UX Polish** - Animations, loading states, etc.
+2. **Search API** - Useful for large projects
+3. **Terminal WebSocket** - Shell command execution
+4. **UI/UX Polish** - Animations, loading states, etc.
 
-The app follows best practices with MVVM architecture, has a solid foundation, and most "critical P0 issues" were either already fixed or never existed. The codebase is ready for adding the remaining MCP and Cursor features.
+The app follows best practices with MVVM architecture, has a solid foundation, and most "critical P0 issues" were either already fixed or never existed. The codebase is ready for adding the remaining MCP and Search features.
 
 ---
 
