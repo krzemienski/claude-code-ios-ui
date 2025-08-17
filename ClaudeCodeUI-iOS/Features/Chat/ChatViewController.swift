@@ -841,9 +841,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         })
         
         actionSheet.addAction(UIAlertAction(title: "Files", style: .default) { [weak self] _ in
-            // TODO: Implement document picker
-            // self?.presentDocumentPicker()
-            print("Files selected - not yet implemented")
+            // Navigate to File Explorer
+            self?.showFileExplorer()
         })
         
         actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))

@@ -19,6 +19,7 @@ struct CyberpunkTheme {
     static let border = UIColor(white: 0.3, alpha: 1.0)
     static let surfaceSecondary = UIColor(red: 0.15, green: 0.15, blue: 0.2, alpha: 1.0)
     static let textPrimary = UIColor.white
+    static let textTertiary = UIColor(white: 0.5, alpha: 1.0)
     
     static let headingFont = UIFont.systemFont(ofSize: 18, weight: .bold)
     static let bodyFont = UIFont.systemFont(ofSize: 16, weight: .regular)

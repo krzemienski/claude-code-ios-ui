@@ -7,6 +7,7 @@
 
 import UIKit
 import Foundation
+import SwiftUI
 
 // Import view controllers from Features folder
 // ChatViewController is properly included in the Xcode project
@@ -160,33 +161,80 @@ class AppCoordinator: NSObject, Coordinator {
     }
     
     private func showMainInterface() {
-        // Create a basic tab bar controller temporarily
+        // Create tab bar controller with all 6 tabs
         let tabBarController = UITabBarController()
         
-        // Create Projects tab
-        let projectsVC = ProjectsListViewController()
-        projectsVC.onProjectSelected = { [weak self] project in
-            self?.selectProject(project)
-        }
+        // Projects Tab
+        let projectsVC = createProjectsViewController()
         let projectsNav = UINavigationController(rootViewController: projectsVC)
-        projectsNav.tabBarItem = UITabBarItem(title: "Projects", image: UIImage(systemName: "folder"), tag: 0)
+        projectsNav.tabBarItem = UITabBarItem(
+            title: "Projects",
+            image: UIImage(systemName: "folder.fill"),
+            selectedImage: UIImage(systemName: "folder.fill.badge.plus")
+        )
         
-        // Create Settings tab (placeholder for now)
-        let settingsVC = UIViewController()
-        settingsVC.title = "Settings"
-        settingsVC.view.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
+        // Search Tab - Placeholder for now
+        let searchVC = createPlaceholderViewController(title: "Search", color: CyberpunkTheme.primaryCyan)
+        let searchNav = UINavigationController(rootViewController: searchVC)
+        searchNav.tabBarItem = UITabBarItem(
+            title: "Search",
+            image: UIImage(systemName: "magnifyingglass"),
+            selectedImage: UIImage(systemName: "magnifyingglass.circle.fill")
+        )
+        
+        // Terminal Tab - Placeholder for now
+        let terminalVC = createPlaceholderViewController(title: "Terminal", color: UIColor(red: 1, green: 0, blue: 0.43, alpha: 1.0))
+        let terminalNav = UINavigationController(rootViewController: terminalVC)
+        terminalNav.tabBarItem = UITabBarItem(
+            title: "Terminal",
+            image: UIImage(systemName: "terminal"),
+            selectedImage: UIImage(systemName: "terminal.fill")
+        )
+        
+        // Git Tab - Placeholder for now
+        let gitVC = createPlaceholderViewController(title: "Git", color: CyberpunkTheme.primaryCyan)
+        let gitNav = UINavigationController(rootViewController: gitVC)
+        gitNav.tabBarItem = UITabBarItem(
+            title: "Git",
+            image: UIImage(systemName: "arrow.triangle.branch"),
+            selectedImage: UIImage(systemName: "arrow.triangle.branch")
+        )
+        
+        // MCP Servers Tab - Create a proper MCP view controller
+        let mcpVC = createMCPViewController()
+        let mcpNav = UINavigationController(rootViewController: mcpVC)
+        mcpNav.tabBarItem = UITabBarItem(
+            title: "MCP",
+            image: UIImage(systemName: "server.rack"),
+            selectedImage: UIImage(systemName: "server.rack")
+        )
+        
+        // Settings Tab - Create a proper Settings view controller
+        let settingsVC = createSettingsViewController()
         let settingsNav = UINavigationController(rootViewController: settingsVC)
-        settingsNav.tabBarItem = UITabBarItem(title: "Settings", image: UIImage(systemName: "gear"), tag: 1)
+        settingsNav.tabBarItem = UITabBarItem(
+            title: "Settings",
+            image: UIImage(systemName: "gearshape.fill"),
+            selectedImage: UIImage(systemName: "gearshape.2.fill")
+        )
         
-        // Set view controllers
-        tabBarController.viewControllers = [projectsNav, settingsNav]
+        // iOS automatically creates a More tab when there are more than 5 view controllers
+        // We'll set all 6, and iOS will put MCP and Settings under the More menu
+        tabBarController.viewControllers = [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav]
+        
+        // Note: iOS will automatically show only 4 tabs + More tab
+        // The More tab will contain MCP and Settings as a list
+        
+        // Configure appearance
+        configureTabBarAppearance(tabBarController)
+        
+        // Configure navigation bars
+        [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav].forEach { nav in
+            configureNavigationBar(nav)
+        }
         
         // Store tab bar controller for later use
         self.mainTabBarController = tabBarController
-        
-        // Apply theme
-        tabBarController.tabBar.tintColor = UIColor(red: 0, green: 0.85, blue: 1, alpha: 1.0)
-        tabBarController.tabBar.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
         
         // Animate transition
         UIView.transition(with: window, duration: 0.5, options: .transitionCrossDissolve, animations: {
@@ -305,13 +353,35 @@ class AppCoordinator: NSObject, Coordinator {
         }
     }
     
-    private func createSettingsViewController() -> UIViewController {
+    private func createPlaceholderViewController(title: String, color: UIColor) -> UIViewController {
         let vc = UIViewController()
-        vc.title = "Settings"
+        vc.title = title
         vc.view.backgroundColor = CyberpunkTheme.background
         
         let label = UILabel()
-        label.text = "Settings"
+        label.text = title
+        label.textColor = color
+        label.font = UIFont.systemFont(ofSize: 24, weight: .bold)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        vc.view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: vc.view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: vc.view.centerYAnchor)
+        ])
+        
+        return vc
+    }
+    
+    private func createMCPViewController() -> UIViewController {
+        // For now, return a simple view controller with MCP UI
+        // This will be replaced with the actual MCPServerListViewController once properly imported
+        let vc = UIViewController()
+        vc.title = "MCP Servers"
+        vc.view.backgroundColor = CyberpunkTheme.background
+        
+        let label = UILabel()
+        label.text = "MCP Servers"
         label.textColor = CyberpunkTheme.primaryCyan
         label.font = UIFont.systemFont(ofSize: 24, weight: .bold)
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -324,6 +394,29 @@ class AppCoordinator: NSObject, Coordinator {
         
         return vc
     }
+    
+    private func createSettingsViewController() -> UIViewController {
+        // For now, return a simple view controller with Settings UI
+        // This will be replaced with the actual SettingsViewController once properly imported  
+        let vc = UIViewController()
+        vc.title = "Settings"
+        vc.view.backgroundColor = CyberpunkTheme.background
+        
+        let label = UILabel()
+        label.text = "Settings"
+        label.textColor = UIColor(red: 1, green: 0, blue: 0.43, alpha: 1.0)
+        label.font = UIFont.systemFont(ofSize: 24, weight: .bold)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        vc.view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: vc.view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: vc.view.centerYAnchor)
+        ])
+        
+        return vc
+    }
+    
     
     private func createChatViewController(for project: Project) -> UIViewController {
         let vc = UIViewController()

@@ -57,6 +57,19 @@ class SettingsViewController: BaseTableViewController {
                 ]
             ),
             SettingsSection(
+                title: "MCP Servers",
+                items: [
+                    SettingsItem(
+                        title: "Manage MCP Servers",
+                        value: nil,
+                        action: { [weak self] in
+                            let mcpVC = MCPServerListViewController()
+                            self?.navigationController?.pushViewController(mcpVC, animated: true)
+                        }
+                    )
+                ]
+            ),
+            SettingsSection(
                 title: "Display",
                 items: [
                     SettingsItem(

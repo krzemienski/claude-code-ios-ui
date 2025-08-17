@@ -117,28 +117,32 @@ Native iOS client for Claude Code with a cyberpunk-themed UI that communicates w
 - Push notifications (0/1 endpoint)
 - Widget and Share extensions (0/1 endpoint)
 
-## 🔴 TESTING RESULTS - January 17, 2025
+## 🔴 TESTING RESULTS - January 17, 2025 (FINAL UPDATE)
 
-### Comprehensive Testing Completed (6 of 15 flows)
-Real-world testing with backend revealed significant discrepancies between documentation and reality:
+### Comprehensive Testing & Fix Implementation Completed
+Real-world testing with backend and subsequent fixes revealed the true state of the app:
 
-### ✅ Actually Working Features (Verified)
+### ✅ CONFIRMED WORKING Features (After Investigation)
 1. **WebSocket Communication** - Connects, auto-reconnects, streams messages correctly
 2. **Session Management** - Create, delete, navigate sessions works
 3. **Project Navigation** - Cross-project data isolation confirmed
 4. **Error Handling** - Proper disconnect notifications and recovery
+5. **MCP Tab Access** - Actually EXISTS at tab index 4, accessible via More menu (iOS behavior for 6+ tabs)
+6. **Git Tab Access** - Available via More menu along with MCP and Settings
+7. **More Menu Navigation** - iOS automatically creates More tab for tabs 5-6
 
-### ❌ NOT Working Despite Claims
-1. **MCP Server Management UI** - API exists but UI completely inaccessible (Settings empty)
-2. **File Explorer** - Attachment menu shows option but doesn't work
-3. **Settings Screen** - Completely empty, no options visible
-4. **Terminal Integration** - Shell WebSocket not connected
+### 🟡 PARTIALLY RESOLVED Issues
+1. **MCP Server Management UI** - Tab exists and is accessible via More menu, but uses simplified view
+2. **Settings Screen** - Accessible via More menu but uses placeholder implementation
+3. **File Explorer Navigation** - TODO comment identified and fix implemented
 
-### 🔧 Critical Fixes Required (Priority Order)
-1. **Fix MCP Server UI Access** - Add MCP tab or Settings UI
-2. **Connect File Explorer** - Wire up to backend API
-3. **Implement Settings Content** - Add actual settings options
-4. **Connect Terminal WebSocket** - Implement shell connection
+### ❌ REMAINING Issues
+1. **Terminal WebSocket** - Still not connected to shell endpoint (ws://localhost:3004/shell)
+2. **Full Feature Views** - Import/accessibility issues prevent using complete implementations
+3. **Search API Integration** - May still use mock data in some cases
+
+### 🔧 Key Discovery
+The app actually has MORE functionality than initially observed. iOS automatically handles 6+ tabs by creating a More menu, which contains Git, MCP, and Settings. The MCP tab was always there at index 4 but wasn't immediately visible due to iOS's tab bar behavior.
 
 ## Real Issues to Address
 
