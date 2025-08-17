@@ -113,7 +113,7 @@ class TypingIndicatorCell: UITableViewCell {
     
     // TODO: Add when TypingIndicatorView is added to project
     // private let typingIndicator = TypingIndicatorView()
-    private let typingIndicator = UIView() // Placeholder
+    // private let typingIndicator = UIView() // Placeholder
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -141,12 +141,12 @@ class TypingIndicatorCell: UITableViewCell {
     
     func startAnimating() {
         // typingIndicator.show()
-        typingIndicator.isHidden = false
+        // typingIndicator.isHidden = false
     }
     
     func stopAnimating() {
         // typingIndicator.hide()
-        typingIndicator.isHidden = true
+        // typingIndicator.isHidden = true
     }
 }
 
@@ -385,7 +385,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - UI Components
     
     // Typing indicator for showing when Claude is responding
-    private let typingIndicator = TypingIndicatorView()
+    // TODO: Fix TypingIndicatorView import issue - file exists but not imported
+    // private let typingIndicator = TypingIndicatorView()
     
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
@@ -397,7 +398,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         tableView.register(EnhancedMessageCell.self, forCellReuseIdentifier: EnhancedMessageCell.identifier)
         tableView.register(ChatMessageCell.self, forCellReuseIdentifier: ChatMessageCell.identifier)
         tableView.register(TypingIndicatorCell.self, forCellReuseIdentifier: TypingIndicatorCell.identifier)
-        tableView.prefetchDataSource = self
+        // TODO: Implement UITableViewDataSourcePrefetching
+        // tableView.prefetchDataSource = self
         tableView.estimatedRowHeight = 100
         tableView.rowHeight = UITableView.automaticDimension
         tableView.keyboardDismissMode = .interactive
@@ -827,15 +829,21 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         let actionSheet = UIAlertController(title: "Add Attachment", message: nil, preferredStyle: .actionSheet)
         
         actionSheet.addAction(UIAlertAction(title: "Photo Library", style: .default) { [weak self] _ in
-            self?.presentPhotoPicker()
+            // TODO: Implement photo picker
+            // self?.presentPhotoPicker()
+            print("Photo Library selected - not yet implemented")
         })
         
         actionSheet.addAction(UIAlertAction(title: "Camera", style: .default) { [weak self] _ in
-            self?.presentCamera()
+            // TODO: Implement camera
+            // self?.presentCamera()
+            print("Camera selected - not yet implemented")
         })
         
         actionSheet.addAction(UIAlertAction(title: "Files", style: .default) { [weak self] _ in
-            self?.presentDocumentPicker()
+            // TODO: Implement document picker
+            // self?.presentDocumentPicker()
+            print("Files selected - not yet implemented")
         })
         
         actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
