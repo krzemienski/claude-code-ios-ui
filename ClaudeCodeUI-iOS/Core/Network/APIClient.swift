@@ -195,6 +195,100 @@ actor APIClient: APIClientProtocol {
         }
     }
     
+    // MARK: - MCP Server Methods
+    
+    func getMCPServers() async throws -> [MCPServer] {
+        // Backend likely returns array directly, not wrapped in object
+        // Try direct array first, fall back to wrapped response if needed
+        do {
+            // First try: backend returns array directly
+            let servers: [MCPServer] = try await request(.getMCPServers())
+            return servers
+        } catch {
+            // Fallback: backend returns wrapped response
+            struct MCPServersResponse: Codable {
+                let servers: [MCPServer]
+            }
+            let response: MCPServersResponse = try await request(.getMCPServers())
+            return response.servers
+        }
+    }
+    
+    func addMCPServer(_ server: MCPServer) async throws -> MCPServer {
+        // Backend likely returns the server directly, not wrapped
+        // Try direct server first, fall back to wrapped response if needed
+        do {
+            // First try: backend returns server directly
+            let savedServer: MCPServer = try await request(.addMCPServer(server))
+            return savedServer
+        } catch {
+            // Fallback: backend returns wrapped response
+            struct MCPServerResponse: Codable {
+                let server: MCPServer
+            }
+            let response: MCPServerResponse = try await request(.addMCPServer(server))
+            return response.server
+        }
+    }
+    
+    func updateMCPServer(_ server: MCPServer) async throws -> MCPServer {
+        // Backend likely returns the server directly, not wrapped
+        // Try direct server first, fall back to wrapped response if needed
+        do {
+            // First try: backend returns server directly
+            let updatedServer: MCPServer = try await request(.updateMCPServer(server))
+            return updatedServer
+        } catch {
+            // Fallback: backend returns wrapped response
+            struct MCPServerResponse: Codable {
+                let server: MCPServer
+            }
+            let response: MCPServerResponse = try await request(.updateMCPServer(server))
+            return response.server
+        }
+    }
+    
+    func deleteMCPServer(id: String) async throws {
+        try await requestVoid(.deleteMCPServer(id: id))
+    }
+    
+    func testMCPServer(id: String) async throws -> ConnectionTestResult {
+        // Test endpoint likely needs special handling for connection testing
+        struct TestResponse: Codable {
+            let success: Bool
+            let message: String
+            let latency: Double?
+        }
+        
+        do {
+            let response: TestResponse = try await request(.testMCPServer(id: id))
+            return ConnectionTestResult(
+                success: response.success,
+                message: response.message,
+                latency: response.latency
+            )
+        } catch {
+            // If test fails at network level, return failure result
+            return ConnectionTestResult(
+                success: false,
+                message: "Connection test failed: \(error.localizedDescription)",
+                latency: nil
+            )
+        }
+    }
+    
+    func executeMCPCommand(command: String, args: [String]? = nil) async throws -> String {
+        struct CommandResponse: Codable {
+            let output: String
+            let success: Bool
+        }
+        let response: CommandResponse = try await request(.executeMCPCommand(command: command, args: args))
+        if !response.success {
+            throw APIError.serverError("Command execution failed: \(response.output)")
+        }
+        return response.output
+    }
+    
     // MARK: - Git Methods
     
     func getGitStatus(projectPath: String) async throws -> GitStatusResponse {
@@ -251,6 +345,35 @@ actor APIClient: APIClientProtocol {
     
     func generateCommitMessage(projectPath: String) async throws -> GitCommitMessageResponse {
         return try await request(.gitGenerateCommitMessage(projectPath: projectPath))
+    }
+    
+    // MARK: - Additional Git Methods (missing endpoints)
+    
+    func getCommits(projectPath: String, limit: Int = 20) async throws -> GitLogResponse {
+        // Use the existing GitLogResponse type which contains commits
+        return try await request(.gitCommits(projectPath: projectPath, limit: limit))
+    }
+    
+    func getCommitDiff(projectPath: String, commitHash: String) async throws -> GitDiffResponse {
+        // Use the existing GitDiffResponse type
+        return try await request(.gitCommitDiff(projectPath: projectPath, commitHash: commitHash))
+    }
+    
+    func getRemoteStatus(projectPath: String) async throws -> GitRemoteStatusResponse {
+        // This needs the extended model from GitModels.swift
+        return try await request(.gitRemoteStatus(projectPath: projectPath))
+    }
+    
+    func publishBranch(projectPath: String, branch: String) async throws -> GitActionResponse {
+        return try await request(.gitPublish(projectPath: projectPath, branch: branch))
+    }
+    
+    func discardChanges(projectPath: String, files: [String]) async throws -> GitActionResponse {
+        return try await request(.gitDiscard(projectPath: projectPath, files: files))
+    }
+    
+    func deleteUntrackedFiles(projectPath: String) async throws -> GitActionResponse {
+        return try await request(.gitDeleteUntracked(projectPath: projectPath))
     }
     
     // MARK: - File Management Methods
@@ -325,6 +448,57 @@ actor APIClient: APIClientProtocol {
         try await requestVoid(endpoint)
     }
     
+    // MARK: - File Operations (Fixed API Endpoints)
+    
+    func readFile(projectName: String, filePath: String) async throws -> String {
+        // Read file content from the backend
+        // Backend expects: GET /api/projects/:projectName/file?path=:filePath
+        let encodedPath = filePath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? filePath
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(projectName)/file?path=\(encodedPath)",
+            method: .get
+        )
+        
+        struct FileResponse: Codable {
+            let content: String
+            let path: String?
+        }
+        
+        let response: FileResponse = try await request(endpoint)
+        return response.content
+    }
+    
+    func saveFile(projectName: String, filePath: String, content: String) async throws {
+        // Save file content to the backend
+        // Backend expects: PUT /api/projects/:projectName/file
+        struct SaveFileRequest: Codable {
+            let path: String
+            let content: String
+        }
+        
+        let requestBody = SaveFileRequest(path: filePath, content: content)
+        let body = try? JSONEncoder().encode(requestBody)
+        
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(projectName)/file",
+            method: .put,
+            body: body
+        )
+        
+        try await requestVoid(endpoint)
+    }
+    
+    func getFileTree(projectName: String) async throws -> FileNode {
+        // Get the file tree for a project
+        // Backend expects: GET /api/projects/:projectName/files
+        let endpoint = APIEndpoint(
+            path: "/api/projects/\(projectName)/files",
+            method: .get
+        )
+        
+        return try await request(endpoint)
+    }
+    
     // MARK: - Terminal Methods
     
     func executeTerminalCommand(_ command: String, projectId: String) async throws -> TerminalOutput {
@@ -336,6 +510,40 @@ actor APIClient: APIClientProtocol {
             body: body
         )
         return try await request(endpoint)
+    }
+    
+    // MARK: - Cursor Integration Methods
+    
+    func getCursorConfig() async throws -> CursorConfig {
+        return try await request(.getCursorConfig)
+    }
+    
+    func updateCursorConfig(_ config: CursorConfig) async throws -> CursorConfig {
+        return try await request(.updateCursorConfig(config))
+    }
+    
+    func getCursorMCPServers() async throws -> [CursorMCPServer] {
+        return try await request(.getCursorMCPServers)
+    }
+    
+    func addCursorMCPServer(_ server: CursorMCPServerConfig) async throws -> CursorMCPServer {
+        return try await request(.addCursorMCPServer(server))
+    }
+    
+    func removeCursorMCPServer(_ serverId: String) async throws {
+        try await requestVoid(.removeCursorMCPServer(serverId))
+    }
+    
+    func getCursorSessions() async throws -> [CursorSession] {
+        return try await request(.getCursorSessions)
+    }
+    
+    func getCursorSession(_ sessionId: String) async throws -> CursorSession {
+        return try await request(.getCursorSession(sessionId))
+    }
+    
+    func restoreCursorSession(_ sessionId: String) async throws -> CursorSession {
+        return try await request(.restoreCursorSession(sessionId))
     }
     
     // MARK: - Completion Handler Methods for Legacy Support
@@ -718,6 +926,106 @@ extension APIEndpoint {
         let body = try? JSONEncoder().encode(["projectPath": projectPath])
         return APIEndpoint(path: "/api/git/generate-commit-message", method: .post, body: body)
     }
+    
+    // Missing Git endpoints
+    static func gitCommits(projectPath: String, limit: Int = 20) -> APIEndpoint {
+        let params: [String: Any] = ["projectPath": projectPath, "limit": limit]
+        let body = try? JSONSerialization.data(withJSONObject: params)
+        return APIEndpoint(path: "/api/git/commits", method: .post, body: body)
+    }
+    
+    static func gitCommitDiff(projectPath: String, commitHash: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath, "commitHash": commitHash])
+        return APIEndpoint(path: "/api/git/commit-diff", method: .post, body: body)
+    }
+    
+    static func gitRemoteStatus(projectPath: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath])
+        return APIEndpoint(path: "/api/git/remote-status", method: .post, body: body)
+    }
+    
+    static func gitPublish(projectPath: String, branch: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath, "branch": branch])
+        return APIEndpoint(path: "/api/git/publish", method: .post, body: body)
+    }
+    
+    static func gitDiscard(projectPath: String, files: [String]) -> APIEndpoint {
+        let params: [String: Any] = ["projectPath": projectPath, "files": files]
+        let body = try? JSONSerialization.data(withJSONObject: params)
+        return APIEndpoint(path: "/api/git/discard", method: .post, body: body)
+    }
+    
+    static func gitDeleteUntracked(projectPath: String) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(["projectPath": projectPath])
+        return APIEndpoint(path: "/api/git/delete-untracked", method: .post, body: body)
+    }
+    
+    // MARK: - MCP Server Endpoints
+    static func getMCPServers() -> APIEndpoint {
+        return APIEndpoint(path: "/api/mcp/servers", method: .get)
+    }
+    
+    static func addMCPServer(_ server: MCPServer) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(server)
+        return APIEndpoint(path: "/api/mcp/servers", method: .post, body: body)
+    }
+    
+    static func updateMCPServer(_ server: MCPServer) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(server)
+        return APIEndpoint(path: "/api/mcp/servers/\(server.id)", method: .put, body: body)
+    }
+    
+    static func deleteMCPServer(id: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/mcp/servers/\(id)", method: .delete)
+    }
+    
+    static func testMCPServer(id: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/mcp/servers/\(id)/test", method: .post)
+    }
+    
+    static func executeMCPCommand(command: String, args: [String]? = nil) -> APIEndpoint {
+        var params = ["command": command]
+        if let args = args {
+            params["args"] = args.joined(separator: " ")
+        }
+        let body = try? JSONEncoder().encode(params)
+        return APIEndpoint(path: "/api/mcp/cli", method: .post, body: body)
+    }
+    
+    // MARK: - Cursor Integration Endpoints
+    static var getCursorConfig: APIEndpoint {
+        return APIEndpoint(path: "/api/cursor/config", method: .get)
+    }
+    
+    static func updateCursorConfig(_ config: CursorConfig) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(config)
+        return APIEndpoint(path: "/api/cursor/config", method: .post, body: body)
+    }
+    
+    static var getCursorMCPServers: APIEndpoint {
+        return APIEndpoint(path: "/api/cursor/mcp/servers", method: .get)
+    }
+    
+    static func addCursorMCPServer(_ server: CursorMCPServerConfig) -> APIEndpoint {
+        let body = try? JSONEncoder().encode(server)
+        return APIEndpoint(path: "/api/cursor/mcp/servers", method: .post, body: body)
+    }
+    
+    static func removeCursorMCPServer(_ serverId: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/cursor/mcp/servers/\(serverId)", method: .delete)
+    }
+    
+    static var getCursorSessions: APIEndpoint {
+        return APIEndpoint(path: "/api/cursor/sessions", method: .get)
+    }
+    
+    static func getCursorSession(_ sessionId: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/cursor/sessions/\(sessionId)", method: .get)
+    }
+    
+    static func restoreCursorSession(_ sessionId: String) -> APIEndpoint {
+        return APIEndpoint(path: "/api/cursor/sessions/\(sessionId)/restore", method: .post)
+    }
 }
 
 // MARK: - Response Models
@@ -796,6 +1104,17 @@ struct GitCommitMessageResponse: Codable {
     let error: String?
 }
 
+// MARK: - Git Remote Status Response
+struct GitRemoteStatusResponse: Codable {
+    let success: Bool
+    let hasRemote: Bool
+    let remoteUrl: String?
+    let ahead: Int
+    let behind: Int
+    let diverged: Bool
+    let error: String?
+}
+
 struct ProjectsResponse: Codable {
     let projects: [ProjectDTO]
 }
@@ -848,4 +1167,39 @@ struct DirectoryDTO: Codable {
     let name: String
     let path: String
     let itemCount: Int
+}
+
+// MARK: - Cursor Integration Models
+struct CursorConfig: Codable {
+    let enabled: Bool
+    let apiKey: String?
+    let apiUrl: String?
+    let model: String?
+    let maxTokens: Int?
+    let temperature: Double?
+}
+
+struct CursorMCPServer: Codable {
+    let id: String
+    let name: String
+    let command: String
+    let args: [String]?
+    let env: [String: String]?
+    let enabled: Bool
+}
+
+struct CursorMCPServerConfig: Codable {
+    let name: String
+    let command: String
+    let args: [String]?
+    let env: [String: String]?
+}
+
+struct CursorSession: Codable {
+    let id: String
+    let name: String?
+    let createdAt: Date
+    let updatedAt: Date
+    let messageCount: Int
+    let projectPath: String?
 }

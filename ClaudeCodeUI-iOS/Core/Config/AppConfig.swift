@@ -12,17 +12,17 @@ struct AppConfig {
     
     // MARK: - Network Configuration
     
-    /// HARDCODED Backend server URL for consistent development
-    /// This is the Claude Code backend server running locally
+    /// Local backend URL for development
+    /// This URL connects to the local Node.js backend server
     static let backendURL: String = "http://localhost:3004"
     
-    /// HARDCODED WebSocket URLs for real-time communication
+    /// Local WebSocket URLs for real-time communication
     static let websocketURL: String = "ws://localhost:3004/ws"          // Main chat WebSocket
     static let shellWebSocketURL: String = "ws://localhost:3004/shell"  // Terminal WebSocket
     
-    /// HARDCODED Backend host and port
+    /// Local Backend host (extracted from URL)
     static let backendHost: String = "localhost"
-    static let backendPort: Int = 3004
+    static let backendPort: Int = 3004  // Local Node.js server port
     
     // MARK: - API Endpoints (Hardcoded for consistency)
     

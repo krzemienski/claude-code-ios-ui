@@ -13,6 +13,11 @@ public class MainTabBarController: UITabBarController {
     // MARK: - Properties
     private let projectsVC = ProjectsViewController()
     private let settingsVC = SettingsViewController()
+    private let transcriptionVC = TranscriptionViewController()
+    private let mcpServerVC = MCPServerListViewController()
+    private lazy var searchVC = SearchViewController(project: currentProject)
+    private lazy var terminalVC = TerminalViewController(project: currentProject)
+    private lazy var gitVC = GitViewController(project: currentProject)
     private var currentProject: Project?
     
     // MARK: - Lifecycle
@@ -59,16 +64,40 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "folder.fill.badge.plus")
         )
         
-        // SwiftUI Demo Tab - FIXED: Ensure it's visible
-        let swiftUIView = SwiftUIDemoView()
-        let swiftUIVC = UIHostingController(rootView: swiftUIView)
-        swiftUIVC.title = "Demo"
-        swiftUIVC.view.backgroundColor = .black // Ensure view is initialized
-        let swiftUINav = UINavigationController(rootViewController: swiftUIVC)
-        swiftUINav.tabBarItem = UITabBarItem(
-            title: "Demo",
-            image: createTabIcon(systemName: "sparkles"),
-            selectedImage: createTabIcon(systemName: "sparkles")
+        // Search Tab - Project-wide search functionality
+        searchVC.title = "Search"
+        let searchNav = UINavigationController(rootViewController: searchVC)
+        searchNav.tabBarItem = UITabBarItem(
+            title: "Search",
+            image: createTabIcon(systemName: "magnifyingglass"),
+            selectedImage: createTabIcon(systemName: "magnifyingglass.circle.fill")
+        )
+        
+        // Terminal Tab - Command execution
+        terminalVC.title = "Terminal"
+        let terminalNav = UINavigationController(rootViewController: terminalVC)
+        terminalNav.tabBarItem = UITabBarItem(
+            title: "Terminal",
+            image: createTabIcon(systemName: "terminal"),
+            selectedImage: createTabIcon(systemName: "terminal.fill")
+        )
+        
+        // Git Tab - Version control management
+        gitVC.title = "Git"
+        let gitNav = UINavigationController(rootViewController: gitVC)
+        gitNav.tabBarItem = UITabBarItem(
+            title: "Git",
+            image: createTabIcon(systemName: "arrow.triangle.branch"),
+            selectedImage: createTabIcon(systemName: "arrow.triangle.branch")
+        )
+        
+        // MCP Servers Tab - Integrated MCP server management
+        mcpServerVC.title = "MCP Servers"
+        let mcpNav = UINavigationController(rootViewController: mcpServerVC)
+        mcpNav.tabBarItem = UITabBarItem(
+            title: "MCP",
+            image: createTabIcon(systemName: "server.rack"),
+            selectedImage: createTabIcon(systemName: "server.rack")
         )
         
         // Settings Tab - Always available
@@ -79,15 +108,15 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "gearshape.2.fill")
         )
         
-        // Set initial view controllers (projects, demo, and settings)
-        // IMPORTANT: Make sure all three are added
-        viewControllers = [projectsNav, swiftUINav, settingsNav]
+        // Set initial view controllers (projects, search, terminal, Git, MCP, and settings)
+        // Now includes Git integration for version control
+        viewControllers = [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav]
         
         // Debug: Log tab count
         print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
         
         // Configure navigation bars
-        [projectsNav, swiftUINav, settingsNav].forEach { nav in
+        [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav].forEach { nav in
             nav.navigationBar.prefersLargeTitles = true
             nav.navigationBar.isTranslucent = false
             nav.navigationBar.backgroundColor = CyberpunkTheme.background
@@ -147,61 +176,60 @@ public class MainTabBarController: UITabBarController {
         // Store current project
         currentProject = project
         
-        // Create chat view controller for this project
-        let chatVC = ChatViewController(project: project)
-        let chatNav = UINavigationController(rootViewController: chatVC)
-        chatNav.tabBarItem = UITabBarItem(
-            title: "Chat",
-            image: createTabIcon(systemName: "message.fill"),
-            selectedImage: createTabIcon(systemName: "message.fill")
-        )
+        // Update SearchViewController with new project context
+        if let searchNav = viewControllers?[1] as? UINavigationController {
+            // Create new SearchViewController with project context
+            let newSearchVC = SearchViewController(project: project)
+            newSearchVC.title = "Search"
+            searchNav.setViewControllers([newSearchVC], animated: false)
+        }
         
-        // Configure navigation bar
-        chatNav.navigationBar.prefersLargeTitles = true
-        chatNav.navigationBar.isTranslucent = false
-        chatNav.navigationBar.backgroundColor = CyberpunkTheme.background
-        chatNav.navigationBar.tintColor = CyberpunkTheme.primaryCyan
-        chatNav.navigationBar.largeTitleTextAttributes = [
-            .foregroundColor: CyberpunkTheme.textPrimary,
-            .font: UIFont.systemFont(ofSize: 34, weight: .bold)
-        ]
-        chatNav.navigationBar.titleTextAttributes = [
-            .foregroundColor: CyberpunkTheme.textPrimary,
-            .font: UIFont.systemFont(ofSize: 17, weight: .semibold)
-        ]
+        // Update TerminalViewController with new project context
+        if let terminalNav = viewControllers?[2] as? UINavigationController {
+            // Create new TerminalViewController with project context
+            let newTerminalVC = TerminalViewController(project: project)
+            newTerminalVC.title = "Terminal"
+            terminalNav.setViewControllers([newTerminalVC], animated: false)
+        }
         
-        // Update tab bar with chat tab
-        if let projectsNav = viewControllers?[0] as? UINavigationController,
-           let settingsNav = viewControllers?.last as? UINavigationController {
-            viewControllers = [projectsNav, chatNav, settingsNav]
-            
-            // Switch to chat tab
-            selectedIndex = 1
-            
-            // Add animation
-            UIView.animate(withDuration: 0.3) {
-                self.tabBar.alpha = 0.8
-            } completion: { _ in
-                UIView.animate(withDuration: 0.2) {
-                    self.tabBar.alpha = 1.0
-                }
-            }
+        // Update GitViewController with new project context
+        if let gitNav = viewControllers?[3] as? UINavigationController {
+            // Create new GitViewController with project context
+            let newGitVC = GitViewController(project: project)
+            newGitVC.title = "Git"
+            gitNav.setViewControllers([newGitVC], animated: false)
+        }
+        
+        // Navigate to session list within the Projects tab instead of replacing tabs
+        if let projectsNav = viewControllers?[0] as? UINavigationController {
+            let sessionListVC = SessionListViewController(project: project)
+            projectsNav.pushViewController(sessionListVC, animated: true)
         }
     }
     
     // MARK: - Public Methods
-    func switchToChat() {
-        if viewControllers?.count ?? 0 >= 3 {
-            selectedIndex = 1
-        }
-    }
-    
     func switchToProjects() {
         selectedIndex = 0
     }
     
+    func switchToSearch() {
+        selectedIndex = 1  // Search is at index 1
+    }
+    
+    func switchToTerminal() {
+        selectedIndex = 2  // Terminal is at index 2
+    }
+    
+    func switchToGit() {
+        selectedIndex = 3  // Git is at index 3
+    }
+    
+    func switchToMCP() {
+        selectedIndex = 4  // MCP is at index 4
+    }
+    
     func switchToSettings() {
-        selectedIndex = viewControllers?.count == 3 ? 2 : (viewControllers?.count == 4 ? 3 : 1)
+        selectedIndex = 5  // Settings is always at index 5 (last tab)
     }
 }
 

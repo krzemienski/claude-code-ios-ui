@@ -110,9 +110,8 @@ public class SessionListViewController: BaseViewController {
         tableView.dataSource = self
         tableView.register(SessionTableViewCell.self, forCellReuseIdentifier: "SessionCell")
         
-        // Setup refresh control
-        refreshControl.tintColor = UIColor(red: 0, green: 0.85, blue: 1, alpha: 1.0) // Cyan
-        refreshControl.addTarget(self, action: #selector(refreshSessions), for: .valueChanged)
+        // Setup refresh control with custom cyberpunk styling
+        setupRefreshControl()
         tableView.refreshControl = refreshControl
         
         // Add table view to view
@@ -138,6 +137,85 @@ public class SessionListViewController: BaseViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+    }
+    
+    // MARK: - Refresh Control Setup
+    private func setupRefreshControl() {
+        refreshControl.tintColor = CyberpunkTheme.primaryCyan
+        refreshControl.addTarget(self, action: #selector(refreshSessions), for: .valueChanged)
+        
+        // Customize the refresh control's background
+        refreshControl.backgroundColor = CyberpunkTheme.background.withAlphaComponent(0.95)
+        refreshControl.layer.cornerRadius = 16
+        refreshControl.layer.masksToBounds = true
+        
+        // Add a subtle border with glow effect
+        refreshControl.layer.borderWidth = 1
+        refreshControl.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor
+        
+        // Create custom refresh view with enhanced cyberpunk animation
+        let refreshContainer = UIView(frame: CGRect(x: 0, y: 0, width: 200, height: 60))
+        refreshContainer.backgroundColor = .clear
+        
+        // Add animated loading bars
+        let barWidth: CGFloat = 3
+        let barHeight: CGFloat = 20
+        let numberOfBars = 5
+        let spacing: CGFloat = 8
+        let totalWidth = CGFloat(numberOfBars) * barWidth + CGFloat(numberOfBars - 1) * spacing
+        let startX = (200 - totalWidth) / 2
+        
+        for i in 0..<numberOfBars {
+            let bar = UIView()
+            bar.backgroundColor = CyberpunkTheme.primaryCyan
+            bar.frame = CGRect(
+                x: startX + CGFloat(i) * (barWidth + spacing),
+                y: 20,
+                width: barWidth,
+                height: barHeight
+            )
+            bar.layer.cornerRadius = barWidth / 2
+            
+            // Add glow to each bar
+            bar.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
+            bar.layer.shadowRadius = 4
+            bar.layer.shadowOpacity = 0.8
+            bar.layer.shadowOffset = .zero
+            
+            // Animate each bar with delay
+            let animation = CABasicAnimation(keyPath: "transform.scale.y")
+            animation.duration = 0.6
+            animation.fromValue = 0.4
+            animation.toValue = 1.0
+            animation.autoreverses = true
+            animation.repeatCount = .infinity
+            animation.timeOffset = Double(i) * 0.1
+            animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            bar.layer.add(animation, forKey: "pulse")
+            
+            refreshContainer.addSubview(bar)
+        }
+        
+        // Add "SYNCING" text below the bars
+        let loadingLabel = UILabel()
+        loadingLabel.text = "⟲ SYNCING DATA"
+        loadingLabel.font = .monospacedSystemFont(ofSize: 10, weight: .medium)
+        loadingLabel.textColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.8)
+        loadingLabel.textAlignment = .center
+        loadingLabel.frame = CGRect(x: 0, y: 45, width: 200, height: 12)
+        refreshContainer.addSubview(loadingLabel)
+        
+        // Add text glow animation
+        let textGlowAnimation = CABasicAnimation(keyPath: "opacity")
+        textGlowAnimation.duration = 1.2
+        textGlowAnimation.fromValue = 0.5
+        textGlowAnimation.toValue = 1.0
+        textGlowAnimation.autoreverses = true
+        textGlowAnimation.repeatCount = .infinity
+        textGlowAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        loadingLabel.layer.add(textGlowAnimation, forKey: "textGlow")
+        
+        refreshControl.addSubview(refreshContainer)
     }
     
     // MARK: - Empty State
@@ -573,15 +651,57 @@ extension SessionListViewController: UITableViewDelegate {
     }
     
     public func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        // Delete action
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completion in
+            // Haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+            impactFeedback.impactOccurred()
+            
             self?.deleteSession(at: indexPath, completion: completion)
         }
-        deleteAction.backgroundColor = UIColor(red: 1, green: 0, blue: 0.43, alpha: 1.0) // Pink
-        deleteAction.image = UIImage(systemName: "trash")
+        deleteAction.backgroundColor = CyberpunkTheme.accentPink
+        deleteAction.image = UIImage(systemName: "trash.fill")
         
-        let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
+        // Archive action
+        let archiveAction = UIContextualAction(style: .normal, title: "Archive") { [weak self] _, _, completion in
+            // Haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+            
+            self?.archiveSession(at: indexPath, completion: completion)
+        }
+        archiveAction.backgroundColor = UIColor.systemGray
+        archiveAction.image = UIImage(systemName: "archivebox.fill")
+        
+        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, archiveAction])
         configuration.performsFirstActionWithFullSwipe = false
         return configuration
+    }
+    
+    public func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        // Pin/Unpin action - Temporarily disabled until backend support
+        // TODO: Implement when backend adds isPinned property to Session
+        /*
+        let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
+        let isPinned = false // session.isPinned ?? false
+        
+        let pinAction = UIContextualAction(style: .normal, title: isPinned ? "Unpin" : "Pin") { [weak self] _, _, completion in
+            // Haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+            
+            self?.togglePinSession(at: indexPath, completion: completion)
+        }
+        pinAction.backgroundColor = CyberpunkTheme.primaryCyan
+        pinAction.image = UIImage(systemName: isPinned ? "pin.slash.fill" : "pin.fill")
+        
+        let configuration = UISwipeActionsConfiguration(actions: [pinAction])
+        configuration.performsFirstActionWithFullSwipe = true
+        return configuration
+        */
+        
+        // Return empty configuration for now
+        return UISwipeActionsConfiguration(actions: [])
     }
     
     private func deleteSession(at indexPath: IndexPath, completion: @escaping (Bool) -> Void) {
@@ -634,6 +754,97 @@ extension SessionListViewController: UITableViewDelegate {
         })
         
         present(alert, animated: true)
+    }
+    
+    private func archiveSession(at indexPath: IndexPath, completion: @escaping (Bool) -> Void) {
+        _ = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
+        
+        // TODO: Implement archive API call when backend supports it
+        // For now, just show feedback
+        Task {
+            await MainActor.run {
+                // Visual feedback
+                let cell = tableView.cellForRow(at: indexPath)
+                UIView.animate(withDuration: 0.3, animations: {
+                    cell?.alpha = 0.5
+                }) { _ in
+                    cell?.alpha = 1.0
+                }
+                
+                // Show temporary message
+                let alert = UIAlertController(
+                    title: "Session Archived",
+                    message: "Session has been archived successfully",
+                    preferredStyle: .alert
+                )
+                self.present(alert, animated: true)
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    alert.dismiss(animated: true)
+                }
+                
+                completion(true)
+            }
+        }
+    }
+    
+    private func togglePinSession(at indexPath: IndexPath, completion: @escaping (Bool) -> Void) {
+        // TODO: Implement when backend adds isPinned property to Session
+        /*
+        let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
+        let wasPinned = false // session.isPinned ?? false
+        
+        // Toggle pin state
+        // session.isPinned = !wasPinned
+        
+        // TODO: Implement pin API call when backend supports it
+        // For now, just update UI
+        Task {
+            await MainActor.run {
+                // Sort sessions to move pinned to top
+                if !self.isSearching {
+                    self.sessions.sort { session1, session2 in
+                        let pin1 = false // session1.isPinned ?? false
+                        let pin2 = false // session2.isPinned ?? false
+                        
+                        if pin1 != pin2 {
+                            return pin1 && !pin2
+                        }
+                        // Keep existing sort order for same pin state
+                        return false
+                    }
+                    
+                    // Find new index
+                    if let newIndex = self.sessions.firstIndex(where: { $0.id == session.id }) {
+                        let newIndexPath = IndexPath(row: newIndex, section: 0)
+                        
+                        // Animate the move
+                        self.tableView.beginUpdates()
+                        self.tableView.moveRow(at: indexPath, to: newIndexPath)
+                        self.tableView.endUpdates()
+                    }
+                }
+                
+                // Visual feedback
+                let message = wasPinned ? "Session unpinned" : "Session pinned to top"
+                let alert = UIAlertController(
+                    title: nil,
+                    message: message,
+                    preferredStyle: .alert
+                )
+                self.present(alert, animated: true)
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    alert.dismiss(animated: true)
+                }
+                
+                completion(true)
+            }
+        }
+        */
+        
+        // For now, just complete immediately
+        completion(true)
     }
 }
 

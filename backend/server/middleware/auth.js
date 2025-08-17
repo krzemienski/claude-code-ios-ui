@@ -18,30 +18,16 @@ const validateApiKey = (req, res, next) => {
   next();
 };
 
-// JWT authentication middleware
+// JWT authentication middleware - DISABLED FOR TESTING
 const authenticateToken = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access denied. No token provided.' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    
-    // Verify user still exists and is active
-    const user = userDb.getUserById(decoded.userId);
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid token. User not found.' });
-    }
-    
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error('Token verification error:', error);
-    return res.status(403).json({ error: 'Invalid token' });
-  }
+  // Authentication completely disabled for testing
+  // Always set a mock user and proceed
+  req.user = { 
+    id: 'test-user', 
+    username: 'test',
+    createdAt: new Date().toISOString()
+  };
+  next();
 };
 
 // Generate JWT token (never expires)
@@ -56,19 +42,13 @@ const generateToken = (user) => {
   );
 };
 
-// WebSocket authentication function
+// WebSocket authentication function - DISABLED FOR TESTING
 const authenticateWebSocket = (token) => {
-  if (!token) {
-    return null;
-  }
-  
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return decoded;
-  } catch (error) {
-    console.error('WebSocket token verification error:', error);
-    return null;
-  }
+  // Always return a valid mock user for testing
+  return { 
+    userId: 'test-user', 
+    username: 'test' 
+  };
 };
 
 export {

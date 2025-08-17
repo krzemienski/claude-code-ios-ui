@@ -36,8 +36,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Restart any paused WebSocket connections
         let webSocketManager = DIContainer.shared.webSocketManager
         if !webSocketManager.isConnected {
-            webSocketManager.connect(to: AppConfig.websocketURL)
+            let token = UserDefaults.standard.string(forKey: "authToken")
+            webSocketManager.connect(to: AppConfig.websocketURL, with: token)
         }
+        
+        // Run WebSocket streaming test (only for testing - remove in production)
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["RUN_WEBSOCKET_TEST"] == "1" {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                print("🚀 WebSocket test would run here if enabled")
+                // Test class is in Tests folder, not accessible from main app
+                // To run tests, use: RUN_WEBSOCKET_TEST=1 xcodebuild test
+            }
+        }
+        #endif
     }
 
     func sceneWillResignActive(_ scene: UIScene) {

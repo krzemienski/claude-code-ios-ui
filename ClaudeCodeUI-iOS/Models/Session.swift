@@ -16,6 +16,7 @@ enum SessionStatus: String, Codable {
 }
 
 // MARK: - Session Model
+@available(iOS 17.0, *)
 @Model
 final class Session {
     // MARK: - Properties
@@ -34,6 +35,9 @@ final class Session {
     // Additional backend-specific fields
     var startedAt: Date?
     var lastActiveAt: Date?
+    
+    // UI state
+    var isPinned: Bool? = false
     
     // MARK: - Relationships
     @Relationship(deleteRule: .cascade)

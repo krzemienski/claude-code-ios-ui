@@ -57,6 +57,19 @@ class SettingsViewController: BaseTableViewController {
                 ]
             ),
             SettingsSection(
+                title: "MCP Servers",
+                items: [
+                    SettingsItem(
+                        title: "Manage MCP Servers",
+                        value: nil,
+                        action: { [weak self] in
+                            let mcpVC = MCPServerListViewController()
+                            self?.navigationController?.pushViewController(mcpVC, animated: true)
+                        }
+                    )
+                ]
+            ),
+            SettingsSection(
                 title: "Display",
                 items: [
                     SettingsItem(
@@ -67,6 +80,23 @@ class SettingsViewController: BaseTableViewController {
                     SettingsItem(
                         title: "Haptic Feedback",
                         value: AppConfig.enableHapticFeedback ? "On" : "Off",
+                        action: nil
+                    )
+                ]
+            ),
+            SettingsSection(
+                title: "Developer",
+                items: [
+                    SettingsItem(
+                        title: "Integration Tests",
+                        value: "Run Tests",
+                        action: { [weak self] in
+                            self?.showTestRunner()
+                        }
+                    ),
+                    SettingsItem(
+                        title: "Debug Mode",
+                        value: AppConfig.isDebugMode ? "On" : "Off",
                         action: nil
                     )
                 ]
@@ -218,6 +248,11 @@ class SettingsViewController: BaseTableViewController {
            let urlItem = connectionSection.items.first(where: { $0.title == "Backend URL" }) {
             urlItem.value = AppConfig.backendURL
         }
+    }
+    
+    // MARK: - Test Runner
+    private func showTestRunner() {
+        TestRunnerViewController.present(from: self)
     }
 }
 

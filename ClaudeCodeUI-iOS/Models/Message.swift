@@ -49,6 +49,7 @@ struct MessageMetadata: Codable {
 }
 
 // MARK: - Message Model
+@available(iOS 17.0, *)
 @Model
 final class Message {
     // MARK: - Properties

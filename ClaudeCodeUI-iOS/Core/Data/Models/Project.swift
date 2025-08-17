@@ -10,6 +10,7 @@ import Foundation
 import SwiftData
 #endif
 
+@available(iOS 17.0, *)
 @Model
 final class Project: Codable {
     @Attribute(.unique) var id: String = UUID().uuidString
@@ -164,6 +165,7 @@ final class Session: Codable {
 */
 
 // MARK: - Message Model
+@available(iOS 17.0, *)
 @Model
 final class Message {
     @Attribute(.unique) var id: String = UUID().uuidString

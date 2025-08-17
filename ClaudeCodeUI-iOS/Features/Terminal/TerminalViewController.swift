@@ -15,7 +15,7 @@ class TerminalViewController: BaseViewController {
     private var commandHistory: [String] = []
     private var historyIndex = -1
     private var currentDirectory = "~"
-    private let webSocketManager: WebSocketManager
+    private let webSocketManager: any WebSocketProtocol
     private let shellWebSocketManager: WebSocketManager
     private var isShellConnected = false
     private let maxHistorySize = 100
@@ -711,8 +711,8 @@ extension TerminalViewController: UITextFieldDelegate {
 // MARK: - WebSocketManagerDelegate
 
 extension TerminalViewController: WebSocketManagerDelegate {
-    func webSocketDidConnect(_ manager: WebSocketManager) {
-        if manager === shellWebSocketManager {
+    func webSocketDidConnect(_ manager: any WebSocketProtocol) {
+        if (manager as? WebSocketManager) === shellWebSocketManager {
             isShellConnected = true
             reconnectAttempts = 0 // Reset reconnect counter on successful connection
             appendToTerminal("✅ Connected to terminal server", color: CyberpunkTheme.success)
@@ -726,8 +726,8 @@ extension TerminalViewController: WebSocketManagerDelegate {
         }
     }
     
-    func webSocketDidDisconnect(_ manager: WebSocketManager, error: Error?) {
-        if manager === shellWebSocketManager {
+    func webSocketDidDisconnect(_ manager: any WebSocketProtocol, error: Error?) {
+        if (manager as? WebSocketManager) === shellWebSocketManager {
             isShellConnected = false
             if let error = error {
                 appendToTerminal("⚠️ Disconnected: \(error.localizedDescription)", color: CyberpunkTheme.warning)
@@ -761,8 +761,8 @@ extension TerminalViewController: WebSocketManagerDelegate {
         }
     }
     
-    func webSocket(_ manager: WebSocketManager, didReceiveMessage message: WebSocketMessage) {
-        if manager === shellWebSocketManager {
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveMessage message: WebSocketMessage) {
+        if (manager as? WebSocketManager) === shellWebSocketManager {
             // Handle shell output messages
             switch message.type {
             case .shellOutput:
@@ -797,9 +797,9 @@ extension TerminalViewController: WebSocketManagerDelegate {
         }
     }
     
-    func webSocket(_ manager: WebSocketManager, didReceiveText text: String) {
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveText text: String) {
         // Handle raw text messages from shell WebSocket
-        if manager === shellWebSocketManager {
+        if (manager as? WebSocketManager) === shellWebSocketManager {
             // Parse JSON response from backend
             if let data = text.data(using: .utf8),
                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
@@ -1073,7 +1073,7 @@ extension TerminalViewController: WebSocketManagerDelegate {
         return CyberpunkTheme.primaryText
     }
     
-    func webSocket(_ manager: WebSocketManager, didReceiveData data: Data) {
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveData data: Data) {
         // Handle binary data if needed
     }
     
