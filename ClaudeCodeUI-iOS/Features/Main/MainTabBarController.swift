@@ -15,8 +15,8 @@ public class MainTabBarController: UITabBarController {
     private let settingsVC = SettingsViewController()
     private let transcriptionVC = TranscriptionViewController()
     private let mcpServerVC = MCPServerListViewController()
-    private let searchVC = SearchViewController()
-    private let terminalVC = TerminalViewController()
+    private lazy var searchVC = SearchViewController(project: currentProject)
+    private lazy var terminalVC = TerminalViewController(project: currentProject)
     private var currentProject: Project?
     
     // MARK: - Lifecycle
@@ -165,6 +165,22 @@ public class MainTabBarController: UITabBarController {
     private func openChatForProject(_ project: Project) {
         // Store current project
         currentProject = project
+        
+        // Update SearchViewController with new project context
+        if let searchNav = viewControllers?[1] as? UINavigationController {
+            // Create new SearchViewController with project context
+            let newSearchVC = SearchViewController(project: project)
+            newSearchVC.title = "Search"
+            searchNav.setViewControllers([newSearchVC], animated: false)
+        }
+        
+        // Update TerminalViewController with new project context
+        if let terminalNav = viewControllers?[2] as? UINavigationController {
+            // Create new TerminalViewController with project context
+            let newTerminalVC = TerminalViewController(project: project)
+            newTerminalVC.title = "Terminal"
+            terminalNav.setViewControllers([newTerminalVC], animated: false)
+        }
         
         // Navigate to session list within the Projects tab instead of replacing tabs
         if let projectsNav = viewControllers?[0] as? UINavigationController {

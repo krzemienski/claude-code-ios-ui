@@ -8,11 +8,15 @@
 import SwiftUI
 
 struct SearchView: View {
-    @StateObject private var viewModel = SearchViewModel()
+    @ObservedObject var viewModel: SearchViewModel
     @State private var searchText = ""
     @State private var selectedScope = SearchScope.all
     @State private var selectedFileTypes: Set<FileType> = []
     @State private var showingFilters = false
+    
+    init(viewModel: SearchViewModel? = nil) {
+        self.viewModel = viewModel ?? SearchViewModel()
+    }
     
     @FocusState private var isSearchFieldFocused: Bool
     

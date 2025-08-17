@@ -3,6 +3,34 @@
 This is the single source of truth for the iOS Claude Code UI project. 
 Last Updated: January 16, 2025 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
 
+## 🚨 iOS App Development Task Protocol
+
+### Requirements Overview
+This protocol serves as the single source of truth for iOS app development tasks. All documentation, todos, and implementation details have been consolidated into this CLAUDE.md file.
+
+### Core Development Process
+1. **Todo Consolidation**: All 500+ duplicate todos have been consolidated into the structured task list below
+2. **Agent Requirements**: Development requires continuous use of:
+   - @agent-context-manager for project state
+   - @agent-ios-swift-developer for Swift implementation
+   - @agent-ios-simulator-expert for testing
+3. **Backend Connectivity**: Maintain continuous backend server connection (localhost:3004)
+4. **Testing Protocol**: Use specific simulator UUID: 05223130-57AA-48B0-ABD0-4D59CE455F14
+
+### Testing Framework Requirements
+- **ALWAYS** use touch() with down/up events, NOT tap()
+- **ALWAYS** call describe_ui() first for precise coordinates
+- **NEVER** guess coordinates from screenshots
+- Use background log streaming to avoid app restart issues
+
+### Session Flow Analysis Protocol
+Follow the 5-phase testing approach:
+1. **Start Phase**: Backend initialization
+2. **Project Phase**: Load projects from API
+3. **Session Phase**: Create/load sessions
+4. **Message Phase**: Send/receive via WebSocket
+5. **Cleanup Phase**: Proper teardown
+
 ## 🟢 BACKEND API IMPLEMENTATION STATUS - UPDATED
 
 ### Backend Server Status: ✅ RUNNING

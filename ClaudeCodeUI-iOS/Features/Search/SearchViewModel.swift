@@ -290,12 +290,29 @@ class SearchViewModel: ObservableObject {
 
 class SearchViewController: UIViewController {
     private var hostingController: UIHostingController<SearchView>?
+    private let project: Project?
+    private let searchViewModel = SearchViewModel()
+    
+    init(project: Project? = nil) {
+        self.project = project
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        self.project = nil
+        super.init(coder: coder)
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Setup SwiftUI view
-        let searchView = SearchView()
+        // Set project context in view model
+        if let project = project {
+            searchViewModel.setProjectContext(name: project.name, path: project.path ?? project.id)
+        }
+        
+        // Setup SwiftUI view with view model
+        let searchView = SearchView(viewModel: searchViewModel)
         hostingController = UIHostingController(rootView: searchView)
         
         if let hostingController = hostingController {
