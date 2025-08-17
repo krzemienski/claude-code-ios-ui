@@ -31,7 +31,7 @@ Follow the 5-phase testing approach:
 4. **Message Phase**: Send/receive via WebSocket
 5. **Cleanup Phase**: Proper teardown
 
-## 🟢 BACKEND API IMPLEMENTATION STATUS - UPDATED
+## 🟢 BACKEND API IMPLEMENTATION STATUS - UPDATED January 17, 2025
 
 ### Backend Server Status: ✅ RUNNING
 - Server: http://localhost:3004
@@ -39,12 +39,12 @@ Follow the 5-phase testing approach:
 - Shell WebSocket: ws://localhost:3004/shell  
 - Database: SQLite with auth.db and store.db
 
-### API Implementation Reality Check - UPDATED January 2025
+### API Implementation Reality Check - TESTED January 17, 2025
 - **Total Backend Endpoints**: 62 (including all features)
 - **Actually Implemented in iOS**: 49 endpoints (79%)
 - **Missing in iOS**: 13 endpoints (21%)
-- **Critical Issues**: Most "P0 issues" are already fixed!
-- **MCP Server Management**: ✅ 6/6 endpoints (100% COMPLETE - implemented and integrated!)
+- **Critical Issues**: WebSocket works, but UI issues exist
+- **MCP Server Management**: ⚠️ API implemented but UI NOT ACCESSIBLE (Settings screen empty)
 
 ## ✅ WORKING FEATURES (Much More Than Previously Documented!)
 
@@ -116,6 +116,29 @@ Native iOS client for Claude Code with a cyberpunk-themed UI that communicates w
 - Offline caching with SwiftData
 - Push notifications (0/1 endpoint)
 - Widget and Share extensions (0/1 endpoint)
+
+## 🔴 TESTING RESULTS - January 17, 2025
+
+### Comprehensive Testing Completed (6 of 15 flows)
+Real-world testing with backend revealed significant discrepancies between documentation and reality:
+
+### ✅ Actually Working Features (Verified)
+1. **WebSocket Communication** - Connects, auto-reconnects, streams messages correctly
+2. **Session Management** - Create, delete, navigate sessions works
+3. **Project Navigation** - Cross-project data isolation confirmed
+4. **Error Handling** - Proper disconnect notifications and recovery
+
+### ❌ NOT Working Despite Claims
+1. **MCP Server Management UI** - API exists but UI completely inaccessible (Settings empty)
+2. **File Explorer** - Attachment menu shows option but doesn't work
+3. **Settings Screen** - Completely empty, no options visible
+4. **Terminal Integration** - Shell WebSocket not connected
+
+### 🔧 Critical Fixes Required (Priority Order)
+1. **Fix MCP Server UI Access** - Add MCP tab or Settings UI
+2. **Connect File Explorer** - Wire up to backend API
+3. **Implement Settings Content** - Add actual settings options
+4. **Connect Terminal WebSocket** - Implement shell connection
 
 ## Real Issues to Address
 
@@ -231,37 +254,38 @@ For complete API documentation, see the full backend reference at the end of thi
 
 ## 📋 CONSOLIDATED IMPLEMENTATION TASKS
 
-## ✅ PRIORITY 0: MCP SERVER MANAGEMENT [COMPLETED - 6 Tasks]
-**MCP Server Management is FULLY IMPLEMENTED and INTEGRATED**
+## 🔴 PRIORITY 0: MCP SERVER MANAGEMENT [CRITICAL - UI NOT ACCESSIBLE]
+**MCP Server Management APIs exist but UI is NOT ACCESSIBLE - Testing on Jan 17, 2025**
 
-### MCP-1: List MCP Servers API ✅
-- **Status**: COMPLETE - Implemented in `APIClient.swift` line 200
+### MCP-1: List MCP Servers API ✅ (API Only)
+- **Status**: API COMPLETE - Implemented in `APIClient.swift` line 200
 - **Endpoint**: GET /api/mcp/servers
-- **Test**: Working with backend integration
+- **UI Issue**: ❌ No way to access MCP UI in app
 
-### MCP-2: Add MCP Server API ✅
-- **Status**: COMPLETE - Implemented in `APIClient.swift` line 217
+### MCP-2: Add MCP Server API ✅ (API Only)
+- **Status**: API COMPLETE - Implemented in `APIClient.swift` line 217
 - **Endpoint**: POST /api/mcp/servers
-- **Body**: `{name, url, type, apiKey?, description?}`
+- **UI Issue**: ❌ Cannot test - UI not accessible
 
-### MCP-3: Remove MCP Server API ✅
-- **Status**: COMPLETE - Implemented in `APIClient.swift` line 251
+### MCP-3: Remove MCP Server API ✅ (API Only)
+- **Status**: API COMPLETE - Implemented in `APIClient.swift` line 251
 - **Endpoint**: DELETE /api/mcp/servers/:id
+- **UI Issue**: ❌ Cannot test - UI not accessible
 
-### MCP-4: Test MCP Connection ✅
-- **Status**: COMPLETE - Implemented in `APIClient.swift` line 255
+### MCP-4: Test MCP Connection ✅ (API Only)
+- **Status**: API COMPLETE - Implemented in `APIClient.swift` line 255
 - **Endpoint**: POST /api/mcp/servers/:id/test
-- **Response**: `{success: bool, message: string, latency?: number}`
+- **UI Issue**: ❌ Cannot test - UI not accessible
 
-### MCP-5: Execute MCP CLI Commands ✅
-- **Status**: COMPLETE - Implemented in `APIClient.swift` line 986
+### MCP-5: Execute MCP CLI Commands ✅ (API Only)
+- **Status**: API COMPLETE - Implemented in `APIClient.swift` line 986
 - **Endpoint**: POST /api/mcp/cli
-- **Request**: `{command: string, args?: string[]}`
+- **UI Issue**: ❌ Cannot test - UI not accessible
 
-### MCP-6: MCP Tab in MainTabBarController ✅
-- **Status**: COMPLETE - Implemented in `MainTabBarController.swift` line 17, 85-90
-- **View**: MCPServerListViewController with SwiftUI integration
-- **Icon**: server.rack / server.rack.fill
+### MCP-6: Fix MCP UI Access ❌ CRITICAL
+- **Status**: NOT WORKING - Tab exists in code but not visible in app
+- **Issue**: Settings screen is empty, no MCP tab visible
+- **Fix Required**: Make MCP UI actually accessible in app
 
 ## 🟡 PRIORITY 1: SEARCH FUNCTIONALITY [HIGH - 4 Tasks]
 
