@@ -702,20 +702,62 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 }
             } catch {
                 print("❌ Failed to load messages from backend: \(error)")
-                await MainActor.run {
-                    // Show error message instead of fake data
-                    let errorMessage = EnhancedChatMessage(
-                        id: UUID().uuidString,
-                        content: "Failed to load messages: \(error.localizedDescription)\n\nPlease ensure the backend server is running on http://localhost:3004",
-                        isUser: false,
-                        timestamp: Date(),
-                        status: .failed
-                    )
-                    errorMessage.messageType = .error
-                    
-                    if !append {
-                        self.messages = [errorMessage]
+                print("📋 Error details: \(String(describing: error))")
+                
+                // Log more detailed error information
+                if let urlError = error as? URLError {
+                    print("🔗 URL Error code: \(urlError.code), description: \(urlError.localizedDescription)")
+                } else if let decodingError = error as? DecodingError {
+                    switch decodingError {
+                    case .dataCorrupted(let context):
+                        print("🔴 Data corrupted: \(context.debugDescription)")
+                        print("📍 Coding path: \(context.codingPath)")
+                    case .keyNotFound(let key, let context):
+                        print("🔴 Key not found: \(key)")
+                        print("📋 Context: \(context.debugDescription)")
+                        print("📍 Coding path: \(context.codingPath)")
+                    case .typeMismatch(let type, let context):
+                        print("🔴 Type mismatch, expected: \(type)")
+                        print("📋 Context: \(context.debugDescription)")
+                        print("📍 Coding path: \(context.codingPath)")
+                    case .valueNotFound(let type, let context):
+                        print("🔴 Value not found for type: \(type)")
+                        print("📋 Context: \(context.debugDescription)")
+                        print("📍 Coding path: \(context.codingPath)")
+                    @unknown default:
+                        print("🔴 Unknown decoding error")
                     }
+                }
+                
+                await MainActor.run {
+                    // Don't show error message in the chat if there are simply no messages
+                    // Check if the error is due to missing data vs actual failure
+                    let errorDesc = error.localizedDescription.lowercased()
+                    let isDataMissing = errorDesc.contains("missing") || 
+                                       errorDesc.contains("no such file") || 
+                                       errorDesc.contains("enoent") ||
+                                       errorDesc.contains("couldn't be read")
+                    
+                    if isDataMissing {
+                        // No messages exist yet, this is normal for a new session
+                        print("ℹ️ No messages found for session (likely new session)")
+                        self.messages = []
+                    } else {
+                        // Show error message for actual failures
+                        let errorMessage = EnhancedChatMessage(
+                            id: UUID().uuidString,
+                            content: "⚠️ Could not load previous messages.\n\nThis is normal for a new session. Start chatting!",
+                            isUser: false,
+                            timestamp: Date(),
+                            status: .delivered
+                        )
+                        errorMessage.messageType = .system
+                        
+                        if !append {
+                            self.messages = [errorMessage]
+                        }
+                    }
+                    
                     self.isLoadingMore = false
                     self.isLoading = false
                     self.tableView.reloadData()

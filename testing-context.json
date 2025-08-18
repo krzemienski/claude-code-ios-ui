@@ -1,0 +1,104 @@
+{
+  "testingSession": {
+    "id": "test_session_20250118",
+    "startTime": "2025-01-18T00:00:00Z",
+    "project": {
+      "path": "/Users/nick/Documents/claude-code-ios-ui",
+      "xcodeProject": "ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj",
+      "scheme": "ClaudeCodeUI",
+      "bundleId": "com.claudecode.ui"
+    },
+    "backend": {
+      "url": "http://localhost:3004",
+      "websocket": "ws://localhost:3004/ws",
+      "shellWebsocket": "ws://localhost:3004/shell",
+      "status": "not_running",
+      "lastHealthCheck": null
+    },
+    "simulator": {
+      "primaryUuid": "A707456B-44DB-472F-9722-C88153CDFFA1",
+      "fallbackUuid": "05223130-57AA-48B0-ABD0-4D59CE455F14",
+      "device": "iPhone 16 Pro Max",
+      "iosVersion": "18.6",
+      "status": "shutdown",
+      "booted": false
+    },
+    "app": {
+      "buildStatus": "not_built",
+      "installStatus": "not_installed",
+      "launchStatus": "not_launched",
+      "appPath": null,
+      "lastBuildTime": null
+    }
+  },
+  "testFlows": {
+    "phase1_start": {
+      "status": "pending",
+      "steps": [
+        "Start backend server",
+        "Boot simulator",
+        "Build app",
+        "Install app"
+      ],
+      "results": {}
+    },
+    "phase2_project": {
+      "status": "pending",
+      "steps": [
+        "Launch app",
+        "Verify projects load",
+        "Test project selection",
+        "Capture screenshot"
+      ],
+      "results": {}
+    },
+    "phase3_session": {
+      "status": "pending",
+      "steps": [
+        "Navigate to sessions",
+        "Create new session",
+        "Load existing sessions",
+        "Test session CRUD"
+      ],
+      "results": {}
+    },
+    "phase4_message": {
+      "status": "pending",
+      "steps": [
+        "Open chat view",
+        "Send message via WebSocket",
+        "Receive response",
+        "Test auto-reconnection"
+      ],
+      "results": {}
+    },
+    "phase5_cleanup": {
+      "status": "pending",
+      "steps": [
+        "Collect logs",
+        "Capture final screenshots",
+        "Stop app",
+        "Generate report"
+      ],
+      "results": {}
+    }
+  },
+  "evidence": {
+    "screenshots": [],
+    "logs": [],
+    "errors": [],
+    "performance": {
+      "launchTime": null,
+      "memoryUsage": null,
+      "apiResponseTimes": [],
+      "websocketLatency": null
+    }
+  },
+  "issues": {
+    "critical": [],
+    "high": [],
+    "medium": [],
+    "low": []
+  },
+  "recommendations": []
+}

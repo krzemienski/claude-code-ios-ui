@@ -640,7 +640,16 @@ actor APIClient: APIClientProtocol {
         }
         
         print("📦 Response status: \(httpResponse.statusCode)")
-        print("📦 Response data: \(String(data: data, encoding: .utf8) ?? "nil")")
+        
+        // Log response data but truncate if too long
+        if let responseString = String(data: data, encoding: .utf8) {
+            let maxLength = 500
+            if responseString.count > maxLength {
+                print("📦 Response data (truncated): \(responseString.prefix(maxLength))...")
+            } else {
+                print("📦 Response data: \(responseString)")
+            }
+        }
         
         guard (200...299).contains(httpResponse.statusCode) else {
             if httpResponse.statusCode == 401 {

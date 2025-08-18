@@ -410,34 +410,22 @@ class TerminalViewController: BaseViewController {
     // MARK: - WebSocket Methods
     
     private func connectShellWebSocket() {
-        // Set self as delegate to receive messages
-        shellWebSocketManager.delegate = self
+        // NOTE: The /shell WebSocket endpoint is specifically for Claude/Cursor CLI commands,
+        // not general shell commands. For general terminal commands, we use the HTTP API
+        // at /api/terminal/execute which is already implemented in sendCommandToBackend()
         
-        // Configure auto-reconnection for shell WebSocket
-        shellWebSocketManager.configure(
-            enableAutoReconnect: true,
-            reconnectDelay: 2.0,
-            maxReconnectAttempts: 5
-        )
+        // For now, we'll disable WebSocket shell connection since it's not for general commands
+        // The HTTP fallback in sendCommandToBackend() works fine for terminal commands
         
-        // Connect to shell WebSocket endpoint
-        var wsURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/shell"
+        // Mark as not connected so HTTP fallback is used
+        isShellConnected = false
         
-        // Add authentication token if available
-        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
-            wsURL += "?token=\(authToken)"
-        }
+        // Show status
+        appendToTerminal("✅ Terminal ready (using HTTP mode)", color: CyberpunkTheme.success)
+        appendToTerminal("📂 Working directory: \(getCurrentWorkingDirectory())", color: CyberpunkTheme.primaryCyan)
         
-        // Add project ID if available (though backend uses projectPath from init message)
-        if let projectId = project?.id {
-            wsURL += wsURL.contains("?") ? "&projectId=\(projectId)" : "?projectId=\(projectId)"
-        }
-        
-        shellWebSocketManager.connect(to: wsURL)
-        print("🐚 Connecting to Shell WebSocket at: \(wsURL)")
-        
-        // Show connection status
-        appendToTerminal("⏳ Connecting to shell server...", color: CyberpunkTheme.primaryCyan)
+        // Update toolbar to show we're using HTTP mode
+        updateToolbarForConnectionState()
     }
     
     private func sendShellInitMessage() {
@@ -594,13 +582,10 @@ class TerminalViewController: BaseViewController {
     }
     
     @objc private func reconnectShell() {
-        if isShellConnected {
-            appendToTerminal("Shell is already connected", color: CyberpunkTheme.success)
-        } else {
-            reconnectAttempts = 0 // Reset attempts for manual reconnection
-            appendToTerminal("🔄 Manually reconnecting to shell...", color: CyberpunkTheme.primaryCyan)
-            connectShellWebSocket()
-        }
+        // Since we're using HTTP mode for general terminal commands,
+        // this button just shows the current status
+        appendToTerminal("ℹ️ Terminal is using HTTP mode for command execution", color: CyberpunkTheme.primaryCyan)
+        appendToTerminal("✅ Ready to execute commands", color: CyberpunkTheme.success)
         
         // Haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .light)

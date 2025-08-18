@@ -84,8 +84,16 @@ async function spawnClaude(command, options = {}, ws) {
       }
     }
     
-    // Add resume flag if resuming
-    if (resume && sessionId) {
+    // Check if sessionId is a UUID format (iOS generates UUIDs) BEFORE deciding on resume
+    const isUUID = sessionId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId);
+    
+    if (isUUID) {
+      // For UUID format session IDs from iOS, let Claude create a new session
+      console.log(`📱 iOS UUID session ID detected (${sessionId}), creating new Claude session`);
+      // Don't add --resume flag for UUID sessions - let Claude create a new session
+    } else if (resume && sessionId) {
+      // Only resume if session ID exists and is NOT a UUID (Claude CLI recognizes this format)
+      console.log(`📄 Resuming Claude session: ${sessionId}`);
       args.push('--resume', sessionId);
     }
     

@@ -130,9 +130,17 @@ class SearchViewModel: ObservableObject {
         
         // Ensure we have a project name
         guard !currentProjectName.isEmpty else {
-            // If no project name, use mock data as fallback
-            print("⚠️ No project name set, using mock data")
-            return generateMockResults(query: query, scope: scope)
+            // Try to get from the first available project if not set
+            if let firstProject = try? await getFirstProject() {
+                currentProjectName = firstProject.name
+                currentProjectPath = firstProject.path ?? firstProject.id
+                print("📁 Auto-selected project: \(currentProjectName)")
+            } else {
+                // If no project available, return empty results with error
+                print("⚠️ No project available for search")
+                throw NSError(domain: "SearchViewModel", code: 1, 
+                            userInfo: [NSLocalizedDescriptionKey: "No project selected"])
+            }
         }
         
         // Create the search request
@@ -144,6 +152,8 @@ class SearchViewModel: ObservableObject {
         
         // Call the backend API
         let endpoint = "/api/projects/\(currentProjectName)/search"
+        
+        print("🔍 Searching in project '\(currentProjectName)' with query: '\(query)'")
         
         do {
             // Using APIClient's generic request method
@@ -159,15 +169,41 @@ class SearchViewModel: ObservableObject {
             
             // Parse the response
             if let searchResults = response["results"] as? [[String: Any]] {
+                print("✅ Search found \(searchResults.count) results")
                 return parseSearchResults(from: searchResults)
             } else {
                 // If no results in response, return empty array
+                print("ℹ️ Search returned no results")
                 return []
             }
         } catch {
             print("❌ Search API error: \(error)")
-            // On error, could fallback to mock data or rethrow
+            // For backend not implemented error, return empty results instead of error
+            if (error as NSError).code == 404 || 
+               error.localizedDescription.contains("not found") ||
+               error.localizedDescription.contains("Not Found") {
+                print("⚠️ Search endpoint not implemented in backend, returning empty results")
+                return []
+            }
             throw error
+        }
+    }
+    
+    private func getFirstProject() async throws -> Project {
+        return try await withCheckedThrowingContinuation { continuation in
+            APIClient.shared.getProjects { result in
+                switch result {
+                case .success(let projects):
+                    if let firstProject = projects.first {
+                        continuation.resume(returning: firstProject)
+                    } else {
+                        continuation.resume(throwing: NSError(domain: "SearchViewModel", code: 2,
+                                                             userInfo: [NSLocalizedDescriptionKey: "No projects available"]))
+                    }
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
         }
     }
     

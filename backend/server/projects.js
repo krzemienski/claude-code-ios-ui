@@ -410,6 +410,14 @@ async function getSessionMessages(projectName, sessionId, limit = null, offset =
   const projectDir = path.join(process.env.HOME, '.claude', 'projects', projectName);
   
   try {
+    // Check if directory exists before trying to read it
+    try {
+      await fs.access(projectDir);
+    } catch (error) {
+      console.log(`Project directory does not exist yet: ${projectDir}`);
+      return limit === null ? [] : { messages: [], total: 0, hasMore: false };
+    }
+    
     const files = await fs.readdir(projectDir);
     const jsonlFiles = files.filter(file => file.endsWith('.jsonl'));
     
