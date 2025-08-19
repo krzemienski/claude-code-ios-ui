@@ -180,6 +180,14 @@ class TerminalViewController: BaseViewController {
         commandTextField.becomeFirstResponder()
     }
     
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // Send terminal resize message when view size changes
+        if isShellConnected {
+            sendTerminalResize()
+        }
+    }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         // Disconnect shell WebSocket when leaving the terminal
@@ -331,14 +339,36 @@ class TerminalViewController: BaseViewController {
     }
     
     private func sendCommandToBackend(_ command: String) {
-        // If shell WebSocket is connected, use it for real-time communication
+        // Always try WebSocket first for real-time communication
         if isShellConnected {
             sendCommandViaWebSocket(command)
             return
         }
         
-        // Fallback to HTTP if WebSocket is not connected
-        // Create the request body
+        // If not connected, try to connect first
+        if reconnectAttempts < maxReconnectAttempts {
+            appendToTerminal("⚠️ Not connected to shell. Attempting to connect...", color: CyberpunkTheme.warning)
+            connectShellWebSocket()
+            
+            // Store the command to execute after connection
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                guard let self = self else { return }
+                if self.isShellConnected {
+                    self.sendCommandViaWebSocket(command)
+                } else {
+                    // Fallback to HTTP if WebSocket connection fails
+                    self.sendCommandViaHTTP(command)
+                }
+            }
+            return
+        }
+        
+        // Fallback to HTTP if WebSocket is not available
+        sendCommandViaHTTP(command)
+    }
+    
+    private func sendCommandViaHTTP(_ command: String) {
+        // HTTP fallback for command execution
         let parameters: [String: Any] = [
             "command": command,
             "projectId": project?.id ?? "",
@@ -410,22 +440,19 @@ class TerminalViewController: BaseViewController {
     // MARK: - WebSocket Methods
     
     private func connectShellWebSocket() {
-        // NOTE: The /shell WebSocket endpoint is specifically for Claude/Cursor CLI commands,
-        // not general shell commands. For general terminal commands, we use the HTTP API
-        // at /api/terminal/execute which is already implemented in sendCommandToBackend()
+        // Connect to shell WebSocket endpoint for real-time terminal communication
+        let shellURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/shell"
         
-        // For now, we'll disable WebSocket shell connection since it's not for general commands
-        // The HTTP fallback in sendCommandToBackend() works fine for terminal commands
+        appendToTerminal("🔄 Connecting to shell server...", color: CyberpunkTheme.primaryCyan)
         
-        // Mark as not connected so HTTP fallback is used
-        isShellConnected = false
+        // Set ourselves as delegate to receive messages
+        shellWebSocketManager.delegate = self
         
-        // Show status
-        appendToTerminal("✅ Terminal ready (using HTTP mode)", color: CyberpunkTheme.success)
-        appendToTerminal("📂 Working directory: \(getCurrentWorkingDirectory())", color: CyberpunkTheme.primaryCyan)
+        // Connect to the shell WebSocket endpoint with project path
+        shellWebSocketManager.connect(to: shellURL)
         
-        // Update toolbar to show we're using HTTP mode
-        updateToolbarForConnectionState()
+        // The actual connection success will be handled in webSocketDidConnect delegate method
+        print("🐚 Initiating shell WebSocket connection to: \(shellURL)")
     }
     
     private func sendShellInitMessage() {
@@ -433,21 +460,49 @@ class TerminalViewController: BaseViewController {
         // Backend expects: {type: "init", projectPath: path, sessionId: id, hasSession: bool, provider: "claude"}
         let projectPath = project?.path ?? project?.id ?? getCurrentWorkingDirectory()
         
+        // Calculate terminal size based on text view bounds
+        let charWidth: CGFloat = 7.0 // Approximate width of monospace character
+        let charHeight: CGFloat = 16.0 // Approximate height with line spacing
+        let cols = Int((terminalTextView.bounds.width - 24) / charWidth) // Account for padding
+        let rows = Int((terminalTextView.bounds.height - 24) / charHeight)
+        
         let initData: [String: Any] = [
             "type": "init",
             "projectPath": projectPath,
             "sessionId": NSNull(), // No session for standalone terminal
             "hasSession": false,
-            "provider": "claude",
-            "cols": 120,  // Terminal columns (wider for better display)
-            "rows": 40    // Terminal rows (more lines)
+            "provider": "terminal", // Changed to "terminal" for standalone usage
+            "cols": max(80, cols),  // Minimum 80 columns
+            "rows": max(24, rows)   // Minimum 24 rows
         ]
         
         if let jsonData = try? JSONSerialization.data(withJSONObject: initData),
            let jsonString = String(data: jsonData, encoding: .utf8) {
             shellWebSocketManager.sendRawText(jsonString)
-            print("🐚 Sent shell init message with project path: \(projectPath)")
+            print("🐚 Sent shell init message with project path: \(projectPath), cols: \(cols), rows: \(rows)")
             appendToTerminal("📂 Working directory: \(projectPath)", color: CyberpunkTheme.primaryCyan)
+            currentDirectory = projectPath // Update current directory
+            updatePrompt()
+        }
+    }
+    
+    private func sendTerminalResize() {
+        // Calculate new terminal size
+        let charWidth: CGFloat = 7.0
+        let charHeight: CGFloat = 16.0
+        let cols = Int((terminalTextView.bounds.width - 24) / charWidth)
+        let rows = Int((terminalTextView.bounds.height - 24) / charHeight)
+        
+        let resizeData: [String: Any] = [
+            "type": "resize",
+            "cols": max(80, cols),
+            "rows": max(24, rows)
+        ]
+        
+        if let jsonData = try? JSONSerialization.data(withJSONObject: resizeData),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            shellWebSocketManager.sendRawText(jsonString)
+            print("🐚 Sent terminal resize: cols=\(cols), rows=\(rows)")
         }
     }
     
@@ -459,18 +514,19 @@ class TerminalViewController: BaseViewController {
             return
         }
         
-        // Create message matching backend's expected format for shell input
-        // Backend expects {type: "input", data: "command"}
+        // Create message matching backend's expected format for shell commands
+        // Backend expects: {"type": "shell-command", "command": "ls -la", "cwd": "/path"}
         let messageData: [String: Any] = [
-            "type": "input",
-            "data": command
+            "type": "shell-command",
+            "command": command,
+            "cwd": currentDirectory.isEmpty ? getCurrentWorkingDirectory() : currentDirectory
         ]
         
         // Send as raw JSON string since backend expects specific format
         if let jsonData = try? JSONSerialization.data(withJSONObject: messageData),
            let jsonString = String(data: jsonData, encoding: .utf8) {
             shellWebSocketManager.sendRawText(jsonString)
-            print("🐚 Sent shell command via WebSocket: \(command)")
+            print("🐚 Sent shell command via WebSocket: \(command) in directory: \(messageData["cwd"] ?? "unknown")")
         } else {
             appendToTerminal("❌ Failed to send command", color: CyberpunkTheme.accentPink)
         }
@@ -791,15 +847,28 @@ extension TerminalViewController: WebSocketManagerDelegate {
                 
                 if let type = json["type"] as? String {
                     switch type {
+                    case "shell-output":
+                        // Handle output from shell commands
+                        if let output = json["output"] as? String {
+                            appendToTerminalWithANSI(output)
+                        }
+                    case "shell-error":
+                        // Handle error from shell commands
+                        if let error = json["error"] as? String {
+                            if error.contains("command not found") || error.contains("not found") {
+                                appendToTerminal(error, color: CyberpunkTheme.warning)
+                            } else {
+                                appendToTerminal("❌ \(error)", color: CyberpunkTheme.accentPink)
+                            }
+                        }
                     case "output":
+                        // Also handle legacy "output" type
                         if let output = json["data"] as? String {
-                            // Display shell output with ANSI parsing
-                            // Don't add extra newlines for output that already has them
                             appendToTerminalWithANSI(output)
                         }
                     case "error":
+                        // Also handle legacy "error" type
                         if let error = json["data"] as? String {
-                            // Check if it's a command not found error
                             if error.contains("command not found") || error.contains("not found") {
                                 appendToTerminal(error, color: CyberpunkTheme.warning)
                             } else {
@@ -827,11 +896,16 @@ extension TerminalViewController: WebSocketManagerDelegate {
                         // Still try to display any data if present
                         if let data = json["data"] as? String {
                             appendToTerminalWithANSI(data)
+                        } else if let output = json["output"] as? String {
+                            appendToTerminalWithANSI(output)
                         }
                     }
                 } else if let data = json["data"] as? String {
                     // Some messages might not have a type but have data
                     appendToTerminalWithANSI(data)
+                } else if let output = json["output"] as? String {
+                    // Direct output field without type
+                    appendToTerminalWithANSI(output)
                 } else {
                     // Handle other JSON structures
                     print("🐚 Received JSON without recognized structure: \(json)")

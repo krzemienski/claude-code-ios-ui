@@ -142,10 +142,22 @@ actor APIClient: APIClientProtocol {
             method: .get
         )
         
-        // Backend returns: {"messages": [...], "total": 5, "hasMore": false, "offset": 0, "limit": 50}
-        // We need to extract just the messages array
+        // Backend returns complex nested structure
+        struct BackendMessage: Codable {
+            let uuid: String
+            let timestamp: String
+            let sessionId: String?
+            let type: String?
+            let message: MessageContent
+            
+            struct MessageContent: Codable {
+                let role: String
+                let content: String
+            }
+        }
+        
         struct MessagesResponse: Codable {
-            let messages: [MessageDTO]
+            let messages: [BackendMessage]
             let total: Int
             let hasMore: Bool
             let offset: Int
@@ -153,13 +165,18 @@ actor APIClient: APIClientProtocol {
         }
         
         let response: MessagesResponse = try await request(endpoint)
-        return response.messages.map { dto in
+        return response.messages.map { backendMsg in
             let message = Message(
-                id: dto.id ?? UUID().uuidString,
-                role: MessageRole(rawValue: dto.role) ?? .user,
-                content: dto.content
+                id: backendMsg.uuid,
+                role: MessageRole(rawValue: backendMsg.message.role) ?? .user,
+                content: backendMsg.message.content
             )
-            message.timestamp = dto.timestamp ?? Date()
+            // Parse timestamp from ISO string
+            if let date = ISO8601DateFormatter().date(from: backendMsg.timestamp) {
+                message.timestamp = date
+            } else {
+                message.timestamp = Date()
+            }
             return message
         }
     }

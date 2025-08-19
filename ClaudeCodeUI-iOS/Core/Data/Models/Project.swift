@@ -68,7 +68,14 @@ final class Project: Codable {
     
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.id = try container.decode(String.self, forKey: .id)
+        // Make id optional and generate from name if not present
+        if let id = try container.decodeIfPresent(String.self, forKey: .id) {
+            self.id = id
+        } else {
+            // Generate id from name if backend doesn't provide one
+            let name = try container.decode(String.self, forKey: .name)
+            self.id = name // Use name as id for backend compatibility
+        }
         self.name = try container.decode(String.self, forKey: .name)
         self.path = try container.decode(String.self, forKey: .path)
         self.fullPath = try container.decodeIfPresent(String.self, forKey: .fullPath)

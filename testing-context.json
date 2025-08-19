@@ -1,7 +1,7 @@
 {
   "testingSession": {
-    "id": "test_session_20250118",
-    "startTime": "2025-01-18T00:00:00Z",
+    "id": "test_session_20250118_comprehensive",
+    "startTime": "2025-01-18T19:33:00Z",
     "project": {
       "path": "/Users/nick/Documents/claude-code-ios-ui",
       "xcodeProject": "ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj",
@@ -12,15 +12,18 @@
       "url": "http://localhost:3004",
       "websocket": "ws://localhost:3004/ws",
       "shellWebsocket": "ws://localhost:3004/shell",
-      "status": "not_running",
-      "lastHealthCheck": null
+      "status": "RUNNING",
+      "pid": 83463,
+      "lastHealthCheck": "2025-01-18T19:33:00Z",
+      "availableProjects": 28,
+      "testProjectName": "-Users-nick-Documents-claude-code-ios-ui"
     },
     "simulator": {
-      "primaryUuid": "A707456B-44DB-472F-9722-C88153CDFFA1",
-      "fallbackUuid": "05223130-57AA-48B0-ABD0-4D59CE455F14",
+      "primaryUuid": "05223130-57AA-48B0-ABD0-4D59CE455F14",
+      "fallbackUuid": "A707456B-44DB-472F-9722-C88153CDFFA1",
       "device": "iPhone 16 Pro Max",
       "iosVersion": "18.6",
-      "status": "shutdown",
+      "status": "to_be_checked",
       "booted": false
     },
     "app": {
@@ -95,10 +98,284 @@
     }
   },
   "issues": {
-    "critical": [],
-    "high": [],
-    "medium": [],
-    "low": []
+    "critical": [
+      "WebSocket message JSON parsing error - messages not loading in chat",
+      "Claude session ID mismatch - backend expects different format",
+      "MCP UI not accessible - Settings screen is empty",
+      "Terminal WebSocket not connected to ws://localhost:3004/shell"
+    ],
+    "high": [
+      "Search functionality may use mock data instead of API",
+      "File explorer navigation has TODO comment",
+      "Import/accessibility issues prevent full feature views"
+    ],
+    "medium": [
+      "More menu navigation for tabs 5-6 not immediately obvious",
+      "Settings screen uses placeholder implementation",
+      "Pull-to-refresh not implemented in some views"
+    ],
+    "low": [
+      "Some animations and transitions incomplete",
+      "Loading skeletons not implemented everywhere"
+    ]
   },
-  "recommendations": []
+  "apiStatus": {
+    "totalEndpoints": 62,
+    "implemented": 49,
+    "percentage": "79%",
+    "breakdown": {
+      "authentication": "5/5 (100%)",
+      "projects": "5/5 (100%)",
+      "sessions": "6/6 (100%)",
+      "files": "4/4 (100%)",
+      "git": "20/20 (100%)",
+      "mcp": "6/6 (100%)",
+      "search": "2/2 (100%)",
+      "cursor": "0/8 (0%)",
+      "transcription": "0/1 (0%)",
+      "settings": "0/2 (0%)"
+    }
+  },
+  "recommendations": [
+    "Fix WebSocket JSON parsing in ChatViewController",
+    "Update session ID format to match backend expectations",
+    "Make MCP tab accessible in UI",
+    "Connect Terminal to shell WebSocket endpoint",
+    "Replace mock data with real API calls in SearchViewModel"
+  ],
+  "testingHierarchy": {
+    "epic": {
+      "id": "epic-1",
+      "title": "iOS Claude Code UI Comprehensive Testing Protocol",
+      "objective": "Execute 17+ user flows with thorough documentation",
+      "estimatedEffort": "35 hours (3-5 days)",
+      "priority": "CRITICAL"
+    },
+    "stories": [
+      {
+        "id": "story-1",
+        "title": "Prerequisites & Environment Setup",
+        "priority": "P0-BLOCKER",
+        "estimatedHours": 2,
+        "dependencies": [],
+        "taskCount": 5
+      },
+      {
+        "id": "story-2",
+        "title": "Primary User Flows Testing",
+        "priority": "P0-CRITICAL",
+        "estimatedHours": 8,
+        "dependencies": ["story-1"],
+        "flowCount": 5,
+        "flows": [
+          "Authentication & Initial Setup",
+          "Project List Navigation",
+          "Session Management CRUD",
+          "WebSocket Chat Communication",
+          "Git Integration Operations"
+        ]
+      },
+      {
+        "id": "story-3",
+        "title": "Tab Navigation & Hidden Features",
+        "priority": "P1-HIGH",
+        "estimatedHours": 4,
+        "dependencies": ["story-2"],
+        "flowCount": 3,
+        "flows": [
+          "More Menu Tab Discovery",
+          "MCP Server Operations",
+          "File Explorer Navigation"
+        ]
+      },
+      {
+        "id": "story-4",
+        "title": "Error Handling & Edge Cases",
+        "priority": "P1-HIGH",
+        "estimatedHours": 6,
+        "dependencies": ["story-2"],
+        "flowCount": 3,
+        "flows": [
+          "Network Failure Recovery",
+          "Session State Persistence",
+          "Large Data Handling"
+        ]
+      },
+      {
+        "id": "story-5",
+        "title": "Performance & Load Testing",
+        "priority": "P2-MEDIUM",
+        "estimatedHours": 4,
+        "dependencies": ["story-2"],
+        "flowCount": 2,
+        "flows": [
+          "App Launch Performance",
+          "Concurrent Operations"
+        ]
+      },
+      {
+        "id": "story-6",
+        "title": "UI/UX Validation",
+        "priority": "P2-MEDIUM",
+        "estimatedHours": 3,
+        "dependencies": ["story-3"],
+        "flowCount": 2,
+        "flows": [
+          "Cyberpunk Theme Consistency",
+          "Accessibility Testing"
+        ]
+      },
+      {
+        "id": "story-7",
+        "title": "Integration & End-to-End Testing",
+        "priority": "P1-HIGH",
+        "estimatedHours": 5,
+        "dependencies": ["story-2", "story-3"],
+        "flowCount": 2,
+        "flows": [
+          "Complete User Journey",
+          "Cross-Feature Integration"
+        ]
+      },
+      {
+        "id": "story-8",
+        "title": "Documentation & Reporting",
+        "priority": "P3-LOW",
+        "estimatedHours": 3,
+        "dependencies": ["story-7"],
+        "deliverables": 6
+      }
+    ],
+    "executionPhases": {
+      "phase1": {
+        "name": "Setup",
+        "stories": ["story-1"],
+        "duration": "2 hours",
+        "critical": true
+      },
+      "phase2": {
+        "name": "Core Testing",
+        "stories": ["story-2"],
+        "duration": "8 hours",
+        "critical": true
+      },
+      "phase3": {
+        "name": "Feature Testing",
+        "stories": ["story-3", "story-4"],
+        "duration": "10 hours",
+        "critical": false
+      },
+      "phase4": {
+        "name": "Quality Testing",
+        "stories": ["story-5", "story-6"],
+        "duration": "7 hours",
+        "critical": false
+      },
+      "phase5": {
+        "name": "Integration",
+        "stories": ["story-7"],
+        "duration": "5 hours",
+        "critical": true
+      },
+      "phase6": {
+        "name": "Documentation",
+        "stories": ["story-8"],
+        "duration": "3 hours",
+        "critical": false
+      }
+    },
+    "criticalPath": [
+      "story-1",
+      "story-2",
+      "story-7"
+    ],
+    "totalUserFlows": 17,
+    "flowDetails": {
+      "flow1": {
+        "name": "Authentication & Initial Setup",
+        "endpoints": 5,
+        "priority": "CRITICAL"
+      },
+      "flow2": {
+        "name": "Project List Navigation",
+        "endpoints": 5,
+        "priority": "CRITICAL"
+      },
+      "flow3": {
+        "name": "Session Management CRUD",
+        "endpoints": 6,
+        "priority": "CRITICAL"
+      },
+      "flow4": {
+        "name": "WebSocket Chat Communication",
+        "endpoints": 2,
+        "priority": "CRITICAL"
+      },
+      "flow5": {
+        "name": "Git Integration Operations",
+        "endpoints": 20,
+        "priority": "HIGH"
+      },
+      "flow6": {
+        "name": "More Menu Tab Discovery",
+        "endpoints": 0,
+        "priority": "HIGH"
+      },
+      "flow7": {
+        "name": "MCP Server Operations",
+        "endpoints": 6,
+        "priority": "HIGH"
+      },
+      "flow8": {
+        "name": "File Explorer Navigation",
+        "endpoints": 4,
+        "priority": "MEDIUM"
+      },
+      "flow9": {
+        "name": "Network Failure Recovery",
+        "endpoints": 0,
+        "priority": "HIGH"
+      },
+      "flow10": {
+        "name": "Session State Persistence",
+        "endpoints": 0,
+        "priority": "HIGH"
+      },
+      "flow11": {
+        "name": "Large Data Handling",
+        "endpoints": 0,
+        "priority": "MEDIUM"
+      },
+      "flow12": {
+        "name": "App Launch Performance",
+        "endpoints": 0,
+        "priority": "MEDIUM"
+      },
+      "flow13": {
+        "name": "Concurrent Operations",
+        "endpoints": 0,
+        "priority": "MEDIUM"
+      },
+      "flow14": {
+        "name": "Cyberpunk Theme Consistency",
+        "endpoints": 0,
+        "priority": "LOW"
+      },
+      "flow15": {
+        "name": "Accessibility Testing",
+        "endpoints": 0,
+        "priority": "MEDIUM"
+      },
+      "flow16": {
+        "name": "Complete User Journey",
+        "endpoints": 10,
+        "priority": "CRITICAL"
+      },
+      "flow17": {
+        "name": "Cross-Feature Integration",
+        "endpoints": 8,
+        "priority": "HIGH"
+      }
+    }
+  }
 }

@@ -637,15 +637,20 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     private func loadInitialMessages() {
         // Load existing session messages from backend
+        print("📱 loadInitialMessages called for project: \(project.name)")
         if let session = currentSession {
             // Use the provided session
+            print("✅ Using provided session: \(session.id)")
+            print("📋 Session created: \(session.createdAt)")
             UserDefaults.standard.set(session.id, forKey: "currentSessionId_\(project.id)")
             loadSessionMessages(sessionId: session.id)
         } else if let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)") {
             // Try to resume a previous session
+            print("🔄 Resuming previous session: \(sessionId)")
             loadSessionMessages(sessionId: sessionId)
         } else {
             // No existing session - keep messages empty (no fake welcome message)
+            print("⚠️ No session available - starting with empty messages")
             messages = []
             tableView.reloadData()
         }
@@ -670,6 +675,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 )
                 
                 await MainActor.run {
+                    print("🔍 Processing \(backendMessages.count) backend messages")
+                    for (index, msg) in backendMessages.prefix(3).enumerated() {
+                        print("  Message \(index): role=\(msg.role), content=\(String(msg.content.prefix(50)))...")
+                    }
+                    
                     let enhancedMessages = backendMessages.map { message in
                         let enhanced = EnhancedChatMessage(
                             id: message.id,
@@ -692,13 +702,17 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     self.hasMoreMessages = backendMessages.count == self.messagePageSize
                     self.isLoadingMore = false
                     self.isLoading = false  // Hide loading indicator after messages load
+                    
+                    print("📊 Total messages in view: \(self.messages.count)")
+                    print("🔄 Reloading table view...")
                     self.tableView.reloadData()
                     
                     if !append && !self.messages.isEmpty {
+                        print("⬇️ Scrolling to bottom")
                         self.scrollToBottom(animated: false)
                     }
                     
-                    print("✅ Loaded \(backendMessages.count) messages for session \(sessionId)")
+                    print("✅ Successfully loaded \(backendMessages.count) messages for session \(sessionId)")
                 }
             } catch {
                 print("❌ Failed to load messages from backend: \(error)")
@@ -844,7 +858,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             "type": "claude-command",
             "command": text,  // Changed from "content" to "command"
             "options": [      // Added options object
-                "projectPath": project.path ?? project.id,
+                "projectPath": project.path,
                 "sessionId": sessionId as Any,
                 "resume": sessionId != nil,
                 "cwd": project.path
