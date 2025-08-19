@@ -822,6 +822,681 @@ The main remaining features to implement are:
 
 The app follows best practices with MVVM architecture, has a solid foundation, and most "critical P0 issues" were either already fixed or never existed. The codebase is ready for adding the remaining MCP and Search features.
 
+## 📋 COMPREHENSIVE 500+ ACTIONABLE TODOS
+
+Generated from complete codebase analysis on January 19, 2025.
+Total: 525 actionable items organized by category and priority.
+
+### 🔴 TERMINAL & SHELL WEBSOCKET [50 todos] - PRIORITY 0 (CRITICAL)
+
+#### Core Terminal Implementation (15)
+1. Connect TerminalViewController to ws://localhost:3004/shell WebSocket
+2. Implement shell command message format: {"type": "shell-command", "command": "ls", "cwd": "/path"}
+3. Handle shell response format: {"type": "shell-output", "output": "...", "error": false}
+4. Create ShellWebSocketManager separate from main WebSocketManager
+5. Implement command queue for sequential execution
+6. Add command history storage (last 100 commands)
+7. Implement UP/DOWN arrow key navigation for history
+8. Add TAB completion for file paths
+9. Create TerminalOutputParser for response handling
+10. Implement terminal resize message: {"type": "resize", "cols": 80, "rows": 24}
+11. Handle terminal clear command (Cmd+K)
+12. Implement copy/paste support in terminal
+13. Add terminal session persistence
+14. Create terminal configuration model
+15. Implement multiple terminal tab support
+
+#### ANSI Color Support (10)
+16. Create ANSIColorParser class
+17. Support 16 basic ANSI colors
+18. Implement 256 color mode support
+19. Add true color (24-bit) support
+20. Create NSAttributedString extensions for ANSI
+21. Handle bold, italic, underline text styles
+22. Implement cursor positioning commands
+23. Support background colors
+24. Handle color reset sequences
+25. Create color theme customization
+
+#### Terminal UI/UX (15)
+26. Implement terminal font selection (monospace fonts)
+27. Add font size adjustment (Cmd+/Cmd-)
+28. Create terminal theme selector (dark/light/custom)
+29. Implement smooth scrolling for output
+30. Add line number display option
+31. Create split terminal view (horizontal/vertical)
+32. Implement terminal search (Cmd+F)
+33. Add terminal output export to file
+34. Create terminal shortcuts overlay
+35. Implement terminal status bar (cwd, user, host)
+36. Add terminal bell/notification support
+37. Create terminal performance monitor
+38. Implement terminal output buffering (10000 lines)
+39. Add terminal output filtering/grep
+40. Create terminal snippet manager
+
+#### Terminal Testing (10)
+41. Create TerminalWebSocketTests unit tests
+42. Test ANSI color parsing accuracy
+43. Test command history functionality
+44. Test terminal resize handling
+45. Test error output handling
+46. Test large output performance (>1MB)
+47. Test concurrent command execution
+48. Test terminal session recovery
+49. Test clipboard operations
+50. Create terminal integration test suite
+
+### 🟠 UI/UX POLISH & ANIMATIONS [75 todos] - PRIORITY 1
+
+#### Loading States & Skeletons (15)
+51. Create SkeletonView base component
+52. Implement shimmer animation effect
+53. Add skeleton for ProjectsViewController table
+54. Add skeleton for SessionListViewController
+55. Add skeleton for ChatViewController messages
+56. Add skeleton for FileExplorerViewController
+57. Create skeleton for search results
+58. Implement skeleton for Git commit list
+59. Add skeleton for MCP server list
+60. Create gradient animation for skeletons
+61. Add skeleton customization options
+62. Implement skeleton auto-sizing
+63. Create skeleton for user avatars
+64. Add skeleton for code preview
+65. Implement skeleton state management
+
+#### Pull-to-Refresh Implementation (10)
+66. Add UIRefreshControl to SessionListViewController
+67. Customize refresh control with cyberpunk theme
+68. Add haptic feedback on refresh trigger
+69. Implement refresh animation
+70. Add refresh to ProjectsViewController
+71. Add refresh to FileExplorerViewController
+72. Add refresh to Git commit list
+73. Create custom refresh control view
+74. Add refresh completion animation
+75. Implement refresh failure handling
+
+#### Empty States (15)
+76. Create EmptyStateView base component
+77. Design "No Projects" empty state
+78. Design "No Sessions" empty state
+79. Design "No Messages" empty state
+80. Design "No Search Results" empty state
+81. Design "No Files" empty state
+82. Design "No Git Commits" empty state
+83. Design "No MCP Servers" empty state
+84. Add empty state animations
+85. Create empty state action buttons
+86. Implement empty state illustrations
+87. Add empty state customization
+88. Create empty state for errors
+89. Add empty state for offline mode
+90. Implement empty state transitions
+
+#### Swipe Actions (10)
+91. Add swipe-to-delete for sessions
+92. Add swipe-to-archive for sessions
+93. Add swipe-to-duplicate for projects
+94. Add swipe-to-rename for files
+95. Add swipe-to-share for messages
+96. Customize swipe action colors
+97. Add swipe action icons
+98. Implement swipe action animations
+99. Add haptic feedback for swipes
+100. Create swipe action confirmation
+
+#### Navigation Transitions (10)
+101. Implement custom push transition
+102. Create custom pop transition
+103. Add modal presentation animation
+104. Implement tab switch animation
+105. Create drawer slide animation
+106. Add parallax scrolling effect
+107. Implement hero transitions
+108. Create fade transitions
+109. Add spring animations
+110. Implement gesture-driven transitions
+
+#### Button & Interaction Animations (15)
+111. Add button press animation
+112. Create button glow effect
+113. Implement button ripple effect
+114. Add toggle switch animation
+115. Create checkbox animation
+116. Implement radio button animation
+117. Add floating action button animation
+118. Create menu reveal animation
+119. Implement dropdown animation
+120. Add tooltip animations
+121. Create progress button animation
+122. Implement success/error animations
+123. Add loading spinner variations
+124. Create pulse animations for notifications
+125. Implement shake animation for errors
+
+### 🔵 SEARCH FUNCTIONALITY [40 todos] - PRIORITY 1
+
+#### Backend Search Integration (10)
+126. Implement POST /api/projects/:projectName/search endpoint
+127. Add search request model with query, scope, fileTypes
+128. Create search response model with results, highlights
+129. Implement search result caching (5 min TTL)
+130. Add search history persistence
+131. Create search suggestions endpoint
+132. Implement search filters backend logic
+133. Add regex search support
+134. Create search indexing service
+135. Implement search analytics
+
+#### Search UI Components (15)
+136. Replace mock data in SearchViewModel.performSearch()
+137. Create SearchFilterView with file type selection
+138. Add date range picker for search
+139. Implement search scope selector (project/global)
+140. Create search result cell with syntax highlighting
+141. Add search result preview pane
+142. Implement search result grouping by file
+143. Create search history dropdown
+144. Add recent searches section
+145. Implement search suggestions UI
+146. Create advanced search modal
+147. Add search shortcuts guide
+148. Implement search result export
+149. Create search result sharing
+150. Add search keyboard shortcuts
+
+#### Search Performance (10)
+151. Implement search debouncing (300ms)
+152. Add search result pagination
+153. Create incremental search loading
+154. Implement search cancellation
+155. Add search result streaming
+156. Create search cache management
+157. Implement search result diffing
+158. Add search performance monitoring
+159. Create search result compression
+160. Implement offline search capability
+
+#### Search Testing (5)
+161. Create SearchViewModelTests
+162. Test search API integration
+163. Test search result caching
+164. Test search filter functionality
+165. Create search performance tests
+
+### 🟣 FILE OPERATIONS [35 todos] - PRIORITY 2
+
+#### File Explorer Enhancements (15)
+166. Fix file explorer navigation TODO
+167. Implement file/folder creation UI
+168. Add file rename functionality
+169. Implement file move/copy operations
+170. Create file deletion with confirmation
+171. Add file properties view
+172. Implement file permissions editor
+173. Create file preview for images
+174. Add file preview for PDFs
+175. Implement syntax highlighting for code
+176. Create file diff viewer
+177. Add file version history
+178. Implement file search within directory
+179. Create file bulk operations
+180. Add file compression/extraction
+
+#### File Upload/Download (10)
+181. Implement file upload with progress
+182. Add drag-and-drop file upload
+183. Create file download manager
+184. Implement chunked file upload for large files
+185. Add file upload queue
+186. Create upload retry mechanism
+187. Implement upload cancellation
+188. Add download resume capability
+189. Create file transfer history
+190. Implement bandwidth throttling
+
+#### File Tree Improvements (10)
+191. Implement lazy loading for large directories
+192. Add file tree search/filter
+193. Create file tree expand/collapse all
+194. Implement file tree drag-and-drop
+195. Add file tree context menu
+196. Create file tree breadcrumb navigation
+197. Implement file tree virtualization
+198. Add file tree selection modes
+199. Create file tree sorting options
+200. Implement file tree icons by type
+
+### 🟡 GIT INTEGRATION UI [30 todos] - PRIORITY 2
+
+#### Git UI Components (15)
+201. Create GitStatusView with file changes
+202. Implement GitCommitView with message editor
+203. Add GitBranchSelector dropdown
+204. Create GitHistoryView with commit graph
+205. Implement GitDiffView with side-by-side comparison
+206. Add GitStashView with stash management
+207. Create GitRemoteView with push/pull status
+208. Implement GitMergeView with conflict resolution
+209. Add GitTagView with tag management
+210. Create GitBlameView with line annotations
+211. Implement GitCherryPickView
+212. Add GitRebaseView interface
+213. Create GitSubmoduleView
+214. Implement GitHooksView
+215. Add GitConfigView for settings
+
+#### Git Workflow Features (15)
+216. Implement stage/unstage file changes
+217. Add commit message templates
+218. Create branch creation workflow
+219. Implement pull request creation
+220. Add merge conflict resolution UI
+221. Create interactive rebase interface
+222. Implement git flow integration
+223. Add commit signing support
+224. Create git bisect interface
+225. Implement git worktree management
+226. Add git LFS support
+227. Create git statistics dashboard
+228. Implement git shortcuts
+229. Add git aliases management
+230. Create git workflow automation
+
+### 🔷 MCP SERVER MANAGEMENT [25 todos] - PRIORITY 2
+
+#### MCP UI Improvements (15)
+231. Fix MCP tab visibility in main tab bar
+232. Create full MCPServerDetailView
+233. Implement MCP server add/edit form
+234. Add MCP server connection testing UI
+235. Create MCP server status indicators
+236. Implement MCP server logs viewer
+237. Add MCP server configuration editor
+238. Create MCP server templates
+239. Implement MCP server import/export
+240. Add MCP server grouping/categories
+241. Create MCP server search/filter
+242. Implement MCP server health monitoring
+243. Add MCP server performance metrics
+244. Create MCP server documentation viewer
+245. Implement MCP server quick actions
+
+#### MCP Backend Integration (10)
+246. Complete MCPServerViewModel implementation
+247. Add MCP server connection pooling
+248. Implement MCP server auto-discovery
+249. Create MCP server backup/restore
+250. Add MCP server migration tools
+251. Implement MCP server versioning
+252. Create MCP server dependency management
+253. Add MCP server security scanning
+254. Implement MCP server access control
+255. Create MCP server audit logging
+
+### ⚫ CURSOR INTEGRATION [40 todos] - PRIORITY 3
+
+#### Cursor API Implementation (20)
+256. Implement GET /api/cursor/config endpoint
+257. Add POST /api/cursor/config update endpoint
+258. Create GET /api/cursor/sessions endpoint
+259. Implement GET /api/cursor/session/:id endpoint
+260. Add POST /api/cursor/session/import endpoint
+261. Create GET /api/cursor/database endpoint
+262. Implement POST /api/cursor/sync endpoint
+263. Add GET /api/cursor/settings endpoint
+264. Create CursorAPIClient class
+265. Implement CursorConfigModel
+266. Add CursorSessionModel
+267. Create CursorDatabaseModel
+268. Implement CursorSyncManager
+269. Add CursorAuthManager
+270. Create CursorDataParser
+271. Implement CursorErrorHandler
+272. Add CursorCacheManager
+273. Create CursorMigrationManager
+274. Implement CursorBackupManager
+275. Add CursorRestoreManager
+
+#### Cursor UI Components (20)
+276. Complete CursorTabViewController implementation
+277. Create CursorConfigurationView
+278. Implement CursorSessionsView
+279. Add CursorMCPServersView
+280. Create CursorDatabaseView
+281. Implement CursorSyncView
+282. Add CursorSettingsView
+283. Create CursorImportView
+284. Implement CursorExportView
+285. Add CursorHistoryView
+286. Create CursorSearchView
+287. Implement CursorFilterView
+288. Add CursorSortView
+289. Create CursorGroupView
+290. Implement CursorTagView
+291. Add CursorFavoriteView
+292. Create CursorRecentView
+293. Implement CursorStatisticsView
+294. Add CursorNotificationView
+295. Create CursorHelpView
+
+### 🟢 TESTING & QUALITY [50 todos] - PRIORITY 3
+
+#### Unit Tests (20)
+296. Create APIClientTests for all 109 functions
+297. Add WebSocketManagerTests
+298. Create SessionListViewControllerTests
+299. Implement ChatViewControllerTests
+300. Add ProjectsViewControllerTests
+301. Create FileExplorerViewControllerTests
+302. Implement TerminalViewControllerTests
+303. Add GitViewControllerTests
+304. Create MCPServerViewModelTests
+305. Implement SearchViewModelTests
+306. Add SettingsViewModelTests
+307. Create AuthenticationManagerTests
+308. Implement JWTTokenTests
+309. Add DataModelTests
+310. Create ThemeManagerTests
+311. Implement NavigationCoordinatorTests
+312. Add DependencyInjectionTests
+313. Create ErrorHandlerTests
+314. Implement CacheManagerTests
+315. Add NetworkReachabilityTests
+
+#### Integration Tests (15)
+316. Create full session flow test
+317. Add project CRUD integration test
+318. Implement WebSocket reconnection test
+319. Create file operations integration test
+320. Add Git workflow integration test
+321. Implement MCP server integration test
+322. Create search functionality test
+323. Add authentication flow test
+324. Implement settings sync test
+325. Create offline mode test
+326. Add data migration test
+327. Implement performance regression test
+328. Create memory leak detection test
+329. Add concurrent operation test
+330. Implement error recovery test
+
+#### UI Tests (15)
+331. Create app launch UI test
+332. Add tab navigation UI test
+333. Implement project list UI test
+334. Create session creation UI test
+335. Add chat messaging UI test
+336. Implement file browsing UI test
+337. Create terminal interaction UI test
+338. Add settings modification UI test
+339. Implement search UI test
+340. Create swipe gesture UI test
+341. Add pull-to-refresh UI test
+342. Implement modal presentation UI test
+343. Create keyboard handling UI test
+344. Add accessibility UI test
+345. Implement orientation change UI test
+
+### 🔵 PERFORMANCE OPTIMIZATION [30 todos] - PRIORITY 4
+
+#### Memory Optimization (10)
+346. Implement lazy loading for ProjectsViewController
+347. Add image caching with size limits
+348. Create memory warning handlers
+349. Implement view controller preloading
+350. Add memory profiling integration
+351. Create automatic cache clearing
+352. Implement resource pooling
+353. Add memory leak detection
+354. Create memory usage monitoring
+355. Implement low memory mode
+
+#### Network Optimization (10)
+356. Implement request batching
+357. Add response compression
+358. Create request deduplication
+359. Implement prefetching strategies
+360. Add connection pooling
+361. Create retry with exponential backoff
+362. Implement request prioritization
+363. Add bandwidth monitoring
+364. Create offline request queue
+365. Implement delta sync
+
+#### Rendering Optimization (10)
+366. Implement virtual scrolling for long lists
+367. Add cell reuse optimization
+368. Create async image loading
+369. Implement diff-based updates
+370. Add render frame monitoring
+371. Create smooth scroll optimization
+372. Implement layer rasterization
+373. Add shadow/blur optimization
+374. Create animation frame rate control
+375. Implement GPU acceleration
+
+### 🟤 SECURITY ENHANCEMENTS [25 todos] - PRIORITY 4
+
+#### Authentication & Authorization (10)
+376. Implement biometric authentication
+377. Add OAuth2 integration
+378. Create multi-factor authentication
+379. Implement session timeout
+380. Add role-based access control
+381. Create API key management
+382. Implement refresh token rotation
+383. Add device trust management
+384. Create login attempt limiting
+385. Implement account lockout
+
+#### Data Protection (10)
+386. Migrate tokens to Keychain storage
+387. Implement database encryption with SQLCipher
+388. Add certificate pinning
+389. Create secure data transmission
+390. Implement code obfuscation
+391. Add anti-tampering measures
+392. Create jailbreak detection
+393. Implement anti-debugging
+394. Add secure backup/restore
+395. Create data sanitization
+
+#### Security Monitoring (5)
+396. Implement security event logging
+397. Add intrusion detection
+398. Create vulnerability scanning
+399. Implement security analytics
+400. Add compliance reporting
+
+### 🔶 OFFLINE & SYNC [30 todos] - PRIORITY 5
+
+#### Offline Mode (15)
+401. Implement offline data storage with SwiftData
+402. Add offline queue for API requests
+403. Create conflict resolution strategies
+404. Implement incremental sync
+405. Add offline indicator UI
+406. Create offline mode toggle
+407. Implement cached data expiry
+408. Add offline search capability
+409. Create offline file access
+410. Implement offline message drafts
+411. Add offline session creation
+412. Create offline Git operations
+413. Implement offline settings
+414. Add offline error handling
+415. Create offline data migration
+
+#### Sync Features (15)
+416. Implement CloudKit integration
+417. Add iCloud backup
+418. Create cross-device sync
+419. Implement selective sync
+420. Add sync status indicators
+421. Create sync conflict UI
+422. Implement sync scheduling
+423. Add bandwidth-aware sync
+424. Create sync history
+425. Implement sync rollback
+426. Add sync verification
+427. Create sync reporting
+428. Implement sync optimization
+429. Add sync debugging tools
+430. Create sync performance monitoring
+
+### 🟨 ACCESSIBILITY [25 todos] - PRIORITY 5
+
+#### VoiceOver Support (10)
+431. Add accessibility labels to all UI elements
+432. Implement accessibility hints
+433. Create accessibility custom actions
+434. Add accessibility traits
+435. Implement accessibility focus management
+436. Create accessibility announcements
+437. Add accessibility escape gestures
+438. Implement accessibility rotor items
+439. Create accessibility notifications
+440. Add accessibility testing
+
+#### Visual Accessibility (10)
+441. Implement Dynamic Type support
+442. Add high contrast mode
+443. Create color blind friendly themes
+444. Implement reduce motion support
+445. Add larger tap targets
+446. Create focus indicators
+447. Implement text spacing adjustment
+448. Add zoom support
+449. Create readable fonts option
+450. Implement transparency reduction
+
+#### Other Accessibility (5)
+451. Add keyboard navigation
+452. Implement voice control
+453. Create switch control support
+454. Add assistive touch support
+455. Implement closed captions
+
+### 🟦 EXTENSIONS & WIDGETS [20 todos] - PRIORITY 6
+
+#### Widget Extension (10)
+456. Create widget extension target
+457. Implement project list widget
+458. Add session quick access widget
+459. Create Git status widget
+460. Implement message preview widget
+461. Add file browser widget
+462. Create terminal command widget
+463. Implement statistics widget
+464. Add quick action widget
+465. Create customizable widget
+
+#### Share Extension (10)
+466. Create share extension target
+467. Implement text sharing
+468. Add image sharing
+469. Create file sharing
+470. Implement code snippet sharing
+471. Add URL sharing
+472. Create project sharing
+473. Implement session sharing
+474. Add settings export sharing
+475. Create log sharing
+
+### 🟪 NOTIFICATIONS [15 todos] - PRIORITY 6
+
+#### Push Notifications (10)
+476. Implement push notification registration
+477. Add notification permission handling
+478. Create notification payload parsing
+479. Implement notification actions
+480. Add notification categories
+481. Create notification sounds
+482. Implement notification badges
+483. Add notification grouping
+484. Create notification history
+485. Implement notification preferences
+
+#### Local Notifications (5)
+486. Add task completion notifications
+487. Create reminder notifications
+488. Implement error notifications
+489. Add sync completion notifications
+490. Create update available notifications
+
+### 🟩 ANALYTICS & MONITORING [20 todos] - PRIORITY 7
+
+#### Analytics Integration (10)
+491. Implement analytics SDK integration
+492. Add event tracking
+493. Create user behavior tracking
+494. Implement crash reporting
+495. Add performance monitoring
+496. Create custom metrics
+497. Implement A/B testing
+498. Add conversion tracking
+499. Create retention tracking
+500. Implement funnel analysis
+
+#### Monitoring & Debugging (10)
+501. Add remote logging
+502. Create debug menu
+503. Implement network inspector
+504. Add memory monitor
+505. Create CPU profiler
+506. Implement battery usage tracking
+507. Add thermal state monitoring
+508. Create disk usage tracking
+509. Implement network quality monitoring
+510. Add app lifecycle tracking
+
+### 🔴 PRODUCTION READINESS [15 todos] - PRIORITY 8
+
+#### App Store Preparation (10)
+511. Create App Store screenshots
+512. Write App Store description
+513. Implement App Store review guidelines
+514. Add privacy policy
+515. Create terms of service
+516. Implement GDPR compliance
+517. Add app rating prompt
+518. Create onboarding tutorial
+519. Implement feature flags
+520. Add remote configuration
+
+#### Release Management (5)
+521. Create CI/CD pipeline
+522. Implement automated testing
+523. Add code signing automation
+524. Create release notes generation
+525. Implement rollback mechanism
+
+---
+
+## Summary
+
+**Total Todos: 525**
+- Priority 0 (Critical): 50
+- Priority 1 (High): 115
+- Priority 2 (Medium): 90
+- Priority 3 (Normal): 95
+- Priority 4 (Low): 55
+- Priority 5 (Nice to have): 50
+- Priority 6 (Future): 35
+- Priority 7 (Optional): 20
+- Priority 8 (Release): 15
+
+**Estimated Timeline:**
+- Week 1: Complete P0 items (Terminal WebSocket)
+- Week 2-3: Complete P1 items (UI Polish, Search)
+- Week 4-5: Complete P2 items (File Ops, Git UI, MCP)
+- Week 6-8: Complete P3 items (Cursor, Testing)
+- Month 3: Complete P4-P5 items (Performance, Security, Offline)
+- Month 4: Complete P6-P8 items (Extensions, Production)
+
 ---
 
 *This document is the single source of truth for the iOS Claude Code UI project. All other documentation should defer to this file.*
