@@ -7,6 +7,7 @@
 
 import UIKit
 import Foundation
+import PhotosUI
 
 // MARK: - Message Types (Temporary - should import from MessageTypes.swift)
 
@@ -351,7 +352,7 @@ class ChatMessageCell: UITableViewCell {
     }
 }
 
-class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate, WebSocketManagerDelegate {
+class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate, WebSocketManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate {
     
     // MARK: - Properties
     
@@ -885,15 +886,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         let actionSheet = UIAlertController(title: "Add Attachment", message: nil, preferredStyle: .actionSheet)
         
         actionSheet.addAction(UIAlertAction(title: "Photo Library", style: .default) { [weak self] _ in
-            // TODO: Implement photo picker
-            // self?.presentPhotoPicker()
-            print("Photo Library selected - not yet implemented")
+            self?.presentPhotoPicker()
         })
         
         actionSheet.addAction(UIAlertAction(title: "Camera", style: .default) { [weak self] _ in
-            // TODO: Implement camera
-            // self?.presentCamera()
-            print("Camera selected - not yet implemented")
+            self?.presentCamera()
         })
         
         actionSheet.addAction(UIAlertAction(title: "Files", style: .default) { [weak self] _ in
@@ -1663,5 +1660,99 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
         }
+    }
+    
+    // MARK: - Photo Picker Methods
+    
+    private func presentPhotoPicker() {
+        var configuration = PHPickerConfiguration()
+        configuration.selectionLimit = 1
+        configuration.filter = .images
+        
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+    
+    private func presentCamera() {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            showAlert(title: "Camera Not Available", message: "Camera is not available on this device")
+            return
+        }
+        
+        let imagePicker = UIImagePickerController()
+        imagePicker.sourceType = .camera
+        imagePicker.delegate = self
+        imagePicker.allowsEditing = false
+        present(imagePicker, animated: true)
+    }
+    
+    // MARK: - PHPickerViewControllerDelegate
+    
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        
+        guard let provider = results.first?.itemProvider,
+              provider.canLoadObject(ofClass: UIImage.self) else { return }
+        
+        provider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    self?.showAlert(title: "Error", message: "Failed to load image: \(error.localizedDescription)")
+                }
+                return
+            }
+            
+            guard let image = image as? UIImage else { return }
+            DispatchQueue.main.async {
+                self?.handleSelectedImage(image)
+            }
+        }
+    }
+    
+    // MARK: - UIImagePickerControllerDelegate
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        picker.dismiss(animated: true)
+        
+        guard let image = info[.originalImage] as? UIImage else { return }
+        handleSelectedImage(image)
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
+    }
+    
+    // MARK: - Image Handling
+    
+    private func handleSelectedImage(_ image: UIImage) {
+        // For now, just show that we received the image
+        // In a real implementation, you would upload this to the server
+        let imageData = image.jpegData(compressionQuality: 0.8)
+        let sizeInMB = Double(imageData?.count ?? 0) / 1024.0 / 1024.0
+        
+        let message = String(format: "📸 Image selected (%.2f MB). Upload functionality coming soon!", sizeInMB)
+        
+        // Create a temporary message to show the image was selected
+        let tempMessage = EnhancedChatMessage(
+            id: UUID().uuidString,
+            content: message,
+            isUser: true,
+            timestamp: Date(),
+            status: .sent
+        )
+        
+        messages.append(tempMessage)
+        tableView.reloadData()
+        scrollToBottom(animated: true)
+        
+        // TODO: Implement actual image upload to backend
+        print("Image selected with size: \(sizeInMB) MB")
+    }
+    
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
