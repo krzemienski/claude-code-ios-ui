@@ -10,7 +10,7 @@ import UIKit
 import AVFoundation
 import Speech
 
-class TranscriptionViewController: UIViewController {
+public class TranscriptionViewController: UIViewController {
     
     // MARK: - Properties
     

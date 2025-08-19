@@ -108,9 +108,9 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "gearshape.2.fill")
         )
         
-        // Set initial view controllers (projects, search, terminal, Git, MCP, and settings)
-        // Now includes Git integration for version control
-        viewControllers = [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav]
+        // Set initial view controllers - MCP moved to index 1 for visibility
+        // Order: Projects, MCP (now visible!), Terminal, Search, Settings, Git (in More menu)
+        viewControllers = [projectsNav, mcpNav, terminalNav, searchNav, settingsNav, gitNav]
         
         // Debug: Log tab count
         print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
@@ -177,7 +177,7 @@ public class MainTabBarController: UITabBarController {
         currentProject = project
         
         // Update SearchViewController with new project context
-        if let searchNav = viewControllers?[1] as? UINavigationController {
+        if let searchNav = viewControllers?[3] as? UINavigationController {
             // Create new SearchViewController with project context
             let newSearchVC = SearchViewController(project: project)
             newSearchVC.title = "Search"
@@ -193,7 +193,7 @@ public class MainTabBarController: UITabBarController {
         }
         
         // Update GitViewController with new project context
-        if let gitNav = viewControllers?[3] as? UINavigationController {
+        if let gitNav = viewControllers?[5] as? UINavigationController {
             // Create new GitViewController with project context
             let newGitVC = GitViewController(project: project)
             newGitVC.title = "Git"
@@ -213,7 +213,7 @@ public class MainTabBarController: UITabBarController {
     }
     
     func switchToSearch() {
-        selectedIndex = 1  // Search is at index 1
+        selectedIndex = 3  // Search is now at index 3
     }
     
     func switchToTerminal() {
@@ -221,15 +221,15 @@ public class MainTabBarController: UITabBarController {
     }
     
     func switchToGit() {
-        selectedIndex = 3  // Git is at index 3
+        selectedIndex = 5  // Git is now at index 5 (in More menu)
     }
     
     func switchToMCP() {
-        selectedIndex = 4  // MCP is at index 4
+        selectedIndex = 1  // MCP is now at index 1 (visible!)
     }
     
     func switchToSettings() {
-        selectedIndex = 5  // Settings is always at index 5 (last tab)
+        selectedIndex = 4  // Settings is now at index 4
     }
 }
 

@@ -7,13 +7,13 @@
 
 import UIKit
 
-class SettingsViewController: BaseTableViewController {
+public class SettingsViewController: BaseTableViewController {
     
     // MARK: - Properties
     private var sections: [SettingsSection] = []
     
     // MARK: - Lifecycle
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         title = "Settings"
         navigationItem.largeTitleDisplayMode = .always
@@ -21,7 +21,7 @@ class SettingsViewController: BaseTableViewController {
         setupUI()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
+    public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         updateBackendURLDisplay()
         tableView.reloadData()
@@ -258,15 +258,15 @@ class SettingsViewController: BaseTableViewController {
 
 // MARK: - UITableViewDataSource
 extension SettingsViewController {
-    override func numberOfSections(in tableView: UITableView) -> Int {
+    public override func numberOfSections(in tableView: UITableView) -> Int {
         return sections.count
     }
     
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    public override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return sections[section].items.count
     }
     
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let item = sections[indexPath.section].items[indexPath.row]
         
         let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
@@ -299,14 +299,14 @@ extension SettingsViewController {
         return cell
     }
     
-    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    public override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         return sections[section].title.uppercased()
     }
 }
 
 // MARK: - UITableViewDelegate
 extension SettingsViewController {
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    public override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
         let item = sections[indexPath.section].items[indexPath.row]
@@ -319,7 +319,7 @@ extension SettingsViewController {
         }
     }
     
-    override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
+    public override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
             header.textLabel?.textColor = CyberpunkTheme.textSecondary
             header.textLabel?.font = .systemFont(ofSize: 13, weight: .bold)
@@ -327,7 +327,7 @@ extension SettingsViewController {
         }
     }
     
-    override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+    public override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 40
     }
 }

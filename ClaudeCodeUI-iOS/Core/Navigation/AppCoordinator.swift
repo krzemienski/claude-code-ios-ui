@@ -161,77 +161,8 @@ class AppCoordinator: NSObject, Coordinator {
     }
     
     private func showMainInterface() {
-        // Create tab bar controller with all 6 tabs
-        let tabBarController = UITabBarController()
-        
-        // Projects Tab
-        let projectsVC = createProjectsViewController()
-        let projectsNav = UINavigationController(rootViewController: projectsVC)
-        projectsNav.tabBarItem = UITabBarItem(
-            title: "Projects",
-            image: UIImage(systemName: "folder.fill"),
-            selectedImage: UIImage(systemName: "folder.fill.badge.plus")
-        )
-        
-        // Search Tab - Placeholder for now
-        let searchVC = createPlaceholderViewController(title: "Search", color: CyberpunkTheme.primaryCyan)
-        let searchNav = UINavigationController(rootViewController: searchVC)
-        searchNav.tabBarItem = UITabBarItem(
-            title: "Search",
-            image: UIImage(systemName: "magnifyingglass"),
-            selectedImage: UIImage(systemName: "magnifyingglass.circle.fill")
-        )
-        
-        // Terminal Tab - Placeholder for now
-        let terminalVC = createPlaceholderViewController(title: "Terminal", color: UIColor(red: 1, green: 0, blue: 0.43, alpha: 1.0))
-        let terminalNav = UINavigationController(rootViewController: terminalVC)
-        terminalNav.tabBarItem = UITabBarItem(
-            title: "Terminal",
-            image: UIImage(systemName: "terminal"),
-            selectedImage: UIImage(systemName: "terminal.fill")
-        )
-        
-        // Git Tab - Placeholder for now
-        let gitVC = createPlaceholderViewController(title: "Git", color: CyberpunkTheme.primaryCyan)
-        let gitNav = UINavigationController(rootViewController: gitVC)
-        gitNav.tabBarItem = UITabBarItem(
-            title: "Git",
-            image: UIImage(systemName: "arrow.triangle.branch"),
-            selectedImage: UIImage(systemName: "arrow.triangle.branch")
-        )
-        
-        // MCP Servers Tab - Create a proper MCP view controller
-        let mcpVC = createMCPViewController()
-        let mcpNav = UINavigationController(rootViewController: mcpVC)
-        mcpNav.tabBarItem = UITabBarItem(
-            title: "MCP",
-            image: UIImage(systemName: "server.rack"),
-            selectedImage: UIImage(systemName: "server.rack")
-        )
-        
-        // Settings Tab - Create a proper Settings view controller
-        let settingsVC = createSettingsViewController()
-        let settingsNav = UINavigationController(rootViewController: settingsVC)
-        settingsNav.tabBarItem = UITabBarItem(
-            title: "Settings",
-            image: UIImage(systemName: "gearshape.fill"),
-            selectedImage: UIImage(systemName: "gearshape.2.fill")
-        )
-        
-        // iOS automatically creates a More tab when there are more than 5 view controllers
-        // We'll set all 6, and iOS will put MCP and Settings under the More menu
-        tabBarController.viewControllers = [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav]
-        
-        // Note: iOS will automatically show only 4 tabs + More tab
-        // The More tab will contain MCP and Settings as a list
-        
-        // Configure appearance
-        configureTabBarAppearance(tabBarController)
-        
-        // Configure navigation bars
-        [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav].forEach { nav in
-            configureNavigationBar(nav)
-        }
+        // Use the properly configured MainTabBarController instead of creating our own
+        let tabBarController = MainTabBarController()
         
         // Store tab bar controller for later use
         self.mainTabBarController = tabBarController
