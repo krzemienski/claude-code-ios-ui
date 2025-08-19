@@ -14,6 +14,7 @@ public class SessionListViewController: BaseViewController {
     private var filteredSessions: [Session] = []
     private let tableView = UITableView()
     private let refreshControl = UIRefreshControl()
+    private var skeletonView: UIView?
     private let apiClient = APIClient.shared
     private let searchController = UISearchController(searchResultsController: nil)
     private let sortSegmentedControl = UISegmentedControl(items: ["Recent", "Messages", "Name"])
@@ -339,6 +340,121 @@ public class SessionListViewController: BaseViewController {
     
     private var pendingSessionIdToResume: String?
     
+    // MARK: - Skeleton Loading
+    private func showSkeletonLoading() {
+        // Create container view for skeleton
+        let containerView = UIView(frame: tableView.bounds)
+        containerView.backgroundColor = CyberpunkTheme.background
+        containerView.tag = 999 // Tag for identification
+        
+        // Add skeleton cells with cyberpunk animation
+        var previousCell: UIView?
+        for i in 0..<6 {
+            // Create cell container
+            let cellView = UIView()
+            cellView.translatesAutoresizingMaskIntoConstraints = false
+            cellView.backgroundColor = CyberpunkTheme.surface
+            containerView.addSubview(cellView)
+            
+            // Create avatar skeleton
+            let avatarView = UIView()
+            avatarView.translatesAutoresizingMaskIntoConstraints = false
+            avatarView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.7)
+            avatarView.layer.cornerRadius = 22
+            avatarView.layer.masksToBounds = true
+            cellView.addSubview(avatarView)
+            
+            // Create title skeleton
+            let titleView = UIView()
+            titleView.translatesAutoresizingMaskIntoConstraints = false
+            titleView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.7)
+            titleView.layer.cornerRadius = 4
+            cellView.addSubview(titleView)
+            
+            // Create subtitle skeleton
+            let subtitleView = UIView()
+            subtitleView.translatesAutoresizingMaskIntoConstraints = false
+            subtitleView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.5)
+            subtitleView.layer.cornerRadius = 4
+            cellView.addSubview(subtitleView)
+            
+            // Add shimmer gradient
+            let gradientLayer = CAGradientLayer()
+            gradientLayer.colors = [
+                CyberpunkTheme.surface.cgColor,
+                CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor,
+                CyberpunkTheme.surface.cgColor
+            ]
+            gradientLayer.locations = [0.0, 0.5, 1.0]
+            gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.5)
+            gradientLayer.endPoint = CGPoint(x: 1.0, y: 0.5)
+            gradientLayer.frame = CGRect(x: -tableView.bounds.width, y: 0, width: tableView.bounds.width * 3, height: 80)
+            cellView.layer.addSublayer(gradientLayer)
+            
+            // Animate shimmer
+            let animation = CABasicAnimation(keyPath: "transform.translation.x")
+            animation.duration = 1.5
+            animation.fromValue = -tableView.bounds.width
+            animation.toValue = tableView.bounds.width
+            animation.repeatCount = .infinity
+            gradientLayer.add(animation, forKey: "shimmer")
+            
+            // Setup constraints
+            NSLayoutConstraint.activate([
+                // Cell
+                cellView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+                cellView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+                cellView.heightAnchor.constraint(equalToConstant: 80),
+                
+                // Avatar
+                avatarView.leadingAnchor.constraint(equalTo: cellView.leadingAnchor, constant: 16),
+                avatarView.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
+                avatarView.widthAnchor.constraint(equalToConstant: 44),
+                avatarView.heightAnchor.constraint(equalToConstant: 44),
+                
+                // Title
+                titleView.leadingAnchor.constraint(equalTo: avatarView.trailingAnchor, constant: 12),
+                titleView.topAnchor.constraint(equalTo: cellView.topAnchor, constant: 20),
+                titleView.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -16),
+                titleView.heightAnchor.constraint(equalToConstant: 20),
+                
+                // Subtitle
+                subtitleView.leadingAnchor.constraint(equalTo: titleView.leadingAnchor),
+                subtitleView.topAnchor.constraint(equalTo: titleView.bottomAnchor, constant: 8),
+                subtitleView.widthAnchor.constraint(equalTo: titleView.widthAnchor, multiplier: 0.7),
+                subtitleView.heightAnchor.constraint(equalToConstant: 16)
+            ])
+            
+            if let previous = previousCell {
+                cellView.topAnchor.constraint(equalTo: previous.bottomAnchor, constant: 1).isActive = true
+            } else {
+                cellView.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
+            }
+            
+            previousCell = cellView
+        }
+        
+        // Store and add as overlay
+        skeletonView = containerView
+        containerView.alpha = 0
+        tableView.addSubview(containerView)
+        tableView.bringSubviewToFront(containerView)
+        
+        // Fade in animation
+        UIView.animate(withDuration: 0.3) {
+            containerView.alpha = 1
+        }
+    }
+    
+    private func hideSkeletonLoading() {
+        UIView.animate(withDuration: 0.3, animations: {
+            self.skeletonView?.alpha = 0
+        }) { _ in
+            self.skeletonView?.removeFromSuperview()
+            self.skeletonView = nil
+        }
+    }
+    
     // MARK: - Data Loading
     private func fetchSessions(append: Bool = false) {
         guard !isLoadingMore else { return }
@@ -346,8 +462,8 @@ public class SessionListViewController: BaseViewController {
         if !append {
             currentOffset = 0
             hasMoreSessions = true
-            // Show loading indicator only for initial load
-            showLoading(message: "Loading sessions...")
+            // Show skeleton loading for initial load and refresh
+            showSkeletonLoading()
         } else {
             // For pagination, just set the flag
             isLoadingMore = true
@@ -373,7 +489,7 @@ public class SessionListViewController: BaseViewController {
                     self.hasMoreSessions = fetchedSessions.count == self.pageSize
                     self.currentOffset += fetchedSessions.count
                     self.isLoadingMore = false
-                    self.hideLoading()  // Hide loading indicator
+                    self.hideSkeletonLoading()  // Hide skeleton loading
                     self.refreshControl.endRefreshing()
                     self.tableView.reloadData()
                     self.updateEmptyStateVisibility()
@@ -392,7 +508,7 @@ public class SessionListViewController: BaseViewController {
             } catch {
                 await MainActor.run {
                     self.isLoadingMore = false
-                    self.hideLoading()  // Hide loading indicator
+                    self.hideSkeletonLoading()  // Hide skeleton loading
                     self.refreshControl.endRefreshing()
                     
                     // Try to load from cache if network fails
