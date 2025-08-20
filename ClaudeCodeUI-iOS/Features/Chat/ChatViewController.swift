@@ -757,17 +757,25 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     let isDataMissing = errorDesc.contains("missing") || 
                                        errorDesc.contains("no such file") || 
                                        errorDesc.contains("enoent") ||
-                                       errorDesc.contains("couldn't be read")
+                                       errorDesc.contains("couldn't be read") ||
+                                       errorDesc.contains("could not find") ||
+                                       errorDesc.contains("not found")
                     
-                    if isDataMissing {
-                        // No messages exist yet, this is normal for a new session
-                        print("ℹ️ No messages found for session (likely new session)")
+                    // Also check for network errors that should be reported
+                    let isNetworkError = errorDesc.contains("connection") ||
+                                        errorDesc.contains("timeout") ||
+                                        errorDesc.contains("network") ||
+                                        errorDesc.contains("offline")
+                    
+                    if isDataMissing && !isNetworkError {
+                        // No messages exist yet, this is normal for a new or empty session
+                        print("ℹ️ No messages found for session (likely new or empty session)")
                         self.messages = []
-                    } else {
-                        // Show error message for actual failures
+                    } else if isNetworkError {
+                        // Show network error message
                         let errorMessage = EnhancedChatMessage(
                             id: UUID().uuidString,
-                            content: "⚠️ Could not load previous messages.\n\nThis is normal for a new session. Start chatting!",
+                            content: "⚠️ Could not connect to server.\n\nPlease check your connection and try again.",
                             isUser: false,
                             timestamp: Date(),
                             status: .delivered
@@ -777,6 +785,10 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                         if !append {
                             self.messages = [errorMessage]
                         }
+                    } else {
+                        // For other errors, just log them but don't show in chat
+                        print("⚠️ Error loading messages but not showing to user: \(error)")
+                        self.messages = []
                     }
                     
                     self.isLoadingMore = false
@@ -1711,6 +1723,29 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return UITableView.automaticDimension
+    }
+    
+    // MARK: - Pagination Support
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        // Check if we should load more messages when scrolling to top
+        let offsetY = scrollView.contentOffset.y
+        let contentHeight = scrollView.contentSize.height
+        let frameHeight = scrollView.frame.size.height
+        
+        // Load more when scrolled near the top (within 100 points)
+        if offsetY < 100 && !isLoadingMore && hasMoreMessages && messages.count >= messagePageSize {
+            // Load more historical messages
+            if let sessionId = currentSessionId ?? currentSession?.id {
+                print("📜 Loading more messages... (offset: \(messages.count))")
+                loadSessionMessages(sessionId: sessionId, append: true)
+            }
+        }
+    }
+    
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        // Dismiss keyboard when scrolling
+        view.endEditing(true)
     }
     
     // MARK: - UITextViewDelegate

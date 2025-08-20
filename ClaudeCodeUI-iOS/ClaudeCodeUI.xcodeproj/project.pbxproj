@@ -35,6 +35,7 @@
 		3FD7C8E12D3A4F5B9E8C6A2D /* SessionPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD7C8E02D3A4F5B9E8C6A2C /* SessionPersistenceService.swift */; };
 		40B7C33051CEDAE6BE2C1242 /* DIContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E703F121AE00716858A34C9 /* DIContainer.swift */; };
 		49F9E9CCE1B5434B80E0C19D /* TerminalViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4026CAF3B7A46A2AC1AD9B2 /* TerminalViewController.swift */; };
+		2A1B3C4D5E6F7A8B9C0D1E2F /* PlaceholderViewControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1B3C4D5E6F7A8B9C0D1E2E /* PlaceholderViewControllers.swift */; };
 		50F9C4AFA26E495E959E2B78 /* MCPModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6BDCC5AA6D4BABB4CA675D /* MCPModels.swift */; };
 		5CA17007BAD345CBB66820B6 /* FilePreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8160272A1B7942EAB39F2B14 /* FilePreviewViewController.swift */; };
 		704436B7DE1D469495491C6D /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 908A0FC3A7394AEDABD41BAE /* ChatViewController.swift */; };
@@ -87,6 +88,7 @@
 		BA20E2A91D59F7BFD98A5C6E /* AppConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppConfig.swift; path = Core/Config/AppConfig.swift; sourceTree = SOURCE_ROOT; };
 		C2B39A42D2EAE5FE7B6D6731 /* CacheManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
 		E4026CAF3B7A46A2AC1AD9B2 /* TerminalViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalViewController.swift; sourceTree = "<group>"; };
+		2A1B3C4D5E6F7A8B9C0D1E2E /* PlaceholderViewControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderViewControllers.swift; sourceTree = "<group>"; };
 		F3C2FC9F5058A817D083EBB3 /* SettingsExportManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsExportManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -157,6 +159,7 @@
 				1D1A2B6C2C60A1230001A234 /* Launch */,
 				6CA3F607BF8144BDB7856FC3 /* Sessions */,
 				DEB1925DDFEE49489CD64FDD /* Terminal */,
+				2A1B3C4D5E6F7A8B9C0D1E2E /* PlaceholderViewControllers.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -435,6 +438,7 @@
 				50F9C4AFA26E495E959E2B78 /* MCPModels.swift in Sources */,
 				1D1A2B502C60A1230001A234 /* SwiftDataContainer.swift in Sources */,
 				49F9E9CCE1B5434B80E0C19D /* TerminalViewController.swift in Sources */,
+				2A1B3C4D5E6F7A8B9C0D1E2F /* PlaceholderViewControllers.swift in Sources */,
 				1D1A2B4A2C60A1230001A234 /* WebSocketManager.swift in Sources */,
 				40B7C33051CEDAE6BE2C1242 /* DIContainer.swift in Sources */,
 				710FDCC1008A154C77C40F68 /* CacheManager.swift in Sources */,

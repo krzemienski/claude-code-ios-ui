@@ -142,41 +142,112 @@ actor APIClient: APIClientProtocol {
             method: .get
         )
         
-        // Backend returns complex nested structure
+        // Backend returns complex nested structure with content array for assistant messages
         struct BackendMessage: Codable {
             let uuid: String
             let timestamp: String
             let sessionId: String?
             let type: String?
-            let message: MessageContent
+            let message: MessagePayload
             
-            struct MessageContent: Codable {
+            struct MessagePayload: Codable {
                 let role: String
-                let content: String
+                let content: String?  // For user messages (simple string)
+                let contentArray: [ContentItem]?  // For assistant messages (array)
+                
+                // Custom decoding to handle both string and array content
+                private enum CodingKeys: String, CodingKey {
+                    case role
+                    case content
+                }
+                
+                init(from decoder: Decoder) throws {
+                    let container = try decoder.container(keyedBy: CodingKeys.self)
+                    self.role = try container.decode(String.self, forKey: .role)
+                    
+                    // Try to decode as string first (user messages)
+                    if let stringContent = try? container.decode(String.self, forKey: .content) {
+                        self.content = stringContent
+                        self.contentArray = nil
+                    } 
+                    // Try to decode as array (assistant messages)
+                    else if let arrayContent = try? container.decode([ContentItem].self, forKey: .content) {
+                        self.contentArray = arrayContent
+                        self.content = nil
+                    } 
+                    // Default to empty
+                    else {
+                        self.content = ""
+                        self.contentArray = nil
+                    }
+                }
+                
+                func encode(to encoder: Encoder) throws {
+                    var container = encoder.container(keyedBy: CodingKeys.self)
+                    try container.encode(role, forKey: .role)
+                    if let content = content {
+                        try container.encode(content, forKey: .content)
+                    } else if let contentArray = contentArray {
+                        try container.encode(contentArray, forKey: .content)
+                    }
+                }
+            }
+            
+            struct ContentItem: Codable {
+                let type: String
+                let text: String?
+                let name: String?  // For tool_use
+                let input: [String: AnyCodable]?  // For tool_use parameters
             }
         }
         
         struct MessagesResponse: Codable {
             let messages: [BackendMessage]
-            let total: Int
-            let hasMore: Bool
-            let offset: Int
-            let limit: Int
+            let total: Int?
+            let hasMore: Bool?
         }
         
         let response: MessagesResponse = try await request(endpoint)
+        
         return response.messages.map { backendMsg in
+            // Extract content based on message structure
+            var messageContent = ""
+            
+            if let userContent = backendMsg.message.content {
+                // Simple user message
+                messageContent = userContent
+            } else if let contentArray = backendMsg.message.contentArray {
+                // Assistant message with content array - extract text content
+                messageContent = contentArray
+                    .compactMap { item in
+                        if item.type == "text" {
+                            return item.text
+                        } else if item.type == "tool_use", let name = item.name {
+                            return "🔧 Using tool: \(name)"
+                        }
+                        return nil
+                    }
+                    .joined(separator: "\n\n")
+            }
+            
+            // Default to empty string if no content found
+            if messageContent.isEmpty {
+                messageContent = "[No content]"
+            }
+            
             let message = Message(
                 id: backendMsg.uuid,
                 role: MessageRole(rawValue: backendMsg.message.role) ?? .user,
-                content: backendMsg.message.content
+                content: messageContent
             )
+            
             // Parse timestamp from ISO string
             if let date = ISO8601DateFormatter().date(from: backendMsg.timestamp) {
                 message.timestamp = date
             } else {
                 message.timestamp = Date()
             }
+            
             return message
         }
     }
