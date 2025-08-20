@@ -1,7 +1,7 @@
 # CLAUDE.md - Comprehensive iOS Claude Code UI Implementation Guide
 
 This is the single source of truth for the iOS Claude Code UI project. 
-Last Updated: January 20, 2025 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
+Last Updated: January 21, 2025 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
 
 ## 🚨 iOS App Development Task Protocol
 
@@ -30,6 +30,29 @@ Follow the 5-phase testing approach:
 3. **Session Phase**: Create/load sessions
 4. **Message Phase**: Send/receive via WebSocket
 5. **Cleanup Phase**: Proper teardown
+
+## 🎉 LATEST FIX - January 21, 2025: Tab Bar Visibility Issue RESOLVED
+
+### Tab Bar Fix Summary
+- **Issue**: Only 2 tabs (Projects, Settings) were showing instead of 5 configured tabs
+- **Root Cause**: MainTabBarController.swift existed in filesystem but wasn't properly included in Xcode project
+- **Solution Implemented**:
+  1. Added MainTabBarController.swift to Xcode project target
+  2. Created PlaceholderViewControllers.swift with stub implementations for missing view controllers
+  3. Updated AppCoordinator to properly instantiate MainTabBarController
+  4. Used xcodeproj Ruby gem for proper project file management
+  
+### All 5 Tabs Now Visible ✅
+1. **Projects** - Project list and navigation
+2. **Terminal** - Command execution with project context
+3. **Search** - Project-wide search functionality  
+4. **MCP** - MCP Server management
+5. **Settings** - App configuration
+
+### Files Created/Modified
+- `ClaudeCodeUI-iOS/Features/PlaceholderViewControllers.swift` - Temporary view controller stubs
+- `ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift` - Fixed MainTabBarController usage
+- `ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj/project.pbxproj` - Added missing file references
 
 ## 🟢 BACKEND API IMPLEMENTATION STATUS - UPDATED January 20, 2025
 
