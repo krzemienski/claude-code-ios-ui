@@ -20,6 +20,7 @@ public class ProjectsViewController: BaseViewController {
         collectionView.dataSource = self
         collectionView.register(ProjectCollectionViewCell.self, forCellWithReuseIdentifier: ProjectCollectionViewCell.identifier)
         collectionView.register(AddProjectCollectionViewCell.self, forCellWithReuseIdentifier: AddProjectCollectionViewCell.identifier)
+        collectionView.register(SkeletonCollectionViewCell.self, forCellWithReuseIdentifier: SkeletonCollectionViewCell.identifier)
         return collectionView
     }()
     
@@ -84,6 +85,9 @@ public class ProjectsViewController: BaseViewController {
     // Track if initial load has been performed
     private var hasPerformedInitialLoad = false
     
+    // Track if we're showing skeleton loading
+    private var isShowingSkeletons = false
+    
     // Callback for project selection
     public var onProjectSelected: ((Project) -> Void)?
     
@@ -102,14 +106,14 @@ public class ProjectsViewController: BaseViewController {
     
     // MARK: - Lifecycle
     
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupNavigationBar()
         performInitialLoad()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
+    public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         // Only refresh if we've already done initial load and not currently loading
         if hasPerformedInitialLoad && !isLoading {
@@ -201,6 +205,7 @@ public class ProjectsViewController: BaseViewController {
     // MARK: - Data Loading
     
     private func performInitialLoad() {
+        print("🚨🚨🚨 CRITICAL: performInitialLoad() ENTERED!")
         guard !hasPerformedInitialLoad else { 
             print("⚠️ DEBUG: performInitialLoad() skipped - already performed")
             return 
@@ -211,9 +216,9 @@ public class ProjectsViewController: BaseViewController {
         // Mark that we're performing initial load
         hasPerformedInitialLoad = true
         
-        // Show loading indicator on main thread
+        // Show skeleton loading instead of regular loading indicator
         DispatchQueue.main.async { [weak self] in
-            self?.showLoading(message: "Loading projects...")
+            self?.showSkeletonLoading()
         }
         
         print("📱 Starting initial project load...")
@@ -226,14 +231,23 @@ public class ProjectsViewController: BaseViewController {
                 print("📱 Attempting to fetch projects from API...")
                 print("🔑 Auth token present: \(UserDefaults.standard.string(forKey: "authToken") != nil)")
                 
+                // Add a minimum delay to see the skeleton animation
+                let startTime = Date()
+                
                 // The shared APIClient already has the development token configured
                 let remoteProjects = try await APIClient.shared.fetchProjects()
                 print("✅ Successfully fetched \(remoteProjects.count) projects from API")
                 
+                // Ensure skeleton shows for at least 0.5 seconds for smooth transition
+                let elapsed = Date().timeIntervalSince(startTime)
+                if elapsed < 0.5 {
+                    try await Task.sleep(nanoseconds: UInt64((0.5 - elapsed) * 1_000_000_000))
+                }
+                
                 // Already on main thread due to @MainActor
                 self.projects = remoteProjects
+                self.hideSkeletonLoading()
                 self.updateUI()
-                self.hideLoading()
                 print("🎨 UI updated with \(self.projects.count) projects")
                 
                 // Log success message
@@ -258,6 +272,9 @@ public class ProjectsViewController: BaseViewController {
                     }
                 }
                 
+                // Hide skeleton loading on error
+                self.hideSkeletonLoading()
+                
                 // Fall back to local data if available
                 if let dataContainer = dataContainer {
                     do {
@@ -266,14 +283,11 @@ public class ProjectsViewController: BaseViewController {
                         // Already on main thread
                         self.projects = localProjects
                         self.updateUI()
-                        self.hideLoading()
                     } catch localError {
                         print("❌ Failed to load from local storage: \(localError)")
-                        self.hideLoading()
                         self.showError("Failed to load projects: \(error.localizedDescription)")
                     }
                 } else {
-                    self.hideLoading()
                     self.showError("Failed to load projects: \(error.localizedDescription)")
                 }
             }
@@ -292,17 +306,15 @@ public class ProjectsViewController: BaseViewController {
     }
     
     private func refreshProjects() {
-        guard !isLoading else { 
+        guard !isLoading && !isShowingSkeletons else { 
             print("⚠️ DEBUG: refreshProjects() skipped - already loading")
+            refreshControl.endRefreshing()
             return 
         }
         
         print("🔄 DEBUG: refreshProjects() called - manual refresh")
         
-        // Show loading indicator for manual refresh
-        DispatchQueue.main.async { [weak self] in
-            self?.showLoading(message: "Refreshing projects...")
-        }
+        // Don't show skeleton for pull-to-refresh, just use the refresh control indicator
         
         Task { @MainActor in
             do {
@@ -315,7 +327,6 @@ public class ProjectsViewController: BaseViewController {
                 // Already on main thread
                 self.projects = remoteProjects
                 self.updateUI()
-                self.hideLoading()
                 self.refreshControl.endRefreshing()
                 
                 // Update local cache in background
@@ -328,7 +339,6 @@ public class ProjectsViewController: BaseViewController {
                 }
             } catch {
                 print("⚠️ Refresh failed: \(error)")
-                self.hideLoading()
                 self.refreshControl.endRefreshing()
                 // Don't show error on refresh, just keep existing data
                 Logger.shared.error("Failed to refresh projects: \(error)")
@@ -364,6 +374,21 @@ public class ProjectsViewController: BaseViewController {
     private func updateUI() {
         emptyStateView.isHidden = !projects.isEmpty
         collectionView.reloadData()
+    }
+    
+    // MARK: - Skeleton Loading
+    
+    private func showSkeletonLoading() {
+        print("🦴 Showing skeleton loading...")
+        isShowingSkeletons = true
+        emptyStateView.isHidden = true
+        collectionView.reloadData()
+    }
+    
+    private func hideSkeletonLoading() {
+        print("🦴 Hiding skeleton loading...")
+        isShowingSkeletons = false
+        // updateUI will be called after this to reload with actual data
     }
     
     // MARK: - Actions
@@ -555,10 +580,20 @@ extension ProjectsViewController: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if isShowingSkeletons {
+            return 6 // Show 6 skeleton cells while loading
+        }
         return projects.count + 1 // +1 for add button
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        if isShowingSkeletons {
+            // Return skeleton cell while loading
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SkeletonCollectionViewCell.identifier, for: indexPath) as! SkeletonCollectionViewCell
+            cell.startAnimating()
+            return cell
+        }
+        
         if indexPath.item == projects.count {
             // Add project cell
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: AddProjectCollectionViewCell.identifier, for: indexPath) as! AddProjectCollectionViewCell
@@ -577,6 +612,9 @@ extension ProjectsViewController: UICollectionViewDataSource {
 
 extension ProjectsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        // Don't handle taps while showing skeletons
+        guard !isShowingSkeletons else { return }
+        
         if indexPath.item == projects.count {
             createNewProject()
         } else {
@@ -702,5 +740,51 @@ class AddProjectCollectionViewCell: UICollectionViewCell {
             titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16)
         ])
+    }
+}
+
+// MARK: - Skeleton Cell
+
+class SkeletonCollectionViewCell: UICollectionViewCell {
+    static let identifier = "SkeletonCollectionViewCell"
+    
+    private let skeletonContainer = SkeletonContainerView()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        contentView.backgroundColor = CyberpunkTheme.surface
+        contentView.layer.cornerRadius = 12
+        contentView.layer.borderWidth = 1
+        contentView.layer.borderColor = CyberpunkTheme.border.cgColor
+        
+        skeletonContainer.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(skeletonContainer)
+        
+        NSLayoutConstraint.activate([
+            skeletonContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
+            skeletonContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            skeletonContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            skeletonContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            skeletonContainer.heightAnchor.constraint(equalToConstant: 180)
+        ])
+        
+        // Setup card skeleton layout
+        skeletonContainer.setupCardSkeleton()
+    }
+    
+    func startAnimating() {
+        skeletonContainer.startAnimating()
+    }
+    
+    func stopAnimating() {
+        skeletonContainer.stopAnimating()
     }
 }

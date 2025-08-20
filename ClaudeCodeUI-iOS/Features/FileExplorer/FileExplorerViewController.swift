@@ -198,7 +198,7 @@ class FileExplorerViewController: BaseViewController {
         do {
             // Call backend API to get file tree
             let endpoint = APIEndpoint(
-                path: "/api/projects/\(project.id)/files",
+                path: "/api/projects/\(project.name)/files",
                 method: .get
             )
             

@@ -623,7 +623,7 @@ class LaunchViewController: UIViewController {
     }
 }
 
-// Main Tab Bar Controller - Added to fix build issue
+// MainTabBarController - Temporarily added here because MainTabBarController.swift is not in Xcode project
 public class MainTabBarController: UITabBarController {
     
     // MARK: - Properties
@@ -637,10 +637,14 @@ public class MainTabBarController: UITabBarController {
     }
     
     private func setupTabBar() {
-        // Create view controllers for tabs
+        // Create ProjectsViewController with skeleton loading
         let projectsVC = ProjectsViewController()
         let projectsNav = UINavigationController(rootViewController: projectsVC)
         projectsNav.tabBarItem = UITabBarItem(title: "Projects", image: UIImage(systemName: "folder"), tag: 0)
+        
+        // Force the view to load to trigger viewDidLoad
+        _ = projectsVC.view
+        print("🚨 FORCED ProjectsViewController view to load in MainTabBarController")
         
         let chatVC = ChatViewController(project: currentProject)
         let chatNav = UINavigationController(rootViewController: chatVC)
