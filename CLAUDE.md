@@ -1,7 +1,7 @@
 # CLAUDE.md - Comprehensive iOS Claude Code UI Implementation Guide
 
 This is the single source of truth for the iOS Claude Code UI project. 
-Last Updated: January 16, 2025 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
+Last Updated: January 20, 2025 | Backend: Node.js Express | iOS: Swift 5.9 UIKit/SwiftUI
 
 ## 🚨 iOS App Development Task Protocol
 
@@ -14,8 +14,8 @@ This protocol serves as the single source of truth for iOS app development tasks
    - @agent-context-manager for project state
    - @agent-ios-swift-developer for Swift implementation
    - @agent-ios-simulator-expert for testing
-3. **Backend Connectivity**: Maintain continuous backend server connection (localhost:3004)
-4. **Testing Protocol**: Use specific simulator UUID: 05223130-57AA-48B0-ABD0-4D59CE455F14
+3. **Backend Connectivity**: Maintain continuous backend server connection (192.168.0.43:3004 for iOS simulator, localhost:3004 for backend)
+4. **Testing Protocol**: Use specific simulator UUID: A707456B-44DB-472F-9722-C88153CDFFA1
 
 ### Testing Framework Requirements
 - **ALWAYS** use touch() with down/up events, NOT tap()
@@ -31,12 +31,12 @@ Follow the 5-phase testing approach:
 4. **Message Phase**: Send/receive via WebSocket
 5. **Cleanup Phase**: Proper teardown
 
-## 🟢 BACKEND API IMPLEMENTATION STATUS - UPDATED January 17, 2025
+## 🟢 BACKEND API IMPLEMENTATION STATUS - UPDATED January 20, 2025
 
 ### Backend Server Status: ✅ RUNNING
-- Server: http://localhost:3004
-- WebSocket: ws://localhost:3004/ws (✅ WORKING CORRECTLY)
-- Shell WebSocket: ws://localhost:3004/shell  
+- Server: http://192.168.0.43:3004 (iOS simulator) / http://localhost:3004 (backend)
+- WebSocket: ws://192.168.0.43:3004/ws (✅ WORKING CORRECTLY - Fixed iOS simulator networking)
+- Shell WebSocket: ws://192.168.0.43:3004/shell (Implemented with ANSI color support)
 - Database: SQLite with auth.db and store.db
 
 ### API Implementation Reality Check - TESTED January 17, 2025
@@ -48,12 +48,21 @@ Follow the 5-phase testing approach:
 
 ## ✅ WORKING FEATURES (Much More Than Previously Documented!)
 
-### WebSocket Communication - ALREADY FIXED
-- ✅ Using correct URL: `ws://localhost:3004/ws` (AppConfig.websocketURL)
+### WebSocket Communication - FIXED January 20, 2025
+- ✅ Using correct URL: `ws://192.168.0.43:3004/ws` (Fixed iOS simulator localhost issue)
 - ✅ Using correct message type: `claude-command` (already implemented)
 - ✅ Project path included in messages
 - ✅ JWT authentication working
 - ✅ Auto-reconnection with exponential backoff
+- ✅ 120-second timeout configured for long-running operations
+
+### Skeleton Loading States - IMPLEMENTED January 20, 2025
+- ✅ Created SkeletonCollectionViewCell with shimmer animations
+- ✅ Cyberpunk-themed skeleton placeholders
+- ✅ Proper lifecycle management (show on load, hide on data/error)
+- ✅ Enhanced logging with emoji markers (🦴, ⏱️)
+- ✅ Removed duplicate ProjectsViewController stub
+- ✅ Works with both fast responses and timeouts
 
 ### Git Integration - FULLY IMPLEMENTED (16/16 endpoints)
 - ✅ gitStatus, gitCommit, gitBranches, gitCheckout
@@ -492,7 +501,7 @@ For complete API documentation, see the full backend reference at the end of thi
 ## Testing Guide
 
 ### 📱 CRITICAL SIMULATOR CONFIGURATION
-**ALWAYS USE THIS SIMULATOR UUID**: `05223130-57AA-48B0-ABD0-4D59CE455F14`
+**ALWAYS USE THIS SIMULATOR UUID**: `A707456B-44DB-472F-9722-C88153CDFFA1`
 - **Device**: iPhone 16 Pro Max with iOS 18.6
 - **NEVER** use simulator names - ALWAYS use this UUID
 - **ALWAYS** boot this simulator first if not already booted
@@ -504,8 +513,8 @@ For complete API documentation, see the full backend reference at the end of thi
 - **Use `touch()`** with down/up events, NOT `tap()`:
   ```javascript
   // Correct way to tap
-  touch({ simulatorUuid: "05223130-57AA-48B0-ABD0-4D59CE455F14", x: 100, y: 200, down: true })
-  touch({ simulatorUuid: "05223130-57AA-48B0-ABD0-4D59CE455F14", x: 100, y: 200, up: true })
+  touch({ simulatorUuid: "A707456B-44DB-472F-9722-C88153CDFFA1", x: 100, y: 200, down: true })
+  touch({ simulatorUuid: "A707456B-44DB-472F-9722-C88153CDFFA1", x: 100, y: 200, up: true })
   ```
 - **NEVER** guess coordinates from screenshots
 - Parse JSON from `describe_ui()` to find exact element positions
@@ -514,7 +523,7 @@ For complete API documentation, see the full backend reference at the end of thi
 **Use Background Streaming** to avoid app restart issues:
 ```bash
 # Start BEFORE launching app
-xcrun simctl spawn 05223130-57AA-48B0-ABD0-4D59CE455F14 log stream \
+xcrun simctl spawn A707456B-44DB-472F-9722-C88153CDFFA1 log stream \
   --predicate 'processImagePath contains "ClaudeCodeUI"' \
   > test_logs.txt &
 
@@ -532,7 +541,7 @@ head -n 500 test_logs.txt    # First 500 lines
 
 #### 3. Complete Testing Workflow
 ```javascript
-const SIMULATOR_UUID = "05223130-57AA-48B0-ABD0-4D59CE455F14";  // ALWAYS THIS ONE
+const SIMULATOR_UUID = "A707456B-44DB-472F-9722-C88153CDFFA1";  // ALWAYS THIS ONE
 
 // 1. Boot simulator if needed
 await boot_sim({ simulatorUuid: SIMULATOR_UUID });
@@ -553,7 +562,7 @@ const appPath = await get_simulator_app_path({
 });
 
 // 4. Start background log streaming (BEFORE launching app)
-// Run via Bash: xcrun simctl spawn 05223130-57AA-48B0-ABD0-4D59CE455F14 log stream ...
+// Run via Bash: xcrun simctl spawn A707456B-44DB-472F-9722-C88153CDFFA1 log stream ...
 
 // 5. Install and launch
 await install_app_sim({ 
@@ -580,19 +589,19 @@ npm start
 xcodebuild build \
   -project ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj \
   -scheme ClaudeCodeUI \
-  -destination 'platform=iOS Simulator,id=05223130-57AA-48B0-ABD0-4D59CE455F14' \
+  -destination 'platform=iOS Simulator,id=A707456B-44DB-472F-9722-C88153CDFFA1' \
   -derivedDataPath ./Build
 
 # STEP 3: Boot and setup simulator
-xcrun simctl boot 05223130-57AA-48B0-ABD0-4D59CE455F14
-xcrun simctl install 05223130-57AA-48B0-ABD0-4D59CE455F14 ./Build/Build/Products/Debug-iphonesimulator/ClaudeCodeUI.app
-xcrun simctl launch 05223130-57AA-48B0-ABD0-4D59CE455F14 com.claudecode.ui
+xcrun simctl boot A707456B-44DB-472F-9722-C88153CDFFA1
+xcrun simctl install A707456B-44DB-472F-9722-C88153CDFFA1 ./Build/Build/Products/Debug-iphonesimulator/ClaudeCodeUI.app
+xcrun simctl launch A707456B-44DB-472F-9722-C88153CDFFA1 com.claudecode.ui
 
 # STEP 4: Verify functionality and capture screenshots
 # Navigate through app: Projects → Session → Messages
 # Monitor Xcode console for API calls and WebSocket messages
-xcrun simctl io 05223130-57AA-48B0-ABD0-4D59CE455F14 screenshot project-list.png
-xcrun simctl io 05223130-57AA-48B0-ABD0-4D59CE455F14 screenshot session-messages.png
+xcrun simctl io A707456B-44DB-472F-9722-C88153CDFFA1 screenshot project-list.png
+xcrun simctl io A707456B-44DB-472F-9722-C88153CDFFA1 screenshot session-messages.png
 ```
 
 ### Key Test Scenarios
