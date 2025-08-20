@@ -181,35 +181,19 @@ class AppCoordinator: NSObject, Coordinator {
     }
     
     private func showMainInterface() {
-        // Create a simple tab bar controller directly
-        let tabBarController = UITabBarController()
-        
-        // Create ProjectsViewController - this will use the real one from ViewControllers.swift
-        let projectsVC = createProjectsViewController()
-        let projectsNav = UINavigationController(rootViewController: projectsVC)
-        projectsNav.tabBarItem = UITabBarItem(title: "Projects", image: UIImage(systemName: "folder"), tag: 0)
-        
-        // Create Settings placeholder
-        let settingsVC = createSettingsViewController()
-        let settingsNav = UINavigationController(rootViewController: settingsVC)
-        settingsNav.tabBarItem = UITabBarItem(title: "Settings", image: UIImage(systemName: "gear"), tag: 1)
-        
-        // Set view controllers
-        tabBarController.viewControllers = [projectsNav, settingsNav]
-        
-        // Configure appearance
-        tabBarController.tabBar.tintColor = .systemCyan
-        tabBarController.tabBar.backgroundColor = .systemBackground
+        // Use the MainTabBarController which is now properly in the project
+        let mainTabBarController = MainTabBarController()
         
         // Store tab bar controller for later use  
-        self.mainTabBarController = tabBarController
+        self.mainTabBarController = mainTabBarController
         
         // Animate transition
         UIView.transition(with: window, duration: 0.5, options: .transitionCrossDissolve, animations: {
-            self.window.rootViewController = tabBarController
+            self.window.rootViewController = mainTabBarController
         })
         
-        print("✅ Tab bar controller set as root with ProjectsViewController!")
+        print("✅ MainTabBarController with 5 tabs set as root!")
+        print("📱 Using MainTabBarController from Core/Navigation")
     }
     
     // MARK: - View Controller Creation

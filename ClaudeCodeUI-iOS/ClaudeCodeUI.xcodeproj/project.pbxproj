@@ -27,6 +27,7 @@
 		1D1A2B5A2C60A1230001A234 /* ProjectCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B592C60A1230001A234 /* ProjectCard.swift */; };
 		1D1A2B5C2C60A1230001A234 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B5B2C60A1230001A234 /* MessageBubble.swift */; };
 		1D1A2B5E2C60A1230001A234 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B5D2C60A1230001A234 /* AppCoordinator.swift */; };
+		1D1A2B602C60A1231001A234 /* MainTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B612C60A1230001A235 /* MainTabBarController.swift */; };
 		1D1A2B702C60A1230001A234 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B712C60A1230001A234 /* Settings.swift */; };
 		1D1A2B722C60A1230001A234 /* FileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B732C60A1230001A234 /* FileNode.swift */; };
 		3B692F99B4F0149A40D4E437 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA20E2A91D59F7BFD98A5C6E /* AppConfig.swift */; };
@@ -68,6 +69,7 @@
 		1D1A2B5B2C60A1230001A234 /* MessageBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubble.swift; sourceTree = "<group>"; };
 		1D1A2B5D2C60A1230001A234 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		1D1A2B5F2C60A1230001A234 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1D1A2B612C60A1230001A235 /* MainTabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabBarController.swift; sourceTree = "<group>"; };
 		1D1A2B712C60A1230001A234 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		1D1A2B732C60A1230001A234 /* FileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNode.swift; sourceTree = "<group>"; };
 		1D6058910D05DD3D006BFB54 /* ClaudeCodeUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudeCodeUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -196,6 +198,7 @@
 			isa = PBXGroup;
 			children = (
 				1D1A2B5D2C60A1230001A234 /* AppCoordinator.swift */,
+				1D1A2B612C60A1230001A235 /* MainTabBarController.swift */,
 			);
 			path = Navigation;
 			sourceTree = "<group>";
@@ -406,6 +409,7 @@
 				1D1A2B4C2C60A1230001A234 /* APIClient.swift in Sources */,
 				3B692F99B4F0149A40D4E437 /* AppConfig.swift in Sources */,
 				1D1A2B5E2C60A1230001A234 /* AppCoordinator.swift in Sources */,
+				1D1A2B602C60A1231001A234 /* MainTabBarController.swift in Sources */,
 				1D1A2B3C2C60A1230001A234 /* AppDelegate.swift in Sources */,
 				1D1A2B582C60A1230001A234 /* BaseViewController.swift in Sources */,
 				704436B7DE1D469495491C6D /* ChatViewController.swift in Sources */,
