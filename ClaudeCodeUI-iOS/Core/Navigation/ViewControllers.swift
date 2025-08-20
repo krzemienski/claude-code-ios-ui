@@ -622,3 +622,75 @@ class LaunchViewController: UIViewController {
         ])
     }
 }
+
+// Main Tab Bar Controller - Added to fix build issue
+public class MainTabBarController: UITabBarController {
+    
+    // MARK: - Properties
+    private var currentProject: Project?
+    
+    // MARK: - Lifecycle
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+        setupTabBar()
+        setupAppearance()
+    }
+    
+    private func setupTabBar() {
+        // Create view controllers for tabs
+        let projectsVC = ProjectsViewController()
+        let projectsNav = UINavigationController(rootViewController: projectsVC)
+        projectsNav.tabBarItem = UITabBarItem(title: "Projects", image: UIImage(systemName: "folder"), tag: 0)
+        
+        let chatVC = ChatViewController(project: currentProject)
+        let chatNav = UINavigationController(rootViewController: chatVC)
+        chatNav.tabBarItem = UITabBarItem(title: "Chat", image: UIImage(systemName: "message"), tag: 1)
+        
+        let filesVC = FileExplorerViewController()
+        let filesNav = UINavigationController(rootViewController: filesVC)
+        filesNav.tabBarItem = UITabBarItem(title: "Files", image: UIImage(systemName: "doc"), tag: 2)
+        
+        let terminalVC = TerminalViewController()
+        let terminalNav = UINavigationController(rootViewController: terminalVC)
+        terminalNav.tabBarItem = UITabBarItem(title: "Terminal", image: UIImage(systemName: "terminal"), tag: 3)
+        
+        let settingsVC = SettingsViewController()
+        let settingsNav = UINavigationController(rootViewController: settingsVC)
+        settingsNav.tabBarItem = UITabBarItem(title: "Settings", image: UIImage(systemName: "gear"), tag: 4)
+        
+        // Set view controllers
+        viewControllers = [projectsNav, chatNav, filesNav, terminalNav, settingsNav]
+    }
+    
+    private func setupAppearance() {
+        // Configure tab bar appearance with cyberpunk theme
+        tabBar.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
+        tabBar.tintColor = UIColor(red: 0, green: 0.85, blue: 1, alpha: 1.0) // Cyan
+        tabBar.unselectedItemTintColor = UIColor(white: 0.5, alpha: 1.0)
+        tabBar.barTintColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
+        
+        // iOS 15+ appearance customization
+        if #available(iOS 15.0, *) {
+            let appearance = UITabBarAppearance()
+            appearance.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
+            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(red: 0, green: 0.85, blue: 1, alpha: 1.0)
+            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(red: 0, green: 0.85, blue: 1, alpha: 1.0)]
+            appearance.stackedLayoutAppearance.normal.iconColor = UIColor(white: 0.5, alpha: 1.0)
+            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor(white: 0.5, alpha: 1.0)]
+            tabBar.standardAppearance = appearance
+            tabBar.scrollEdgeAppearance = appearance
+        }
+    }
+    
+    public func updateProject(_ project: Project) {
+        self.currentProject = project
+        // Update relevant view controllers with the project
+        if let navControllers = viewControllers as? [UINavigationController] {
+            for navController in navControllers {
+                if let chatVC = navController.viewControllers.first as? ChatViewController {
+                    chatVC.project = project
+                }
+            }
+        }
+    }
+}

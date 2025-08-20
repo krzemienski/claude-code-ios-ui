@@ -221,108 +221,154 @@ public class SessionListViewController: BaseViewController {
     
     // MARK: - Empty State
     private func setupEmptyState() {
-        emptyStateView.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
         emptyStateView.isHidden = true
+        emptyStateView.backgroundColor = CyberpunkTheme.background
+        view.addSubview(emptyStateView)
         
-        // Container for empty state content
+        // Container for content
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateView.addSubview(containerView)
         
-        // Icon
-        let iconImageView = UIImageView()
-        iconImageView.image = UIImage(systemName: "bubble.left.and.bubble.right")
-        iconImageView.tintColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.5)
-        iconImageView.contentMode = .scaleAspectFit
-        iconImageView.translatesAutoresizingMaskIntoConstraints = false
+        // ASCII art label with cyberpunk theme
+        let asciiLabel = UILabel()
+        asciiLabel.translatesAutoresizingMaskIntoConstraints = false
+        asciiLabel.numberOfLines = 0
+        asciiLabel.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
+        asciiLabel.textColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.6)
+        asciiLabel.textAlignment = .center
+        asciiLabel.text = """
+        ╔═══════════════════════╗
+        ║   NO SESSIONS FOUND   ║
+        ║                       ║
+        ║      ┌─────────┐      ║
+        ║      │  START  │      ║
+        ║      │   NEW   │      ║
+        ║      └─────────┘      ║
+        ╚═══════════════════════╝
+        """
+        containerView.addSubview(asciiLabel)
         
-        // Title
+        // Add glow effect to ASCII art
+        asciiLabel.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
+        asciiLabel.layer.shadowRadius = 8
+        asciiLabel.layer.shadowOpacity = 0.3
+        asciiLabel.layer.shadowOffset = .zero
+        
+        // Title label
         let titleLabel = UILabel()
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = "No Sessions Yet"
-        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
+        titleLabel.font = CyberpunkTheme.titleFont
         titleLabel.textColor = CyberpunkTheme.primaryText
         titleLabel.textAlignment = .center
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(titleLabel)
         
-        // Subtitle
-        let subtitleLabel = UILabel()
-        subtitleLabel.text = "Start a new session to begin chatting"
-        subtitleLabel.font = .systemFont(ofSize: 16, weight: .regular)
-        subtitleLabel.textColor = CyberpunkTheme.secondaryText
-        subtitleLabel.textAlignment = .center
-        subtitleLabel.numberOfLines = 0
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        // Message label
+        let messageLabel = UILabel()
+        messageLabel.translatesAutoresizingMaskIntoConstraints = false
+        messageLabel.text = "Start chatting with Claude to create your first session"
+        messageLabel.font = CyberpunkTheme.bodyFont
+        messageLabel.textColor = CyberpunkTheme.secondaryText
+        messageLabel.textAlignment = .center
+        messageLabel.numberOfLines = 0
+        containerView.addSubview(messageLabel)
         
-        // Create Session Button
+        // Create Session button with cyberpunk style
         let createButton = UIButton(type: .system)
+        createButton.translatesAutoresizingMaskIntoConstraints = false
         createButton.setTitle("Create New Session", for: .normal)
         createButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
         createButton.setTitleColor(UIColor.black, for: .normal)
         createButton.backgroundColor = CyberpunkTheme.primaryCyan
         createButton.layer.cornerRadius = 12
         createButton.addTarget(self, action: #selector(createNewSession), for: .touchUpInside)
-        createButton.translatesAutoresizingMaskIntoConstraints = false
-        createButton.accessibilityIdentifier = "addSessionButton"
+        containerView.addSubview(createButton)
         
         // Add glow effect to button
         createButton.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
         createButton.layer.shadowRadius = 8
         createButton.layer.shadowOpacity = 0.5
-        createButton.layer.shadowOffset = CGSize(width: 0, height: 0)
+        createButton.layer.shadowOffset = .zero
         
-        // Add subviews
-        containerView.addSubview(iconImageView)
-        containerView.addSubview(titleLabel)
-        containerView.addSubview(subtitleLabel)
-        containerView.addSubview(createButton)
-        
-        // Add empty state to view
-        view.addSubview(emptyStateView)
+        // Setup constraints
         emptyStateView.translatesAutoresizingMaskIntoConstraints = false
-        
         NSLayoutConstraint.activate([
-            // Empty state view
             emptyStateView.topAnchor.constraint(equalTo: sortSegmentedControl.superview!.bottomAnchor),
             emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             emptyStateView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
-            // Container
             containerView.centerXAnchor.constraint(equalTo: emptyStateView.centerXAnchor),
             containerView.centerYAnchor.constraint(equalTo: emptyStateView.centerYAnchor, constant: -50),
             containerView.leadingAnchor.constraint(greaterThanOrEqualTo: emptyStateView.leadingAnchor, constant: 40),
             containerView.trailingAnchor.constraint(lessThanOrEqualTo: emptyStateView.trailingAnchor, constant: -40),
             
-            // Icon
-            iconImageView.topAnchor.constraint(equalTo: containerView.topAnchor),
-            iconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 80),
-            iconImageView.heightAnchor.constraint(equalToConstant: 80),
+            asciiLabel.topAnchor.constraint(equalTo: containerView.topAnchor),
+            asciiLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
             
-            // Title
-            titleLabel.topAnchor.constraint(equalTo: iconImageView.bottomAnchor, constant: 24),
+            titleLabel.topAnchor.constraint(equalTo: asciiLabel.bottomAnchor, constant: 24),
             titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             
-            // Subtitle
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
-            subtitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            subtitleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
+            messageLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            messageLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             
-            // Button
-            createButton.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 32),
+            createButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 32),
             createButton.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
             createButton.widthAnchor.constraint(equalToConstant: 200),
             createButton.heightAnchor.constraint(equalToConstant: 50),
             createButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         ])
+        
+        // Add animations
+        addEmptyStateAnimations(asciiLabel: asciiLabel, containerView: containerView)
+    }
+    
+    private func addEmptyStateAnimations(asciiLabel: UILabel, containerView: UIView) {
+        // Pulse animation for ASCII art
+        let pulseAnimation = CABasicAnimation(keyPath: "opacity")
+        pulseAnimation.duration = 2.0
+        pulseAnimation.fromValue = 0.6
+        pulseAnimation.toValue = 1.0
+        pulseAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        pulseAnimation.autoreverses = true
+        pulseAnimation.repeatCount = .infinity
+        asciiLabel.layer.add(pulseAnimation, forKey: "pulse")
+        
+        // Subtle float animation
+        let floatAnimation = CABasicAnimation(keyPath: "transform.translation.y")
+        floatAnimation.duration = 3.0
+        floatAnimation.fromValue = -5
+        floatAnimation.toValue = 5
+        floatAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        floatAnimation.autoreverses = true
+        floatAnimation.repeatCount = .infinity
+        containerView.layer.add(floatAnimation, forKey: "float")
     }
     
     private func updateEmptyStateVisibility() {
         // Use the isLoading property from BaseViewController
         let shouldShowEmpty = sessions.isEmpty && !isLoading
-        emptyStateView.isHidden = !shouldShowEmpty
-        tableView.isHidden = shouldShowEmpty
+        
+        if shouldShowEmpty {
+            tableView.isHidden = true
+            emptyStateView.isHidden = false
+            // Animate appearance
+            emptyStateView.alpha = 0
+            UIView.animate(withDuration: 0.3) {
+                self.emptyStateView.alpha = 1
+            }
+        } else {
+            // Animate disappearance
+            UIView.animate(withDuration: 0.3, animations: {
+                self.emptyStateView.alpha = 0
+            }) { _ in
+                self.emptyStateView.isHidden = true
+                self.tableView.isHidden = false
+            }
+        }
     }
     
     // MARK: - Session Persistence

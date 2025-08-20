@@ -32,6 +32,292 @@ import SwiftUI
 // Import the view controllers from ViewControllers.swift which provides
 // connectivity to the backend at localhost:3004
 
+// MARK: - Temporary View Controller Definitions
+// These are minimal implementations needed to compile MainTabBarController
+
+class ProjectsViewController: UIViewController {
+    var onProjectSelected: ((Project) -> Void)?
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Projects"
+        view.backgroundColor = CyberpunkTheme.background
+    }
+}
+
+class SettingsViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Settings"
+        view.backgroundColor = CyberpunkTheme.background
+    }
+}
+
+class TranscriptionViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Transcription"
+        view.backgroundColor = CyberpunkTheme.background
+    }
+}
+
+class MCPServerListViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "MCP Servers"
+        view.backgroundColor = CyberpunkTheme.background
+    }
+}
+
+class SearchViewController: UIViewController {
+    private var project: Project?
+    
+    init(project: Project?) {
+        self.project = project
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Search"
+        view.backgroundColor = CyberpunkTheme.background
+    }
+}
+
+class GitViewController: UIViewController {
+    private var project: Project?
+    
+    init(project: Project?) {
+        self.project = project
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Git"
+        view.backgroundColor = CyberpunkTheme.background
+    }
+}
+
+// MARK: - MainTabBarController
+
+public class MainTabBarController: UITabBarController, UITabBarControllerDelegate {
+    
+    // MARK: - Properties
+    private let projectsVC = ProjectsViewController()
+    private let settingsVC = SettingsViewController()
+    private let transcriptionVC = TranscriptionViewController()
+    private let mcpServerVC = MCPServerListViewController()
+    private lazy var searchVC = SearchViewController(project: currentProject)
+    private lazy var terminalVC = TerminalViewController(project: currentProject)
+    private lazy var gitVC = GitViewController(project: currentProject)
+    private var currentProject: Project?
+    
+    // MARK: - Lifecycle
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // Set delegate to enable tab selection
+        self.delegate = self
+        
+        setupTabBar()
+        setupViewControllers()
+        applyTheme()
+        setupProjectSelectionHandler()
+    }
+    
+    // MARK: - Setup
+    private func setupTabBar() {
+        // Configure tab bar appearance
+        tabBar.isTranslucent = false
+        tabBar.backgroundColor = CyberpunkTheme.background
+        tabBar.tintColor = CyberpunkTheme.primaryCyan
+        tabBar.unselectedItemTintColor = CyberpunkTheme.textTertiary
+        
+        // Add top border with neon effect
+        let topBorder = CALayer()
+        topBorder.frame = CGRect(x: 0, y: 0, width: tabBar.frame.width, height: 1)
+        topBorder.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor
+        tabBar.layer.addSublayer(topBorder)
+        
+        // Apply blur effect
+        let blurEffect = UIBlurEffect(style: .dark)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.frame = tabBar.bounds
+        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        tabBar.insertSubview(blurView, at: 0)
+    }
+    
+    private func setupViewControllers() {
+        // Projects Tab - Always available
+        let projectsNav = UINavigationController(rootViewController: projectsVC)
+        projectsNav.tabBarItem = UITabBarItem(
+            title: "Projects",
+            image: createTabIcon(systemName: "folder.fill"),
+            selectedImage: createTabIcon(systemName: "folder.fill.badge.plus")
+        )
+        
+        // Search Tab - Project-wide search functionality
+        searchVC.title = "Search"
+        let searchNav = UINavigationController(rootViewController: searchVC)
+        searchNav.tabBarItem = UITabBarItem(
+            title: "Search",
+            image: createTabIcon(systemName: "magnifyingglass"),
+            selectedImage: createTabIcon(systemName: "magnifyingglass.circle.fill")
+        )
+        
+        // Terminal Tab - Command execution
+        terminalVC.title = "Terminal"
+        let terminalNav = UINavigationController(rootViewController: terminalVC)
+        terminalNav.tabBarItem = UITabBarItem(
+            title: "Terminal",
+            image: createTabIcon(systemName: "terminal"),
+            selectedImage: createTabIcon(systemName: "terminal.fill")
+        )
+        
+        // Git Tab - Version control management
+        gitVC.title = "Git"
+        let gitNav = UINavigationController(rootViewController: gitVC)
+        gitNav.tabBarItem = UITabBarItem(
+            title: "Git",
+            image: createTabIcon(systemName: "arrow.triangle.branch"),
+            selectedImage: createTabIcon(systemName: "arrow.triangle.branch")
+        )
+        
+        // MCP Servers Tab - Integrated MCP server management
+        mcpServerVC.title = "MCP Servers"
+        let mcpNav = UINavigationController(rootViewController: mcpServerVC)
+        mcpNav.tabBarItem = UITabBarItem(
+            title: "MCP",
+            image: createTabIcon(systemName: "server.rack"),
+            selectedImage: createTabIcon(systemName: "server.rack")
+        )
+        
+        // Settings Tab - Always available
+        let settingsNav = UINavigationController(rootViewController: settingsVC)
+        settingsNav.tabBarItem = UITabBarItem(
+            title: "Settings",
+            image: createTabIcon(systemName: "gearshape.fill"),
+            selectedImage: createTabIcon(systemName: "gearshape.2.fill")
+        )
+        
+        // Set initial view controllers - MCP moved to index 1 for visibility
+        // Order: Projects, MCP (now visible!), Terminal, Search, Settings, Git (in More menu)
+        viewControllers = [projectsNav, mcpNav, terminalNav, searchNav, settingsNav, gitNav]
+        
+        // Debug: Log tab count
+        print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
+        
+        // Configure navigation bars
+        [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav].forEach { nav in
+            nav.navigationBar.prefersLargeTitles = true
+            nav.navigationBar.isTranslucent = false
+            nav.navigationBar.backgroundColor = CyberpunkTheme.background
+            nav.navigationBar.tintColor = CyberpunkTheme.primaryCyan
+            
+            // Navigation bar title attributes
+            nav.navigationBar.largeTitleTextAttributes = [
+                .foregroundColor: CyberpunkTheme.textPrimary,
+                .font: UIFont.systemFont(ofSize: 34, weight: .bold)
+            ]
+            nav.navigationBar.titleTextAttributes = [
+                .foregroundColor: CyberpunkTheme.textPrimary,
+                .font: UIFont.systemFont(ofSize: 17, weight: .semibold)
+            ]
+        }
+    }
+    
+    private func createTabIcon(systemName: String) -> UIImage? {
+        let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
+        return UIImage(systemName: systemName, withConfiguration: config)
+    }
+    
+    private func applyTheme() {
+        // Apply appearance for iOS 15+
+        if #available(iOS 15.0, *) {
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = CyberpunkTheme.background
+            
+            // Normal state
+            appearance.stackedLayoutAppearance.normal.iconColor = CyberpunkTheme.textTertiary
+            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+                .foregroundColor: CyberpunkTheme.textTertiary,
+                .font: UIFont.systemFont(ofSize: 10, weight: .medium)
+            ]
+            
+            // Selected state
+            appearance.stackedLayoutAppearance.selected.iconColor = CyberpunkTheme.primaryCyan
+            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+                .foregroundColor: CyberpunkTheme.primaryCyan,
+                .font: UIFont.systemFont(ofSize: 10, weight: .semibold)
+            ]
+            
+            tabBar.standardAppearance = appearance
+            tabBar.scrollEdgeAppearance = appearance
+        }
+    }
+    
+    private func setupProjectSelectionHandler() {
+        // Listen for project selection from ProjectsViewController
+        projectsVC.onProjectSelected = { [weak self] project in
+            self?.openChatForProject(project)
+        }
+    }
+    
+    private func openChatForProject(_ project: Project) {
+        // Store current project
+        currentProject = project
+        
+        // Update SearchViewController with new project context
+        if let searchNav = viewControllers?[3] as? UINavigationController {
+            // Create new SearchViewController with project context
+            let newSearchVC = SearchViewController(project: project)
+            newSearchVC.title = "Search"
+            searchNav.setViewControllers([newSearchVC], animated: false)
+        }
+        
+        // Update TerminalViewController with new project context
+        if let terminalNav = viewControllers?[2] as? UINavigationController {
+            // Create new TerminalViewController with project context
+            let newTerminalVC = TerminalViewController(project: project)
+            newTerminalVC.title = "Terminal"
+            terminalNav.setViewControllers([newTerminalVC], animated: false)
+        }
+        
+        // Update GitViewController with new project context
+        if let gitNav = viewControllers?[5] as? UINavigationController {
+            // Create new GitViewController with project context
+            let newGitVC = GitViewController(project: project)
+            newGitVC.title = "Git"
+            gitNav.setViewControllers([newGitVC], animated: false)
+        }
+        
+        // Create and present ChatViewController modally
+        let chatVC = ChatViewController(project: project)
+        let chatNav = UINavigationController(rootViewController: chatVC)
+        chatNav.modalPresentationStyle = UIModalPresentationStyle.fullScreen
+        self.present(chatNav, animated: true)
+    }
+    
+    // MARK: - UITabBarControllerDelegate
+    
+    public func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        // Log tab selection for debugging
+        if let index = viewControllers?.firstIndex(of: viewController) {
+            print("🔵 DEBUG: Selected tab at index \(index)")
+        }
+    }
+}
+
 // Import the real SessionsViewController from Features folder
 // The SessionsViewController is defined in Features/Sessions/SessionsViewController.swift
 
