@@ -28,20 +28,22 @@
 		1D1A2B5C2C60A1230001A234 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B5B2C60A1230001A234 /* MessageBubble.swift */; };
 		1D1A2B5E2C60A1230001A234 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B5D2C60A1230001A234 /* AppCoordinator.swift */; };
 		1D1A2B702C60A1230001A234 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B712C60A1230001A234 /* Settings.swift */; };
-		50F9C4AFA26E495E959E2B78 /* MCPModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6BDCC5AA6D4BABB4CA675D /* MCPModels.swift */; };
 		1D1A2B722C60A1230001A234 /* FileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B732C60A1230001A234 /* FileNode.swift */; };
 		3B692F99B4F0149A40D4E437 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA20E2A91D59F7BFD98A5C6E /* AppConfig.swift */; };
 		3FCDBEF6DA4A72B49371A7D9 /* SettingsExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C2FC9F5058A817D083EBB3 /* SettingsExportManager.swift */; };
 		3FD7C8E12D3A4F5B9E8C6A2D /* SessionPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD7C8E02D3A4F5B9E8C6A2C /* SessionPersistenceService.swift */; };
 		40B7C33051CEDAE6BE2C1242 /* DIContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E703F121AE00716858A34C9 /* DIContainer.swift */; };
 		49F9E9CCE1B5434B80E0C19D /* TerminalViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4026CAF3B7A46A2AC1AD9B2 /* TerminalViewController.swift */; };
+		50F9C4AFA26E495E959E2B78 /* MCPModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6BDCC5AA6D4BABB4CA675D /* MCPModels.swift */; };
 		5CA17007BAD345CBB66820B6 /* FilePreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8160272A1B7942EAB39F2B14 /* FilePreviewViewController.swift */; };
 		704436B7DE1D469495491C6D /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 908A0FC3A7394AEDABD41BAE /* ChatViewController.swift */; };
 		710FDCC1008A154C77C40F68 /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2B39A42D2EAE5FE7B6D6731 /* CacheManager.swift */; };
 		7A4B3ABF6F9D4DC3B86E7721 /* SessionListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6902AE882D214104A2371E83 /* SessionListViewController.swift */; };
 		9C4D3B2E8F6A7C5D2B4A9F1E /* SessionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3F2A1C9D5E7B4F1A6C8E2D /* SessionTableViewCell.swift */; };
 		CF1CDCE8201B4681BC26C272 /* FileExplorerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC926D40F67449184C94AA8 /* FileExplorerViewController.swift */; };
+		D70C021BC80AF1F1A7BD8B65 /* ShellWebSocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45A8268B173D82A282EC8BF2 /* ShellWebSocketManager.swift */; };
 		E9551C46FAE0CE0F9932C352 /* TerminalOutput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4199A6A13A248893C73E73D6 /* TerminalOutput.swift */; };
+		F6847261B8909F03E8A24950 /* TerminalOutputParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7D6C565E0FF75EDE0F057E /* TerminalOutputParser.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,16 +69,18 @@
 		1D1A2B5D2C60A1230001A234 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		1D1A2B5F2C60A1230001A234 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1D1A2B712C60A1230001A234 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
-		3C6BDCC5AA6D4BABB4CA675D /* MCPModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPModels.swift; sourceTree = "<group>"; };
 		1D1A2B732C60A1230001A234 /* FileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNode.swift; sourceTree = "<group>"; };
 		1D6058910D05DD3D006BFB54 /* ClaudeCodeUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudeCodeUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C6BDCC5AA6D4BABB4CA675D /* MCPModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPModels.swift; sourceTree = "<group>"; };
 		3E703F121AE00716858A34C9 /* DIContainer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DIContainer.swift; sourceTree = "<group>"; };
 		3FD7C8E02D3A4F5B9E8C6A2C /* SessionPersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPersistenceService.swift; sourceTree = "<group>"; };
 		4199A6A13A248893C73E73D6 /* TerminalOutput.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TerminalOutput.swift; sourceTree = "<group>"; };
+		45A8268B173D82A282EC8BF2 /* ShellWebSocketManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShellWebSocketManager.swift; sourceTree = "<group>"; };
 		6902AE882D214104A2371E83 /* SessionListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListViewController.swift; sourceTree = "<group>"; };
 		6DC926D40F67449184C94AA8 /* FileExplorerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileExplorerViewController.swift; sourceTree = "<group>"; };
 		8160272A1B7942EAB39F2B14 /* FilePreviewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePreviewViewController.swift; sourceTree = "<group>"; };
 		8B3F2A1C9D5E7B4F1A6C8E2D /* SessionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTableViewCell.swift; sourceTree = "<group>"; };
+		8D7D6C565E0FF75EDE0F057E /* TerminalOutputParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TerminalOutputParser.swift; sourceTree = "<group>"; };
 		908A0FC3A7394AEDABD41BAE /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
 		BA20E2A91D59F7BFD98A5C6E /* AppConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppConfig.swift; path = Core/Config/AppConfig.swift; sourceTree = SOURCE_ROOT; };
 		C2B39A42D2EAE5FE7B6D6731 /* CacheManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
@@ -204,6 +208,7 @@
 				01AF0F702E4EBDD500405F5C /* AliveMainFlowUITests.swift */,
 				01AF0F722E4EBE5400405F5C /* MajorFlowsUITests.swift */,
 				01AF0F742E4EC0C500405F5C /* REFRACTORING_PROPOSALS.md */,
+				45A8268B173D82A282EC8BF2 /* ShellWebSocketManager.swift */,
 			);
 			path = Network;
 			sourceTree = "<group>";
@@ -276,7 +281,7 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		29B97314FDCFA39411CA2CEA /* ClaudeCodeUI */ = {
+		29B97314FDCFA39411CA2CEA = {
 			isa = PBXGroup;
 			children = (
 				1D1A2B3A2C60A1230001A234 /* App */,
@@ -319,6 +324,7 @@
 			isa = PBXGroup;
 			children = (
 				E4026CAF3B7A46A2AC1AD9B2 /* TerminalViewController.swift */,
+				8D7D6C565E0FF75EDE0F057E /* TerminalOutputParser.swift */,
 			);
 			path = Terminal;
 			sourceTree = "<group>";
@@ -371,7 +377,7 @@
 				en,
 				Base,
 			);
-			mainGroup = 29B97314FDCFA39411CA2CEA /* ClaudeCodeUI */;
+			mainGroup = 29B97314FDCFA39411CA2CEA;
 			productRefGroup = 19C28FACFE9D520D11CA2CBB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -431,6 +437,8 @@
 				3FCDBEF6DA4A72B49371A7D9 /* SettingsExportManager.swift in Sources */,
 				3FD7C8E12D3A4F5B9E8C6A2D /* SessionPersistenceService.swift in Sources */,
 				E9551C46FAE0CE0F9932C352 /* TerminalOutput.swift in Sources */,
+				D70C021BC80AF1F1A7BD8B65 /* ShellWebSocketManager.swift in Sources */,
+				F6847261B8909F03E8A24950 /* TerminalOutputParser.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

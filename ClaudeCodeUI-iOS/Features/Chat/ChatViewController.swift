@@ -644,15 +644,18 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             print("✅ Using provided session: \(session.id)")
             print("📋 Session created: \(session.createdAt)")
             UserDefaults.standard.set(session.id, forKey: "currentSessionId_\(project.id)")
+            showChatSkeletonLoading()  // Show skeleton while loading
             loadSessionMessages(sessionId: session.id)
         } else if let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)") {
             // Try to resume a previous session
             print("🔄 Resuming previous session: \(sessionId)")
+            showChatSkeletonLoading()  // Show skeleton while loading
             loadSessionMessages(sessionId: sessionId)
         } else {
             // No existing session - keep messages empty (no fake welcome message)
             print("⚠️ No session available - starting with empty messages")
             messages = []
+            hideChatSkeletonLoading()  // Hide skeleton if no session
             tableView.reloadData()
         }
     }
@@ -703,6 +706,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     self.hasMoreMessages = backendMessages.count == self.messagePageSize
                     self.isLoadingMore = false
                     self.isLoading = false  // Hide loading indicator after messages load
+                    
+                    // Hide skeleton loading after messages are loaded
+                    self.hideChatSkeletonLoading()
                     
                     print("📊 Total messages in view: \(self.messages.count)")
                     print("🔄 Reloading table view...")
@@ -775,6 +781,10 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     
                     self.isLoadingMore = false
                     self.isLoading = false
+                    
+                    // Hide skeleton loading even on error
+                    self.hideChatSkeletonLoading()
+                    
                     self.tableView.reloadData()
                     
                     if !self.messages.isEmpty {
@@ -786,6 +796,101 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     // REMOVED: createTestMessages() function - no longer using mock data
+    
+    // MARK: - Skeleton Loading
+    
+    private func showChatSkeletonLoading() {
+        // Hide real content during loading
+        tableView.alpha = 0
+        
+        // Create skeleton cells
+        let skeletonCount = 5
+        var skeletonViews: [UIView] = []
+        
+        for i in 0..<skeletonCount {
+            let skeletonCell = UIView()
+            skeletonCell.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(skeletonCell)
+            
+            // Alternate between user and assistant messages
+            let isUser = i % 2 == 1
+            
+            // Create message bubble skeleton
+            let bubbleView = UIView()
+            bubbleView.translatesAutoresizingMaskIntoConstraints = false
+            bubbleView.backgroundColor = isUser ? 
+                CyberpunkTheme.primaryCyan.withAlphaComponent(0.1) : 
+                CyberpunkTheme.surface
+            bubbleView.layer.cornerRadius = 16
+            skeletonCell.addSubview(bubbleView)
+            
+            // Add shimmer gradient layer
+            let gradientLayer = CAGradientLayer()
+            gradientLayer.colors = [
+                UIColor.clear.cgColor,
+                CyberpunkTheme.primaryCyan.withAlphaComponent(0.1).cgColor,
+                UIColor.clear.cgColor
+            ]
+            gradientLayer.locations = [0, 0.5, 1]
+            gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
+            gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+            gradientLayer.frame = CGRect(x: -view.bounds.width, y: 0, width: view.bounds.width * 3, height: 60)
+            bubbleView.layer.addSublayer(gradientLayer)
+            
+            // Animate shimmer
+            let animation = CABasicAnimation(keyPath: "position.x")
+            animation.fromValue = -view.bounds.width
+            animation.toValue = view.bounds.width * 2
+            animation.duration = 1.5
+            animation.repeatCount = .infinity
+            gradientLayer.add(animation, forKey: "shimmer")
+            
+            // Layout constraints
+            NSLayoutConstraint.activate([
+                skeletonCell.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                skeletonCell.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                skeletonCell.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: CGFloat(i * 80 + 20)),
+                skeletonCell.heightAnchor.constraint(equalToConstant: 60)
+            ])
+            
+            if isUser {
+                NSLayoutConstraint.activate([
+                    bubbleView.trailingAnchor.constraint(equalTo: skeletonCell.trailingAnchor, constant: -16),
+                    bubbleView.widthAnchor.constraint(equalToConstant: 200),
+                    bubbleView.heightAnchor.constraint(equalToConstant: 50),
+                    bubbleView.centerYAnchor.constraint(equalTo: skeletonCell.centerYAnchor)
+                ])
+            } else {
+                NSLayoutConstraint.activate([
+                    bubbleView.leadingAnchor.constraint(equalTo: skeletonCell.leadingAnchor, constant: 16),
+                    bubbleView.widthAnchor.constraint(equalToConstant: 250),
+                    bubbleView.heightAnchor.constraint(equalToConstant: 50),
+                    bubbleView.centerYAnchor.constraint(equalTo: skeletonCell.centerYAnchor)
+                ])
+            }
+            
+            skeletonCell.tag = 99999 + i // Use tags to identify skeleton views
+            skeletonViews.append(skeletonCell)
+        }
+    }
+    
+    private func hideChatSkeletonLoading() {
+        // Remove all skeleton views
+        view.subviews.forEach { subview in
+            if subview.tag >= 99999 && subview.tag < 100004 {
+                UIView.animate(withDuration: 0.3, animations: {
+                    subview.alpha = 0
+                }) { _ in
+                    subview.removeFromSuperview()
+                }
+            }
+        }
+        
+        // Show real content with fade animation
+        UIView.animate(withDuration: 0.3) {
+            self.tableView.alpha = 1
+        }
+    }
     
     // MARK: - Missing Methods (Stubs for building)
     

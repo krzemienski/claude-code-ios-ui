@@ -185,9 +185,103 @@ class FileExplorerViewController: BaseViewController {
         navigationItem.rightBarButtonItem = closeButton
     }
     
+    // MARK: - Skeleton Loading
+    
+    private func showFileExplorerSkeleton() {
+        // Hide real content
+        tableView.alpha = 0
+        
+        // Create skeleton cells for file explorer
+        let skeletonCount = 8
+        
+        for i in 0..<skeletonCount {
+            let skeletonRow = UIView()
+            skeletonRow.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(skeletonRow)
+            
+            // Indentation for nested items
+            let indentLevel = i > 2 && i < 6 ? 1 : 0
+            let indentWidth: CGFloat = CGFloat(indentLevel * 24)
+            
+            // File/folder icon skeleton
+            let iconView = UIView()
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+            iconView.backgroundColor = CyberpunkTheme.surface
+            iconView.layer.cornerRadius = 4
+            skeletonRow.addSubview(iconView)
+            
+            // File name skeleton
+            let nameView = UIView()
+            nameView.translatesAutoresizingMaskIntoConstraints = false
+            nameView.backgroundColor = CyberpunkTheme.surface
+            nameView.layer.cornerRadius = 4
+            skeletonRow.addSubview(nameView)
+            
+            // Add shimmer gradient
+            let gradientLayer = CAGradientLayer()
+            gradientLayer.colors = [
+                UIColor.clear.cgColor,
+                CyberpunkTheme.primaryCyan.withAlphaComponent(0.1).cgColor,
+                UIColor.clear.cgColor
+            ]
+            gradientLayer.locations = [0, 0.5, 1]
+            gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
+            gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+            gradientLayer.frame = CGRect(x: -view.bounds.width, y: 0, width: view.bounds.width * 3, height: 44)
+            skeletonRow.layer.addSublayer(gradientLayer)
+            
+            // Animate shimmer
+            let animation = CABasicAnimation(keyPath: "position.x")
+            animation.fromValue = -view.bounds.width
+            animation.toValue = view.bounds.width * 2
+            animation.duration = 1.5
+            animation.repeatCount = .infinity
+            gradientLayer.add(animation, forKey: "shimmer")
+            
+            // Layout constraints
+            NSLayoutConstraint.activate([
+                skeletonRow.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                skeletonRow.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                skeletonRow.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: CGFloat(i * 44 + 16)),
+                skeletonRow.heightAnchor.constraint(equalToConstant: 44),
+                
+                iconView.leadingAnchor.constraint(equalTo: skeletonRow.leadingAnchor, constant: 16 + indentWidth),
+                iconView.centerYAnchor.constraint(equalTo: skeletonRow.centerYAnchor),
+                iconView.widthAnchor.constraint(equalToConstant: 20),
+                iconView.heightAnchor.constraint(equalToConstant: 20),
+                
+                nameView.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
+                nameView.centerYAnchor.constraint(equalTo: skeletonRow.centerYAnchor),
+                nameView.widthAnchor.constraint(equalToConstant: CGFloat.random(in: 80...150)),
+                nameView.heightAnchor.constraint(equalToConstant: 16)
+            ])
+            
+            skeletonRow.tag = 89999 + i // Use tags to identify skeleton views
+        }
+    }
+    
+    private func hideFileExplorerSkeleton() {
+        // Remove all skeleton views
+        view.subviews.forEach { subview in
+            if subview.tag >= 89999 && subview.tag < 90007 {
+                UIView.animate(withDuration: 0.3, animations: {
+                    subview.alpha = 0
+                }) { _ in
+                    subview.removeFromSuperview()
+                }
+            }
+        }
+        
+        // Show real content
+        UIView.animate(withDuration: 0.3) {
+            self.tableView.alpha = 1
+        }
+    }
+    
     // MARK: - Data Loading
     
     private func loadFileTree() {
+        showFileExplorerSkeleton()
         Task {
             await fetchFileTree()
         }
@@ -208,10 +302,12 @@ class FileExplorerViewController: BaseViewController {
             // Convert DTOs to our internal model
             rootNode = FileTreeNode(name: project.name, path: project.path, isDirectory: true, children: treeNodes.map { convertToFileTreeNode($0) })
             
+            hideFileExplorerSkeleton()
             tableView.reloadData()
             emptyStateView.isHidden = rootNode != nil && !(rootNode?.children?.isEmpty ?? true)
         } catch {
             Logger.shared.error("Failed to load file tree: \(error)")
+            hideFileExplorerSkeleton()
             
             // Show error to user instead of fake data
             await MainActor.run {

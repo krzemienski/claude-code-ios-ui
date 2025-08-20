@@ -15,12 +15,9 @@ class TerminalViewController: BaseViewController {
     private var commandHistory: [String] = []
     private var historyIndex = -1
     private var currentDirectory = "~"
-    private let webSocketManager: any WebSocketProtocol
-    private let shellWebSocketManager: WebSocketManager
+    private let shellWebSocketManager: ShellWebSocketManager
     private var isShellConnected = false
     private let maxHistorySize = 100
-    private var reconnectAttempts = 0
-    private let maxReconnectAttempts = 5
     
     // MARK: - UI Components
     
@@ -78,6 +75,9 @@ class TerminalViewController: BaseViewController {
         // Add custom caret
         textField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
         
+        // Add custom input accessory view for history navigation
+        textField.inputAccessoryView = createHistoryNavigationView()
+        
         return textField
     }()
     
@@ -110,7 +110,7 @@ class TerminalViewController: BaseViewController {
             image: UIImage(systemName: "arrow.up"),
             style: .plain,
             target: self,
-            action: #selector(previousCommand)
+            action: #selector(navigateHistoryUp)
         )
         upButton.tintColor = CyberpunkTheme.primaryCyan
         
@@ -118,7 +118,7 @@ class TerminalViewController: BaseViewController {
             image: UIImage(systemName: "arrow.down"),
             style: .plain,
             target: self,
-            action: #selector(nextCommand)
+            action: #selector(navigateHistoryDown)
         )
         downButton.tintColor = CyberpunkTheme.primaryCyan
         
@@ -149,16 +149,14 @@ class TerminalViewController: BaseViewController {
     
     init(project: Project? = nil) {
         self.project = project
-        self.webSocketManager = DIContainer.shared.webSocketManager
-        // Create a separate WebSocket manager for shell commands
-        self.shellWebSocketManager = WebSocketManager()
+        // Create a dedicated shell WebSocket manager
+        self.shellWebSocketManager = ShellWebSocketManager()
         super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) {
         self.project = nil
-        self.webSocketManager = DIContainer.shared.webSocketManager
-        self.shellWebSocketManager = WebSocketManager()
+        self.shellWebSocketManager = ShellWebSocketManager()
         super.init(coder: coder)
     }
     
@@ -199,6 +197,68 @@ class TerminalViewController: BaseViewController {
     }
     
     // MARK: - UI Setup
+    
+    private func createHistoryNavigationView() -> UIView {
+        let accessoryView = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
+        accessoryView.backgroundColor = CyberpunkTheme.surface
+        accessoryView.layer.borderWidth = 1
+        accessoryView.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor
+        
+        // Create a toolbar for the accessory view
+        let toolbar = UIToolbar(frame: accessoryView.bounds)
+        toolbar.barStyle = .black
+        toolbar.isTranslucent = true
+        toolbar.backgroundColor = CyberpunkTheme.surface
+        toolbar.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
+        // Create navigation buttons
+        let upButton = UIBarButtonItem(
+            image: UIImage(systemName: "arrow.up"),
+            style: .plain,
+            target: self,
+            action: #selector(navigateHistoryUp)
+        )
+        upButton.tintColor = CyberpunkTheme.primaryCyan
+        
+        let downButton = UIBarButtonItem(
+            image: UIImage(systemName: "arrow.down"),
+            style: .plain,
+            target: self,
+            action: #selector(navigateHistoryDown)
+        )
+        downButton.tintColor = CyberpunkTheme.primaryCyan
+        
+        let clearButton = UIBarButtonItem(
+            title: "Clear",
+            style: .plain,
+            target: self,
+            action: #selector(clearCommandField)
+        )
+        clearButton.tintColor = CyberpunkTheme.primaryCyan
+        
+        let tabButton = UIBarButtonItem(
+            title: "TAB",
+            style: .plain,
+            target: self,
+            action: #selector(handleTabCompletion)
+        )
+        tabButton.tintColor = CyberpunkTheme.primaryCyan
+        
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        
+        let doneButton = UIBarButtonItem(
+            barButtonSystemItem: .done,
+            target: self,
+            action: #selector(dismissKeyboard)
+        )
+        doneButton.tintColor = CyberpunkTheme.primaryCyan
+        
+        toolbar.items = [upButton, downButton, flexSpace, clearButton, tabButton, flexSpace, doneButton]
+        
+        accessoryView.addSubview(toolbar)
+        
+        return accessoryView
+    }
     
     private func setupUI() {
         view.backgroundColor = UIColor(red: 0.02, green: 0.02, blue: 0.03, alpha: 1.0)
@@ -346,25 +406,19 @@ class TerminalViewController: BaseViewController {
         }
         
         // If not connected, try to connect first
-        if reconnectAttempts < maxReconnectAttempts {
-            appendToTerminal("⚠️ Not connected to shell. Attempting to connect...", color: CyberpunkTheme.warning)
-            connectShellWebSocket()
-            
-            // Store the command to execute after connection
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                guard let self = self else { return }
-                if self.isShellConnected {
-                    self.sendCommandViaWebSocket(command)
-                } else {
-                    // Fallback to HTTP if WebSocket connection fails
-                    self.sendCommandViaHTTP(command)
-                }
-            }
-            return
-        }
+        appendToTerminal("⚠️ Not connected to shell. Attempting to connect...", color: CyberpunkTheme.warning)
+        connectShellWebSocket()
         
-        // Fallback to HTTP if WebSocket is not available
-        sendCommandViaHTTP(command)
+        // Store the command to execute after connection
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self = self else { return }
+            if self.isShellConnected {
+                self.sendCommandViaWebSocket(command)
+            } else {
+                // Fallback to HTTP if WebSocket connection fails
+                self.sendCommandViaHTTP(command)
+            }
+        }
     }
     
     private func sendCommandViaHTTP(_ command: String) {
@@ -440,51 +494,18 @@ class TerminalViewController: BaseViewController {
     // MARK: - WebSocket Methods
     
     private func connectShellWebSocket() {
-        // Connect to shell WebSocket endpoint for real-time terminal communication
-        let shellURL = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/shell"
-        
         appendToTerminal("🔄 Connecting to shell server...", color: CyberpunkTheme.primaryCyan)
         
         // Set ourselves as delegate to receive messages
         shellWebSocketManager.delegate = self
         
         // Connect to the shell WebSocket endpoint with project path
-        shellWebSocketManager.connect(to: shellURL)
+        let projectPath = project?.path ?? project?.id ?? FileManager.default.currentDirectoryPath
+        shellWebSocketManager.connect(projectPath: projectPath)
         
-        // The actual connection success will be handled in webSocketDidConnect delegate method
-        print("🐚 Initiating shell WebSocket connection to: \(shellURL)")
+        print("🐚 Initiating shell WebSocket connection with project path: \(projectPath)")
     }
     
-    private func sendShellInitMessage() {
-        // Send init message to shell WebSocket
-        // Backend expects: {type: "init", projectPath: path, sessionId: id, hasSession: bool, provider: "claude"}
-        let projectPath = project?.path ?? project?.id ?? getCurrentWorkingDirectory()
-        
-        // Calculate terminal size based on text view bounds
-        let charWidth: CGFloat = 7.0 // Approximate width of monospace character
-        let charHeight: CGFloat = 16.0 // Approximate height with line spacing
-        let cols = Int((terminalTextView.bounds.width - 24) / charWidth) // Account for padding
-        let rows = Int((terminalTextView.bounds.height - 24) / charHeight)
-        
-        let initData: [String: Any] = [
-            "type": "init",
-            "projectPath": projectPath,
-            "sessionId": NSNull(), // No session for standalone terminal
-            "hasSession": false,
-            "provider": "terminal", // Changed to "terminal" for standalone usage
-            "cols": max(80, cols),  // Minimum 80 columns
-            "rows": max(24, rows)   // Minimum 24 rows
-        ]
-        
-        if let jsonData = try? JSONSerialization.data(withJSONObject: initData),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            shellWebSocketManager.sendRawText(jsonString)
-            print("🐚 Sent shell init message with project path: \(projectPath), cols: \(cols), rows: \(rows)")
-            appendToTerminal("📂 Working directory: \(projectPath)", color: CyberpunkTheme.primaryCyan)
-            currentDirectory = projectPath // Update current directory
-            updatePrompt()
-        }
-    }
     
     private func sendTerminalResize() {
         // Calculate new terminal size
@@ -493,17 +514,8 @@ class TerminalViewController: BaseViewController {
         let cols = Int((terminalTextView.bounds.width - 24) / charWidth)
         let rows = Int((terminalTextView.bounds.height - 24) / charHeight)
         
-        let resizeData: [String: Any] = [
-            "type": "resize",
-            "cols": max(80, cols),
-            "rows": max(24, rows)
-        ]
-        
-        if let jsonData = try? JSONSerialization.data(withJSONObject: resizeData),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            shellWebSocketManager.sendRawText(jsonString)
-            print("🐚 Sent terminal resize: cols=\(cols), rows=\(rows)")
-        }
+        shellWebSocketManager.sendTerminalResize(cols: max(80, cols), rows: max(24, rows))
+        print("🐚 Sent terminal resize: cols=\(cols), rows=\(rows)")
     }
     
     private func sendCommandViaWebSocket(_ command: String) {
@@ -514,22 +526,15 @@ class TerminalViewController: BaseViewController {
             return
         }
         
-        // Create message matching backend's expected format for shell commands
-        // Backend expects: {"type": "shell-command", "command": "ls -la", "cwd": "/path"}
-        let messageData: [String: Any] = [
-            "type": "shell-command",
-            "command": command,
-            "cwd": currentDirectory.isEmpty ? getCurrentWorkingDirectory() : currentDirectory
-        ]
-        
-        // Send as raw JSON string since backend expects specific format
-        if let jsonData = try? JSONSerialization.data(withJSONObject: messageData),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            shellWebSocketManager.sendRawText(jsonString)
-            print("🐚 Sent shell command via WebSocket: \(command) in directory: \(messageData["cwd"] ?? "unknown")")
-        } else {
-            appendToTerminal("❌ Failed to send command", color: CyberpunkTheme.accentPink)
+        // Send command through the new ShellWebSocketManager
+        let workingDirectory = currentDirectory.isEmpty ? getCurrentWorkingDirectory() : currentDirectory
+        shellWebSocketManager.sendCommand(command, workingDirectory: workingDirectory) { [weak self] success, error in
+            if !success, let error = error {
+                self?.appendToTerminal("❌ \(error)", color: CyberpunkTheme.accentPink)
+            }
         }
+        
+        print("🐚 Sent shell command via WebSocket: \(command) in directory: \(workingDirectory)")
     }
     
     private func showHelp() {
@@ -638,10 +643,89 @@ class TerminalViewController: BaseViewController {
     }
     
     @objc private func reconnectShell() {
-        // Since we're using HTTP mode for general terminal commands,
-        // this button just shows the current status
-        appendToTerminal("ℹ️ Terminal is using HTTP mode for command execution", color: CyberpunkTheme.primaryCyan)
-        appendToTerminal("✅ Ready to execute commands", color: CyberpunkTheme.success)
+        if isShellConnected {
+            appendToTerminal("✅ Already connected to shell server", color: CyberpunkTheme.success)
+        } else {
+            appendToTerminal("🔄 Reconnecting to shell server...", color: CyberpunkTheme.primaryCyan)
+            connectShellWebSocket()
+        }
+        
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+    }
+    
+    @objc private func navigateHistoryUp() {
+        // Navigate to previous command in history
+        if !commandHistory.isEmpty {
+            if historyIndex == -1 {
+                // Start from the end of history
+                historyIndex = commandHistory.count - 1
+            } else if historyIndex > 0 {
+                // Move to previous command
+                historyIndex -= 1
+            }
+            
+            if historyIndex >= 0 && historyIndex < commandHistory.count {
+                commandTextField.text = commandHistory[historyIndex]
+            }
+        }
+        
+        // Haptic feedback
+        let generator = UISelectionFeedbackGenerator()
+        generator.selectionChanged()
+    }
+    
+    @objc private func navigateHistoryDown() {
+        // Navigate to next command in history
+        if !commandHistory.isEmpty && historyIndex != -1 {
+            if historyIndex < commandHistory.count - 1 {
+                // Move to next command
+                historyIndex += 1
+                commandTextField.text = commandHistory[historyIndex]
+            } else {
+                // Clear the field when at the end
+                historyIndex = -1
+                commandTextField.text = ""
+            }
+        }
+        
+        // Haptic feedback
+        let generator = UISelectionFeedbackGenerator()
+        generator.selectionChanged()
+    }
+    
+    @objc private func clearCommandField() {
+        commandTextField.text = ""
+        historyIndex = -1
+        
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+    }
+    
+    @objc private func handleTabCompletion() {
+        // TODO: Implement TAB completion for file paths
+        // For now, just show a placeholder message
+        guard let currentText = commandTextField.text, !currentText.isEmpty else { return }
+        
+        // Basic implementation: complete common commands
+        let commonCommands = ["ls", "cd", "pwd", "echo", "clear", "help", "exit", "mkdir", "rm", "cat", "grep", "find"]
+        let matchingCommands = commonCommands.filter { $0.hasPrefix(currentText) }
+        
+        if matchingCommands.count == 1 {
+            commandTextField.text = matchingCommands[0] + " "
+        } else if matchingCommands.count > 1 {
+            appendToTerminal("Suggestions: \(matchingCommands.joined(separator: ", "))", color: CyberpunkTheme.secondaryText)
+        }
+        
+        // Haptic feedback
+        let generator = UISelectionFeedbackGenerator()
+        generator.selectionChanged()
+    }
+    
+    @objc private func dismissKeyboard() {
+        commandTextField.resignFirstResponder()
         
         // Haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .light)
@@ -659,37 +743,6 @@ class TerminalViewController: BaseViewController {
         }
     }
     
-    @objc private func previousCommand() {
-        guard !commandHistory.isEmpty else { return }
-        
-        if historyIndex == -1 {
-            historyIndex = commandHistory.count - 1
-        } else if historyIndex > 0 {
-            historyIndex -= 1
-        }
-        
-        commandTextField.text = commandHistory[historyIndex]
-        
-        // Haptic feedback
-        let generator = UISelectionFeedbackGenerator()
-        generator.selectionChanged()
-    }
-    
-    @objc private func nextCommand() {
-        guard !commandHistory.isEmpty && historyIndex >= 0 else { return }
-        
-        if historyIndex < commandHistory.count - 1 {
-            historyIndex += 1
-            commandTextField.text = commandHistory[historyIndex]
-        } else {
-            historyIndex = -1
-            commandTextField.text = ""
-        }
-        
-        // Haptic feedback
-        let generator = UISelectionFeedbackGenerator()
-        generator.selectionChanged()
-    }
     
     @objc private func textFieldDidChange() {
         // Could add auto-completion here
@@ -749,171 +802,51 @@ extension TerminalViewController: UITextFieldDelegate {
     }
 }
 
-// MARK: - WebSocketManagerDelegate
+// MARK: - ShellWebSocketManagerDelegate
 
-extension TerminalViewController: WebSocketManagerDelegate {
-    func webSocketDidConnect(_ manager: any WebSocketProtocol) {
-        if (manager as? WebSocketManager) === shellWebSocketManager {
-            isShellConnected = true
-            reconnectAttempts = 0 // Reset reconnect counter on successful connection
-            appendToTerminal("✅ Connected to terminal server", color: CyberpunkTheme.success)
-            print("🐚 Shell WebSocket connected successfully")
-            
-            // Send init message immediately after connection
-            sendShellInitMessage()
-            
-            // Update toolbar items to show connected state
-            updateToolbarForConnectionState()
-        }
-    }
-    
-    func webSocketDidDisconnect(_ manager: any WebSocketProtocol, error: Error?) {
-        if (manager as? WebSocketManager) === shellWebSocketManager {
-            isShellConnected = false
-            if let error = error {
-                appendToTerminal("⚠️ Disconnected: \(error.localizedDescription)", color: CyberpunkTheme.warning)
-            } else {
-                appendToTerminal("⚠️ Connection lost", color: CyberpunkTheme.warning)
-            }
-            print("🐚 Shell WebSocket disconnected")
-            
-            // Update toolbar to show disconnected state
-            updateToolbarForConnectionState()
-            
-            // Auto-reconnect with exponential backoff
-            attemptReconnection()
-        }
-    }
-    
-    private func attemptReconnection() {
-        guard reconnectAttempts < maxReconnectAttempts else {
-            appendToTerminal("❌ Failed to reconnect after \(maxReconnectAttempts) attempts", color: CyberpunkTheme.accentPink)
-            return
-        }
+extension TerminalViewController: ShellWebSocketManagerDelegate {
+    func shellWebSocketDidConnect(_ manager: ShellWebSocketManager) {
+        isShellConnected = true
+        appendToTerminal("✅ Connected to terminal server", color: CyberpunkTheme.success)
+        print("🐚 Shell WebSocket connected successfully")
         
-        reconnectAttempts += 1
-        let delay = Double(reconnectAttempts) * 2.0 // Exponential backoff
+        // Update toolbar items to show connected state
+        updateToolbarForConnectionState()
+    }
+    
+    func shellWebSocketDidDisconnect(_ manager: ShellWebSocketManager, error: Error?) {
+        isShellConnected = false
+        if let error = error {
+            appendToTerminal("⚠️ Disconnected: \(error.localizedDescription)", color: CyberpunkTheme.warning)
+        } else {
+            appendToTerminal("⚠️ Connection lost", color: CyberpunkTheme.warning)
+        }
+        print("🐚 Shell WebSocket disconnected")
         
-        appendToTerminal("⏳ Reconnecting in \(Int(delay)) seconds... (attempt \(reconnectAttempts)/\(maxReconnectAttempts))", color: CyberpunkTheme.warning)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            guard let self = self, !self.isShellConnected else { return }
-            self.connectShellWebSocket()
+        // Update toolbar to show disconnected state
+        updateToolbarForConnectionState()
+    }
+    
+    func shellWebSocketDidInitialize(_ manager: ShellWebSocketManager, workingDirectory: String?) {
+        if let cwd = workingDirectory {
+            currentDirectory = cwd
+            updatePrompt()
+            appendToTerminal("✅ Shell initialized in \(cwd)", color: CyberpunkTheme.success)
+        } else {
+            appendToTerminal("✅ Shell initialized", color: CyberpunkTheme.success)
         }
     }
     
-    func webSocket(_ manager: any WebSocketProtocol, didReceiveMessage message: WebSocketMessage) {
-        if (manager as? WebSocketManager) === shellWebSocketManager {
-            // Handle shell output messages
-            switch message.type {
-            case .shellOutput:
-                if let payload = message.payload,
-                   let output = payload["output"] as? String {
-                    appendToTerminal(output, color: CyberpunkTheme.primaryCyan)
-                }
-                
-            case .shellError:
-                if let payload = message.payload,
-                   let error = payload["error"] as? String {
-                    appendToTerminal(error, color: CyberpunkTheme.accentPink)
-                }
-                
-            case .shellInit:
-                if let payload = message.payload,
-                   let cwd = payload["cwd"] as? String {
-                    currentDirectory = cwd
-                    updatePrompt()
-                }
-                
-            default:
-                // Also handle raw "output" type from backend
-                if let type = message.payload?["type"] as? String,
-                   type == "output",
-                   let data = message.payload?["data"] as? String {
-                    // Parse ANSI codes and display output
-                    appendToTerminalWithANSI(data)
-                }
-                break
-            }
-        }
+    func shellWebSocket(_ manager: ShellWebSocketManager, didReceiveOutput output: String) {
+        // Parse ANSI codes and display output
+        appendToTerminalWithANSI(output)
     }
     
-    func webSocket(_ manager: any WebSocketProtocol, didReceiveText text: String) {
-        // Handle raw text messages from shell WebSocket
-        if (manager as? WebSocketManager) === shellWebSocketManager {
-            // Parse JSON response from backend
-            if let data = text.data(using: .utf8),
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                
-                if let type = json["type"] as? String {
-                    switch type {
-                    case "shell-output":
-                        // Handle output from shell commands
-                        if let output = json["output"] as? String {
-                            appendToTerminalWithANSI(output)
-                        }
-                    case "shell-error":
-                        // Handle error from shell commands
-                        if let error = json["error"] as? String {
-                            if error.contains("command not found") || error.contains("not found") {
-                                appendToTerminal(error, color: CyberpunkTheme.warning)
-                            } else {
-                                appendToTerminal("❌ \(error)", color: CyberpunkTheme.accentPink)
-                            }
-                        }
-                    case "output":
-                        // Also handle legacy "output" type
-                        if let output = json["data"] as? String {
-                            appendToTerminalWithANSI(output)
-                        }
-                    case "error":
-                        // Also handle legacy "error" type
-                        if let error = json["data"] as? String {
-                            if error.contains("command not found") || error.contains("not found") {
-                                appendToTerminal(error, color: CyberpunkTheme.warning)
-                            } else {
-                                appendToTerminal("❌ \(error)", color: CyberpunkTheme.accentPink)
-                            }
-                        }
-                    case "init":
-                        // Shell initialized successfully
-                        if let cwd = json["cwd"] as? String {
-                            currentDirectory = cwd
-                            updatePrompt()
-                            appendToTerminal("✅ Shell initialized in \(cwd)", color: CyberpunkTheme.success)
-                        } else {
-                            appendToTerminal("✅ Shell initialized", color: CyberpunkTheme.success)
-                        }
-                    case "exit":
-                        appendToTerminal("👋 Shell session ended", color: CyberpunkTheme.warning)
-                        isShellConnected = false
-                        // Don't auto-reconnect on explicit exit
-                    case "clear":
-                        // Handle clear screen command from backend
-                        clearTerminal()
-                    default:
-                        print("🐚 Unknown shell message type: \(type)")
-                        // Still try to display any data if present
-                        if let data = json["data"] as? String {
-                            appendToTerminalWithANSI(data)
-                        } else if let output = json["output"] as? String {
-                            appendToTerminalWithANSI(output)
-                        }
-                    }
-                } else if let data = json["data"] as? String {
-                    // Some messages might not have a type but have data
-                    appendToTerminalWithANSI(data)
-                } else if let output = json["output"] as? String {
-                    // Direct output field without type
-                    appendToTerminalWithANSI(output)
-                } else {
-                    // Handle other JSON structures
-                    print("🐚 Received JSON without recognized structure: \(json)")
-                }
-            } else {
-                // If not JSON, treat as raw output (might be streaming data)
-                appendToTerminalWithANSI(text)
-            }
+    func shellWebSocket(_ manager: ShellWebSocketManager, didReceiveError error: String) {
+        if error.contains("command not found") || error.contains("not found") {
+            appendToTerminal(error, color: CyberpunkTheme.warning)
+        } else {
+            appendToTerminal("❌ \(error)", color: CyberpunkTheme.accentPink)
         }
     }
     
@@ -1130,26 +1063,5 @@ extension TerminalViewController: WebSocketManagerDelegate {
         }
         
         return CyberpunkTheme.primaryText
-    }
-    
-    func webSocket(_ manager: any WebSocketProtocol, didReceiveData data: Data) {
-        // Handle binary data if needed
-    }
-    
-    func webSocketConnectionStateChanged(_ state: WebSocketConnectionState) {
-        switch state {
-        case .connecting:
-            print("🐚 Shell WebSocket connecting...")
-        case .connected:
-            print("🐚 Shell WebSocket connected")
-        case .disconnected:
-            print("🐚 Shell WebSocket disconnected")
-        case .reconnecting:
-            print("🐚 Shell WebSocket reconnecting...")
-        case .failed:
-            print("🐚 Shell WebSocket connection failed")
-        @unknown default:
-            print("🐚 Shell WebSocket unknown state")
-        }
     }
 }

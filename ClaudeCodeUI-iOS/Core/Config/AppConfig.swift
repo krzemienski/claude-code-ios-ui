@@ -14,14 +14,15 @@ struct AppConfig {
     
     /// Local backend URL for development
     /// This URL connects to the local Node.js backend server
-    static let backendURL: String = "http://localhost:3004"
+    /// Using host machine's IP address for iOS simulator to reach the backend
+    static let backendURL: String = "http://192.168.0.43:3004"
     
     /// Local WebSocket URLs for real-time communication
-    static let websocketURL: String = "ws://localhost:3004/ws"          // Main chat WebSocket
-    static let shellWebSocketURL: String = "ws://localhost:3004/shell"  // Terminal WebSocket
+    static let websocketURL: String = "ws://192.168.0.43:3004/ws"          // Main chat WebSocket
+    static let shellWebSocketURL: String = "ws://192.168.0.43:3004/shell"  // Terminal WebSocket
     
     /// Local Backend host (extracted from URL)
-    static let backendHost: String = "localhost"
+    static let backendHost: String = "192.168.0.43"
     static let backendPort: Int = 3004  // Local Node.js server port
     
     // MARK: - API Endpoints (Hardcoded for consistency)

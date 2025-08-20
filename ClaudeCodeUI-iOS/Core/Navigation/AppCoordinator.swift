@@ -14,136 +14,14 @@ import SwiftUI
 
 // Import SessionListViewController since it's in Features/Sessions
 
-// Temporary view controller stubs for missing classes
-class ProjectsViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "Projects"
-        view.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
-        
-        // Add skeleton loading animation
-        let skeletonView = UIView()
-        skeletonView.backgroundColor = UIColor(white: 0.1, alpha: 1.0)
-        skeletonView.layer.cornerRadius = 8
-        view.addSubview(skeletonView)
-        skeletonView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            skeletonView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            skeletonView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            skeletonView.widthAnchor.constraint(equalToConstant: 300),
-            skeletonView.heightAnchor.constraint(equalToConstant: 200)
-        ])
-        
-        // Shimmer animation
-        let gradient = CAGradientLayer()
-        gradient.frame = skeletonView.bounds
-        gradient.colors = [UIColor(white: 0.1, alpha: 1.0).cgColor, UIColor(white: 0.2, alpha: 1.0).cgColor, UIColor(white: 0.1, alpha: 1.0).cgColor]
-        gradient.locations = [0.0, 0.5, 1.0]
-        gradient.startPoint = CGPoint(x: 0, y: 0.5)
-        gradient.endPoint = CGPoint(x: 1, y: 0.5)
-        skeletonView.layer.addSublayer(gradient)
-        
-        let animation = CABasicAnimation(keyPath: "locations")
-        animation.fromValue = [-1.0, -0.5, 0.0]
-        animation.toValue = [1.0, 1.5, 2.0]
-        animation.duration = 1.5
-        animation.repeatCount = .infinity
-        gradient.add(animation, forKey: "shimmer")
-        
-        print("🎯 ProjectsViewController viewDidLoad called - Skeleton loading active!")
-    }
-}
-
-class SettingsViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "Settings"
-        view.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
-    }
-}
+// Removed stub implementations - using real view controllers from Features folder
+// ProjectsViewController is in Features/Projects/ProjectsViewController.swift
+// SettingsViewController is in Features/Settings/SettingsViewController.swift
 
 // TerminalViewController is already defined in Features/Terminal/TerminalViewController.swift
 
-// MainTabBarController definition - included here because the separate file is not in Xcode project
-public class MainTabBarController: UITabBarController {
-    
-    // MARK: - Properties
-    private var currentProject: Project?
-    
-    // MARK: - Lifecycle
-    public override func viewDidLoad() {
-        super.viewDidLoad()
-        setupTabBar()
-        setupAppearance()
-    }
-    
-    private func setupTabBar() {
-        // Create ProjectsViewController with skeleton loading
-        let projectsVC = ProjectsViewController()
-        let projectsNav = UINavigationController(rootViewController: projectsVC)
-        projectsNav.tabBarItem = UITabBarItem(title: "Projects", image: UIImage(systemName: "folder"), tag: 0)
-        
-        // Force the view to load to trigger viewDidLoad
-        _ = projectsVC.view
-        print("🚨 FORCED ProjectsViewController view to load in MainTabBarController")
-        
-        // Create a dummy project for initial setup
-        let dummyProject = Project(name: "Select Project", path: "/tmp")
-        let chatVC = ChatViewController(project: dummyProject)  // Will be updated when project is selected
-        let chatNav = UINavigationController(rootViewController: chatVC)
-        chatNav.tabBarItem = UITabBarItem(title: "Chat", image: UIImage(systemName: "message"), tag: 1)
-        
-        // Files tab commented out - FileExplorer should only be shown when navigating from a real project
-        // let filesVC = FileExplorerViewController(project: dummyProject)
-        // let filesNav = UINavigationController(rootViewController: filesVC)
-        // filesNav.tabBarItem = UITabBarItem(title: "Files", image: UIImage(systemName: "doc"), tag: 2)
-        
-        let terminalVC = TerminalViewController()
-        let terminalNav = UINavigationController(rootViewController: terminalVC)
-        terminalNav.tabBarItem = UITabBarItem(title: "Terminal", image: UIImage(systemName: "terminal"), tag: 3)
-        
-        let settingsVC = SettingsViewController()
-        let settingsNav = UINavigationController(rootViewController: settingsVC)
-        settingsNav.tabBarItem = UITabBarItem(title: "Settings", image: UIImage(systemName: "gear"), tag: 4)
-        
-        // Set view controllers - Files tab removed
-        viewControllers = [projectsNav, chatNav, terminalNav, settingsNav]
-    }
-    
-    private func setupAppearance() {
-        // Configure tab bar appearance with cyberpunk theme
-        tabBar.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
-        tabBar.tintColor = UIColor(red: 0, green: 0.85, blue: 1, alpha: 1.0) // Cyan
-        tabBar.unselectedItemTintColor = UIColor(white: 0.5, alpha: 1.0)
-        tabBar.barTintColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
-        
-        // iOS 15+ appearance customization
-        if #available(iOS 15.0, *) {
-            let appearance = UITabBarAppearance()
-            appearance.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
-            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(red: 0, green: 0.85, blue: 1, alpha: 1.0)
-            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(red: 0, green: 0.85, blue: 1, alpha: 1.0)]
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor(white: 0.5, alpha: 1.0)
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor(white: 0.5, alpha: 1.0)]
-            tabBar.standardAppearance = appearance
-            tabBar.scrollEdgeAppearance = appearance
-        }
-    }
-    
-    func updateProject(_ project: Project) {
-        self.currentProject = project
-        // Update relevant view controllers with the project
-        if let navControllers = viewControllers as? [UINavigationController] {
-            for navController in navControllers {
-                if let chatVC = navController.viewControllers.first as? ChatViewController {
-                    // Note: project property might be private, this is just for demo
-                    // chatVC.project = project
-                }
-            }
-        }
-    }
-}
-// The class is declared as public in SessionListViewController.swift
+// MARK: - View Controllers are defined in ViewControllers.swift
+// The MainTabBarController is defined at the end of this file after the ViewControllers are available
 
 // MARK: - App Coordinator
 // The view controllers are now properly organized:
@@ -303,38 +181,41 @@ class AppCoordinator: NSObject, Coordinator {
     }
     
     private func showMainInterface() {
-        // Use the REAL MainTabBarController from Core/Navigation/MainTabBarController.swift
-        // NOT the duplicate one defined in this file!
-        // The real one imports the actual ProjectsViewController with skeleton loading
-        let realTabBarController = MainTabBarController()
+        // Create a simple tab bar controller directly
+        let tabBarController = UITabBarController()
         
-        // Critical fix: Force the view to load to trigger viewDidLoad!
-        // Without this, the ProjectsViewController's viewDidLoad is never called
-        if let navControllers = realTabBarController.viewControllers as? [UINavigationController] {
-            for (index, navController) in navControllers.enumerated() {
-                if let rootVC = navController.viewControllers.first {
-                    // Force each view controller's view to load
-                    _ = rootVC.view
-                    print("🚨 FORCED view to load for tab \(index): \(type(of: rootVC))")
-                }
-            }
-        }
+        // Create ProjectsViewController - this will use the real one from ViewControllers.swift
+        let projectsVC = createProjectsViewController()
+        let projectsNav = UINavigationController(rootViewController: projectsVC)
+        projectsNav.tabBarItem = UITabBarItem(title: "Projects", image: UIImage(systemName: "folder"), tag: 0)
+        
+        // Create Settings placeholder
+        let settingsVC = createSettingsViewController()
+        let settingsNav = UINavigationController(rootViewController: settingsVC)
+        settingsNav.tabBarItem = UITabBarItem(title: "Settings", image: UIImage(systemName: "gear"), tag: 1)
+        
+        // Set view controllers
+        tabBarController.viewControllers = [projectsNav, settingsNav]
+        
+        // Configure appearance
+        tabBarController.tabBar.tintColor = .systemCyan
+        tabBarController.tabBar.backgroundColor = .systemBackground
         
         // Store tab bar controller for later use  
-        self.mainTabBarController = realTabBarController
+        self.mainTabBarController = tabBarController
         
         // Animate transition
         UIView.transition(with: window, duration: 0.5, options: .transitionCrossDissolve, animations: {
-            self.window.rootViewController = realTabBarController
+            self.window.rootViewController = tabBarController
         })
         
-        print("✅ MainTabBarController set as root with forced view loading!")
+        print("✅ Tab bar controller set as root with ProjectsViewController!")
     }
     
     // MARK: - View Controller Creation
     
     private func createProjectsViewController() -> UIViewController {
-        // Create a simple projects list view controller inline to avoid naming conflicts
+        // Use the ProjectsListViewController that calls the real API
         let projectsVC = ProjectsListViewController()
         projectsVC.title = "Projects"
         projectsVC.onProjectSelected = { [weak self] project in
@@ -729,5 +610,7 @@ private extension AppCoordinator {
 
 // The ProjectsListViewController has been removed since we're using 
 // the actual ProjectsViewController from Features/Projects/ProjectsViewController.swift
+
+// MainTabBarController is defined in Core/Navigation/MainTabBarController.swift
 
 

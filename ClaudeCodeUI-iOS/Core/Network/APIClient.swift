@@ -648,15 +648,27 @@ actor APIClient: APIClientProtocol {
     func request(_ endpoint: APIEndpoint) async throws -> Data {
         let urlRequest = try createRequest(for: endpoint)
         
-        print("🌐 Making request to: \(urlRequest.url?.absoluteString ?? "nil")")
+        let requestStart = Date()
+        print("🌐 [REQUEST START] Making request to: \(urlRequest.url?.absoluteString ?? "nil")")
+        print("   Method: \(urlRequest.httpMethod ?? "GET")")
+        print("   Headers: \(urlRequest.allHTTPHeaderFields ?? [:])")
+        print("   Timeout: \(urlRequest.timeoutInterval) seconds")
         
-        let (data, response) = try await session.data(for: urlRequest)
+        print("⏳ [WAITING] Starting network call...")
         
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-        
-        print("📦 Response status: \(httpResponse.statusCode)")
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            let responseTime = Date().timeIntervalSince(requestStart)
+            print("✅ [RESPONSE RECEIVED] Response received after \(String(format: "%.2f", responseTime)) seconds")
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ [ERROR] Invalid response type (not HTTPURLResponse)")
+                throw APIError.invalidResponse
+            }
+            
+            print("📦 [RESPONSE STATUS] HTTP \(httpResponse.statusCode)")
+            print("   Headers: \(httpResponse.allHeaderFields)")
         
         // Log response data but truncate if too long
         if let responseString = String(data: data, encoding: .utf8) {
@@ -675,7 +687,14 @@ actor APIClient: APIClientProtocol {
             throw APIError.httpError(statusCode: httpResponse.statusCode, data: data)
         }
         
-        return data
+            return data
+        } catch let error {
+            let responseTime = Date().timeIntervalSince(requestStart)
+            print("❌ [ERROR] Request failed after \(String(format: "%.2f", responseTime)) seconds")
+            print("   Error: \(error.localizedDescription)")
+            print("   Full error: \(error)")
+            throw error
+        }
     }
     
     func requestVoid(_ endpoint: APIEndpoint) async throws {
@@ -797,7 +816,8 @@ extension APIEndpoint {
     
     // Project endpoints
     static func getProjects() -> APIEndpoint {
-        return APIEndpoint(path: "/api/projects", method: .get)
+        // Increase timeout to 120 seconds since this endpoint can be slow with many projects
+        return APIEndpoint(path: "/api/projects", method: .get, timeout: 120)
     }
     
     static func createProject(name: String, path: String) -> APIEndpoint {
@@ -811,7 +831,8 @@ extension APIEndpoint {
     
     // Session endpoints
     static func getSessions(projectName: String, limit: Int = 5, offset: Int = 0) -> APIEndpoint {
-        return APIEndpoint(path: "/api/projects/\(projectName)/sessions?limit=\(limit)&offset=\(offset)", method: .get)
+        // Also increase timeout for sessions since they might be slow with many sessions
+        return APIEndpoint(path: "/api/projects/\(projectName)/sessions?limit=\(limit)&offset=\(offset)", method: .get, timeout: 120)
     }
     
     static func createSession(projectName: String) -> APIEndpoint {
@@ -825,12 +846,14 @@ extension APIEndpoint {
     }
     
     static func getMessages(projectName: String, sessionId: String) -> APIEndpoint {
-        return APIEndpoint(path: "/api/projects/\(projectName)/sessions/\(sessionId)/messages", method: .get)
+        // Increase timeout for messages which can be large
+        return APIEndpoint(path: "/api/projects/\(projectName)/sessions/\(sessionId)/messages", method: .get, timeout: 120)
     }
     
     // Session endpoints (direct)
     static func getSessionMessages(sessionId: String) -> APIEndpoint {
-        return APIEndpoint(path: "/api/sessions/\(sessionId)/messages", method: .get)
+        // Increase timeout for messages which can be large
+        return APIEndpoint(path: "/api/sessions/\(sessionId)/messages", method: .get, timeout: 120)
     }
     
     // File endpoints

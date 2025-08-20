@@ -233,15 +233,22 @@ public class ProjectsViewController: BaseViewController {
                 
                 // Add a minimum delay to see the skeleton animation
                 let startTime = Date()
+                print("⏱️ API REQUEST START: \(startTime)")
                 
                 // The shared APIClient already has the development token configured
                 let remoteProjects = try await APIClient.shared.fetchProjects()
+                
+                let endTime = Date()
+                let elapsed = endTime.timeIntervalSince(startTime)
+                print("⏱️ API REQUEST END: \(endTime)")
+                print("⏱️ API REQUEST DURATION: \(String(format: "%.2f", elapsed)) seconds")
                 print("✅ Successfully fetched \(remoteProjects.count) projects from API")
                 
                 // Ensure skeleton shows for at least 0.5 seconds for smooth transition
-                let elapsed = Date().timeIntervalSince(startTime)
                 if elapsed < 0.5 {
-                    try await Task.sleep(nanoseconds: UInt64((0.5 - elapsed) * 1_000_000_000))
+                    let sleepTime = 0.5 - elapsed
+                    print("⏳ Adding \(String(format: "%.2f", sleepTime)) second delay to show skeleton animation")
+                    try await Task.sleep(nanoseconds: UInt64(sleepTime * 1_000_000_000))
                 }
                 
                 // Already on main thread due to @MainActor
@@ -379,14 +386,17 @@ public class ProjectsViewController: BaseViewController {
     // MARK: - Skeleton Loading
     
     private func showSkeletonLoading() {
-        print("🦴 Showing skeleton loading...")
+        print("🦴🦴🦴 SKELETON LOADING STATE: SHOWING at \(Date())")
+        print("🦴 Number of skeleton cells to show: 6")
         isShowingSkeletons = true
         emptyStateView.isHidden = true
         collectionView.reloadData()
+        print("🦴 Collection view reloaded with skeleton cells")
     }
     
     private func hideSkeletonLoading() {
-        print("🦴 Hiding skeleton loading...")
+        print("🦴🦴🦴 SKELETON LOADING STATE: HIDING at \(Date())")
+        print("🦴 Skeleton cells will be replaced with actual data")
         isShowingSkeletons = false
         // updateUI will be called after this to reload with actual data
     }
