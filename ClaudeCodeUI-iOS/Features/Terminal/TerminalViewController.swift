@@ -370,6 +370,31 @@ class TerminalViewController: BaseViewController {
         }
     }
     
+    private func appendAttributedText(_ attributedText: NSAttributedString) {
+        let currentAttributedText = terminalTextView.attributedText ?? NSAttributedString()
+        let mutableText = NSMutableAttributedString(attributedString: currentAttributedText)
+        
+        mutableText.append(attributedText)
+        
+        // Add newline if needed
+        let text = attributedText.string
+        if !text.isEmpty && !text.hasSuffix("\n") && !text.hasSuffix("\r") {
+            let newlineAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedSystemFont(ofSize: 14, weight: .regular),
+                .foregroundColor: CyberpunkTheme.primaryText
+            ]
+            mutableText.append(NSAttributedString(string: "\n", attributes: newlineAttributes))
+        }
+        
+        terminalTextView.attributedText = mutableText
+        
+        // Scroll to bottom
+        if terminalTextView.text.count > 0 {
+            let bottom = NSMakeRange(terminalTextView.text.count - 1, 1)
+            terminalTextView.scrollRangeToVisible(bottom)
+        }
+    }
+    
     private func executeCommand(_ command: String) {
         // Add to history
         addToCommandHistory(command)
@@ -391,6 +416,12 @@ class TerminalViewController: BaseViewController {
             } else {
                 appendToTerminal("Cannot exit main terminal", color: CyberpunkTheme.accentPink)
             }
+            return
+        }
+        
+        // Special handling for help command
+        if command.lowercased() == "help" {
+            showHelp()
             return
         }
         
@@ -553,26 +584,13 @@ class TerminalViewController: BaseViewController {
         
         Navigation:
         ↑/↓         - Browse command history
+        TAB         - Auto-complete commands
         
-        Note: All commands except 'clear' and 'exit' are
-        executed on the backend server.
+        Note: All commands except 'clear', 'help' and 'exit' 
+        are executed on the backend server.
         """
         
         appendToTerminal(helpText, color: CyberpunkTheme.primaryText)
-    }
-    
-    private func changeDirectory(_ path: String) {
-        if path == ".." {
-            currentDirectory = "~"
-        } else if path == "~" {
-            currentDirectory = "~"
-        } else if path.starts(with: "/") {
-            currentDirectory = path
-        } else {
-            currentDirectory = "\(currentDirectory)/\(path)"
-        }
-        updatePrompt()
-        appendToTerminal("Changed directory to: \(currentDirectory)")
     }
     
     private func updatePrompt() {
@@ -838,8 +856,9 @@ extension TerminalViewController: ShellWebSocketManagerDelegate {
     }
     
     func shellWebSocket(_ manager: ShellWebSocketManager, didReceiveOutput output: String) {
-        // Parse ANSI codes and display output
-        appendToTerminalWithANSI(output)
+        // Use TerminalOutputParser for ANSI code handling
+        let parsedOutput = TerminalOutputParser.shared.parseOutput(output)
+        appendAttributedText(parsedOutput)
     }
     
     func shellWebSocket(_ manager: ShellWebSocketManager, didReceiveError error: String) {
@@ -848,220 +867,5 @@ extension TerminalViewController: ShellWebSocketManagerDelegate {
         } else {
             appendToTerminal("❌ \(error)", color: CyberpunkTheme.accentPink)
         }
-    }
-    
-    // MARK: - ANSI Code Parser
-    
-    private func parseANSIOutput(_ text: String) -> NSAttributedString {
-        // Create an attributed string to handle ANSI colors
-        let attributedString = NSMutableAttributedString()
-        
-        // ANSI color codes for foreground (30-37, 90-97)
-        let ansiColors: [Int: UIColor] = [
-            30: UIColor.black,
-            31: UIColor.systemRed,
-            32: UIColor.systemGreen,
-            33: UIColor.systemYellow,
-            34: UIColor.systemBlue,
-            35: UIColor.systemPurple,
-            36: UIColor.systemCyan,
-            37: UIColor.white,
-            90: UIColor.darkGray,
-            91: UIColor(red: 1.0, green: 0.5, blue: 0.5, alpha: 1.0), // Light red
-            92: UIColor(red: 0.5, green: 1.0, blue: 0.5, alpha: 1.0), // Light green
-            93: UIColor(red: 1.0, green: 1.0, blue: 0.5, alpha: 1.0), // Light yellow
-            94: UIColor(red: 0.5, green: 0.5, blue: 1.0, alpha: 1.0), // Light blue
-            95: UIColor(red: 1.0, green: 0.5, blue: 1.0, alpha: 1.0), // Light magenta
-            96: UIColor(red: 0.5, green: 1.0, blue: 1.0, alpha: 1.0), // Light cyan
-            97: UIColor.white
-        ]
-        
-        // Default attributes
-        var currentAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.monospacedSystemFont(ofSize: 14, weight: .regular),
-            .foregroundColor: CyberpunkTheme.primaryText
-        ]
-        
-        // Pattern to match ANSI escape sequences (including 256 color and RGB)
-        let ansiPattern = "\\x1B\\[([0-9;]+)m|\\x1B\\[([0-9]+)([A-Z])"
-        let ansiRegex = try? NSRegularExpression(pattern: ansiPattern, options: [])
-        
-        var lastIndex = 0
-        let nsText = text as NSString
-        
-        // Find all ANSI codes
-        ansiRegex?.enumerateMatches(in: text, options: [], range: NSRange(location: 0, length: nsText.length)) { match, _, _ in
-            guard let match = match else { return }
-            
-            // Append text before this ANSI code
-            if match.range.location > lastIndex {
-                let range = NSRange(location: lastIndex, length: match.range.location - lastIndex)
-                let substring = nsText.substring(with: range)
-                attributedString.append(NSAttributedString(string: substring, attributes: currentAttributes))
-            }
-            
-            // Parse ANSI codes
-            if match.numberOfRanges > 1 {
-                let codeRange = match.range(at: 1)
-                let codes = nsText.substring(with: codeRange).split(separator: ";").compactMap { Int($0) }
-                
-                var i = 0
-                while i < codes.count {
-                    let code = codes[i]
-                    switch code {
-                    case 0: // Reset all attributes
-                        currentAttributes[.foregroundColor] = CyberpunkTheme.primaryText
-                        currentAttributes[.backgroundColor] = UIColor.clear
-                        currentAttributes[.font] = UIFont.monospacedSystemFont(ofSize: 14, weight: .regular)
-                        currentAttributes[.underlineStyle] = 0
-                        currentAttributes[.strikethroughStyle] = 0
-                    case 1: // Bold
-                        currentAttributes[.font] = UIFont.monospacedSystemFont(ofSize: 14, weight: .bold)
-                    case 2: // Dim
-                        if let color = currentAttributes[.foregroundColor] as? UIColor {
-                            currentAttributes[.foregroundColor] = color.withAlphaComponent(0.6)
-                        }
-                    case 3: // Italic (simulate with oblique if needed)
-                        // iOS doesn't have italic monospace, keep regular
-                        break
-                    case 4: // Underline
-                        currentAttributes[.underlineStyle] = NSUnderlineStyle.single.rawValue
-                    case 7: // Reverse (swap foreground and background)
-                        let fg = currentAttributes[.foregroundColor] as? UIColor ?? CyberpunkTheme.primaryText
-                        let bg = currentAttributes[.backgroundColor] as? UIColor ?? UIColor.clear
-                        currentAttributes[.foregroundColor] = bg == UIColor.clear ? UIColor.black : bg
-                        currentAttributes[.backgroundColor] = fg
-                    case 9: // Strikethrough
-                        currentAttributes[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
-                    case 22: // Normal intensity
-                        currentAttributes[.font] = UIFont.monospacedSystemFont(ofSize: 14, weight: .regular)
-                    case 24: // No underline
-                        currentAttributes[.underlineStyle] = 0
-                    case 30...37, 90...97: // Foreground colors
-                        currentAttributes[.foregroundColor] = ansiColors[code] ?? CyberpunkTheme.primaryText
-                    case 38: // Extended foreground color
-                        if i + 2 < codes.count && codes[i + 1] == 5 {
-                            // 256 color mode
-                            let colorIndex = codes[i + 2]
-                            currentAttributes[.foregroundColor] = ansi256Color(colorIndex)
-                            i += 2
-                        } else if i + 4 < codes.count && codes[i + 1] == 2 {
-                            // RGB color mode
-                            let r = CGFloat(codes[i + 2]) / 255.0
-                            let g = CGFloat(codes[i + 3]) / 255.0
-                            let b = CGFloat(codes[i + 4]) / 255.0
-                            currentAttributes[.foregroundColor] = UIColor(red: r, green: g, blue: b, alpha: 1.0)
-                            i += 4
-                        }
-                    case 39: // Default foreground color
-                        currentAttributes[.foregroundColor] = CyberpunkTheme.primaryText
-                    case 40...47, 100...107: // Background colors
-                        let bgCode = code >= 100 ? code - 60 : code - 10
-                        currentAttributes[.backgroundColor] = ansiColors[bgCode] ?? UIColor.clear
-                    case 48: // Extended background color
-                        if i + 2 < codes.count && codes[i + 1] == 5 {
-                            // 256 color mode
-                            let colorIndex = codes[i + 2]
-                            currentAttributes[.backgroundColor] = ansi256Color(colorIndex)
-                            i += 2
-                        } else if i + 4 < codes.count && codes[i + 1] == 2 {
-                            // RGB color mode
-                            let r = CGFloat(codes[i + 2]) / 255.0
-                            let g = CGFloat(codes[i + 3]) / 255.0
-                            let b = CGFloat(codes[i + 4]) / 255.0
-                            currentAttributes[.backgroundColor] = UIColor(red: r, green: g, blue: b, alpha: 1.0)
-                            i += 4
-                        }
-                    case 49: // Default background color
-                        currentAttributes[.backgroundColor] = UIColor.clear
-                    default:
-                        break
-                    }
-                    i += 1
-                }
-            }
-            
-            lastIndex = match.range.location + match.range.length
-        }
-        
-        // Append remaining text
-        if lastIndex < nsText.length {
-            let range = NSRange(location: lastIndex, length: nsText.length - lastIndex)
-            let substring = nsText.substring(with: range)
-            attributedString.append(NSAttributedString(string: substring, attributes: currentAttributes))
-        }
-        
-        // If no ANSI codes were found, return plain text with default attributes
-        if attributedString.length == 0 {
-            return NSAttributedString(string: text, attributes: currentAttributes)
-        }
-        
-        return attributedString
-    }
-    
-    private func appendToTerminalWithANSI(_ text: String) {
-        let currentAttributedText = terminalTextView.attributedText ?? NSAttributedString()
-        let mutableText = NSMutableAttributedString(attributedString: currentAttributedText)
-        
-        // Parse ANSI and append
-        let parsedText = parseANSIOutput(text)
-        mutableText.append(parsedText)
-        
-        // Add newline if not present and text is not empty
-        if !text.isEmpty && !text.hasSuffix("\n") && !text.hasSuffix("\r") {
-            mutableText.append(NSAttributedString(string: "\n"))
-        }
-        
-        terminalTextView.attributedText = mutableText
-        
-        // Scroll to bottom
-        if terminalTextView.text.count > 0 {
-            let bottom = NSMakeRange(terminalTextView.text.count - 1, 1)
-            terminalTextView.scrollRangeToVisible(bottom)
-        }
-    }
-    
-    // Helper function to get 256 color palette colors
-    private func ansi256Color(_ index: Int) -> UIColor {
-        // Standard 16 colors (0-15)
-        if index < 16 {
-            let standardColors: [UIColor] = [
-                UIColor.black,
-                UIColor(red: 0.5, green: 0, blue: 0, alpha: 1), // Dark red
-                UIColor(red: 0, green: 0.5, blue: 0, alpha: 1), // Dark green
-                UIColor(red: 0.5, green: 0.5, blue: 0, alpha: 1), // Dark yellow
-                UIColor(red: 0, green: 0, blue: 0.5, alpha: 1), // Dark blue
-                UIColor(red: 0.5, green: 0, blue: 0.5, alpha: 1), // Dark magenta
-                UIColor(red: 0, green: 0.5, blue: 0.5, alpha: 1), // Dark cyan
-                UIColor(red: 0.75, green: 0.75, blue: 0.75, alpha: 1), // Light gray
-                UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 1), // Dark gray
-                UIColor.systemRed,
-                UIColor.systemGreen,
-                UIColor.systemYellow,
-                UIColor.systemBlue,
-                UIColor.systemPurple,
-                UIColor.systemCyan,
-                UIColor.white
-            ]
-            return index < standardColors.count ? standardColors[index] : CyberpunkTheme.primaryText
-        }
-        
-        // 216 color cube (16-231)
-        if index >= 16 && index <= 231 {
-            let idx = index - 16
-            let r = (idx / 36) * 51
-            let g = ((idx % 36) / 6) * 51
-            let b = (idx % 6) * 51
-            return UIColor(red: CGFloat(r) / 255.0, green: CGFloat(g) / 255.0, blue: CGFloat(b) / 255.0, alpha: 1.0)
-        }
-        
-        // Grayscale (232-255)
-        if index >= 232 && index <= 255 {
-            let gray = 8 + (index - 232) * 10
-            let value = CGFloat(gray) / 255.0
-            return UIColor(white: value, alpha: 1.0)
-        }
-        
-        return CyberpunkTheme.primaryText
     }
 }

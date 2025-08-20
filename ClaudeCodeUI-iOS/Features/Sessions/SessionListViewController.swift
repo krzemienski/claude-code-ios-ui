@@ -530,6 +530,16 @@ public class SessionListViewController: BaseViewController {
                         self.sessions = fetchedSessions
                         // Cache sessions for offline access
                         self.persistenceService.cacheSessions(fetchedSessions, for: self.project.name)
+                        
+                        // Log successful refresh
+                        print("✅ Sessions refreshed successfully: \(fetchedSessions.count) sessions loaded")
+                        
+                        // Haptic feedback on successful refresh
+                        if self.refreshControl.isRefreshing {
+                            let successFeedback = UINotificationFeedbackGenerator()
+                            successFeedback.prepare()
+                            successFeedback.notificationOccurred(.success)
+                        }
                     }
                     
                     self.hasMoreSessions = fetchedSessions.count == self.pageSize
@@ -555,6 +565,16 @@ public class SessionListViewController: BaseViewController {
                 await MainActor.run {
                     self.isLoadingMore = false
                     self.hideSkeletonLoading()  // Hide skeleton loading
+                    
+                    // Error haptic feedback if refreshing
+                    if self.refreshControl.isRefreshing {
+                        let errorFeedback = UINotificationFeedbackGenerator()
+                        errorFeedback.prepare()
+                        errorFeedback.notificationOccurred(.error)
+                        
+                        print("❌ Session refresh failed: \(error.localizedDescription)")
+                    }
+                    
                     self.refreshControl.endRefreshing()
                     
                     // Try to load from cache if network fails
@@ -563,10 +583,10 @@ public class SessionListViewController: BaseViewController {
                         self.tableView.reloadData()
                         self.updateEmptyStateVisibility()
                         
-                        // Show offline notice
+                        // Show offline notice with more context
                         let offlineAlert = UIAlertController(
                             title: "Offline Mode",
-                            message: "Showing cached sessions. Some features may be limited.",
+                            message: "Showing cached sessions. Pull down to retry when online.",
                             preferredStyle: .alert
                         )
                         offlineAlert.addAction(UIAlertAction(title: "OK", style: .default))
@@ -582,6 +602,14 @@ public class SessionListViewController: BaseViewController {
     
     // MARK: - Actions
     @objc private func refreshSessions() {
+        // Add haptic feedback when refresh starts
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
+        
+        // Log refresh action
+        print("🔄 Pull-to-refresh triggered for sessions in project: \(project.name)")
+        
         fetchSessions(append: false)
     }
     

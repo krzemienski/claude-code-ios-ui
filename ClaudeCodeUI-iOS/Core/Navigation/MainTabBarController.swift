@@ -108,9 +108,10 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "gearshape.2.fill")
         )
         
-        // Set initial view controllers - MCP moved to index 1 for visibility
-        // Order: Projects, MCP (now visible!), Terminal, Search, Settings, Git (in More menu)
-        viewControllers = [projectsNav, mcpNav, terminalNav, searchNav, settingsNav, gitNav]
+        // Set initial view controllers - limiting to 5 for iOS tab bar
+        // Order: Projects, Terminal, Search, MCP, Settings
+        // Git will be accessible from within projects
+        viewControllers = [projectsNav, terminalNav, searchNav, mcpNav, settingsNav]
         
         // Debug: Log tab count
         print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
@@ -176,29 +177,23 @@ public class MainTabBarController: UITabBarController {
         // Store current project
         currentProject = project
         
-        // Update SearchViewController with new project context
-        if let searchNav = viewControllers?[3] as? UINavigationController {
-            // Create new SearchViewController with project context
-            let newSearchVC = SearchViewController(project: project)
-            newSearchVC.title = "Search"
-            searchNav.setViewControllers([newSearchVC], animated: false)
-        }
-        
-        // Update TerminalViewController with new project context
-        if let terminalNav = viewControllers?[2] as? UINavigationController {
+        // Update TerminalViewController with new project context (index 1)
+        if let terminalNav = viewControllers?[1] as? UINavigationController {
             // Create new TerminalViewController with project context
             let newTerminalVC = TerminalViewController(project: project)
             newTerminalVC.title = "Terminal"
             terminalNav.setViewControllers([newTerminalVC], animated: false)
         }
         
-        // Update GitViewController with new project context
-        if let gitNav = viewControllers?[5] as? UINavigationController {
-            // Create new GitViewController with project context
-            let newGitVC = GitViewController(project: project)
-            newGitVC.title = "Git"
-            gitNav.setViewControllers([newGitVC], animated: false)
+        // Update SearchViewController with new project context (index 2)
+        if let searchNav = viewControllers?[2] as? UINavigationController {
+            // Create new SearchViewController with project context
+            let newSearchVC = SearchViewController(project: project)
+            newSearchVC.title = "Search"
+            searchNav.setViewControllers([newSearchVC], animated: false)
         }
+        
+        // Git is no longer in tab bar - it's accessed through projects
         
         // Navigate to session list within the Projects tab instead of replacing tabs
         if let projectsNav = viewControllers?[0] as? UINavigationController {
@@ -212,24 +207,25 @@ public class MainTabBarController: UITabBarController {
         selectedIndex = 0
     }
     
-    func switchToSearch() {
-        selectedIndex = 3  // Search is now at index 3
-    }
-    
     func switchToTerminal() {
-        selectedIndex = 2  // Terminal is at index 2
+        selectedIndex = 1  // Terminal is at index 1
     }
     
-    func switchToGit() {
-        selectedIndex = 5  // Git is now at index 5 (in More menu)
+    func switchToSearch() {
+        selectedIndex = 2  // Search is at index 2
     }
     
     func switchToMCP() {
-        selectedIndex = 1  // MCP is now at index 1 (visible!)
+        selectedIndex = 3  // MCP is at index 3
     }
     
     func switchToSettings() {
-        selectedIndex = 4  // Settings is now at index 4
+        selectedIndex = 4  // Settings is at index 4
+    }
+    
+    func switchToGit() {
+        // Git is not in tab bar anymore, accessed through projects
+        switchToProjects()
     }
 }
 
