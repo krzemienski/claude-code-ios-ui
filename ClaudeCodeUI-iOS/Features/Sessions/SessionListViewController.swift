@@ -19,7 +19,9 @@ public class SessionListViewController: BaseViewController {
     private let searchController = UISearchController(searchResultsController: nil)
     private let sortSegmentedControl = UISegmentedControl(items: ["Recent", "Messages", "Name"])
     private let persistenceService = SessionPersistenceService.shared
-    private let emptyStateView = UIView()
+    // TODO: Fix NoDataView import
+    // private let emptyStateView = NoDataView()
+    private let emptyStateView = UIView() // Temporary placeholder
     private var isSearching: Bool {
         return searchController.isActive && !(searchController.searchBar.text?.isEmpty ?? true)
     }
@@ -222,74 +224,21 @@ public class SessionListViewController: BaseViewController {
     // MARK: - Empty State
     private func setupEmptyState() {
         emptyStateView.isHidden = true
-        emptyStateView.backgroundColor = CyberpunkTheme.background
         view.addSubview(emptyStateView)
         
-        // Container for content
-        let containerView = UIView()
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        emptyStateView.addSubview(containerView)
-        
-        // ASCII art label with cyberpunk theme
-        let asciiLabel = UILabel()
-        asciiLabel.translatesAutoresizingMaskIntoConstraints = false
-        asciiLabel.numberOfLines = 0
-        asciiLabel.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
-        asciiLabel.textColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.6)
-        asciiLabel.textAlignment = .center
-        asciiLabel.text = """
-        ╔═══════════════════════╗
-        ║   NO SESSIONS FOUND   ║
-        ║                       ║
-        ║      ┌─────────┐      ║
-        ║      │  START  │      ║
-        ║      │   NEW   │      ║
-        ║      └─────────┘      ║
-        ╚═══════════════════════╝
-        """
-        containerView.addSubview(asciiLabel)
-        
-        // Add glow effect to ASCII art
-        asciiLabel.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
-        asciiLabel.layer.shadowRadius = 8
-        asciiLabel.layer.shadowOpacity = 0.3
-        asciiLabel.layer.shadowOffset = .zero
-        
-        // Title label
-        let titleLabel = UILabel()
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = "No Sessions Yet"
-        titleLabel.font = CyberpunkTheme.titleFont
-        titleLabel.textColor = CyberpunkTheme.primaryText
-        titleLabel.textAlignment = .center
-        containerView.addSubview(titleLabel)
-        
-        // Message label
-        let messageLabel = UILabel()
-        messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        messageLabel.text = "Start chatting with Claude to create your first session"
-        messageLabel.font = CyberpunkTheme.bodyFont
-        messageLabel.textColor = CyberpunkTheme.secondaryText
-        messageLabel.textAlignment = .center
-        messageLabel.numberOfLines = 0
-        containerView.addSubview(messageLabel)
-        
-        // Create Session button with cyberpunk style
-        let createButton = UIButton(type: .system)
-        createButton.translatesAutoresizingMaskIntoConstraints = false
-        createButton.setTitle("Create New Session", for: .normal)
-        createButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-        createButton.setTitleColor(UIColor.black, for: .normal)
-        createButton.backgroundColor = CyberpunkTheme.primaryCyan
-        createButton.layer.cornerRadius = 12
-        createButton.addTarget(self, action: #selector(createNewSession), for: .touchUpInside)
-        containerView.addSubview(createButton)
-        
-        // Add glow effect to button
-        createButton.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
-        createButton.layer.shadowRadius = 8
-        createButton.layer.shadowOpacity = 0.5
-        createButton.layer.shadowOffset = .zero
+        // TODO: Fix NoDataView configuration
+        /*
+        emptyStateView.configure(
+            artStyle: .noData,
+            title: "No Sessions Yet",
+            message: "Start chatting with Claude to create your first session",
+            buttonTitle: "Create New Session",
+            buttonAction: { [weak self] in
+                self?.createNewSession()
+            }
+        )
+        */
+        emptyStateView.backgroundColor = UIColor.CyberpunkTheme.surface
         
         // Setup constraints
         emptyStateView.translatesAutoresizingMaskIntoConstraints = false
@@ -297,55 +246,8 @@ public class SessionListViewController: BaseViewController {
             emptyStateView.topAnchor.constraint(equalTo: sortSegmentedControl.superview!.bottomAnchor),
             emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            emptyStateView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
-            containerView.centerXAnchor.constraint(equalTo: emptyStateView.centerXAnchor),
-            containerView.centerYAnchor.constraint(equalTo: emptyStateView.centerYAnchor, constant: -50),
-            containerView.leadingAnchor.constraint(greaterThanOrEqualTo: emptyStateView.leadingAnchor, constant: 40),
-            containerView.trailingAnchor.constraint(lessThanOrEqualTo: emptyStateView.trailingAnchor, constant: -40),
-            
-            asciiLabel.topAnchor.constraint(equalTo: containerView.topAnchor),
-            asciiLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            
-            titleLabel.topAnchor.constraint(equalTo: asciiLabel.bottomAnchor, constant: 24),
-            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            
-            messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
-            messageLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            messageLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            
-            createButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 32),
-            createButton.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            createButton.widthAnchor.constraint(equalToConstant: 200),
-            createButton.heightAnchor.constraint(equalToConstant: 50),
-            createButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+            emptyStateView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-        
-        // Add animations
-        addEmptyStateAnimations(asciiLabel: asciiLabel, containerView: containerView)
-    }
-    
-    private func addEmptyStateAnimations(asciiLabel: UILabel, containerView: UIView) {
-        // Pulse animation for ASCII art
-        let pulseAnimation = CABasicAnimation(keyPath: "opacity")
-        pulseAnimation.duration = 2.0
-        pulseAnimation.fromValue = 0.6
-        pulseAnimation.toValue = 1.0
-        pulseAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        pulseAnimation.autoreverses = true
-        pulseAnimation.repeatCount = .infinity
-        asciiLabel.layer.add(pulseAnimation, forKey: "pulse")
-        
-        // Subtle float animation
-        let floatAnimation = CABasicAnimation(keyPath: "transform.translation.y")
-        floatAnimation.duration = 3.0
-        floatAnimation.fromValue = -5
-        floatAnimation.toValue = 5
-        floatAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        floatAnimation.autoreverses = true
-        floatAnimation.repeatCount = .infinity
-        containerView.layer.add(floatAnimation, forKey: "float")
     }
     
     private func updateEmptyStateVisibility() {
@@ -354,19 +256,10 @@ public class SessionListViewController: BaseViewController {
         
         if shouldShowEmpty {
             tableView.isHidden = true
-            emptyStateView.isHidden = false
-            // Animate appearance
-            emptyStateView.alpha = 0
-            UIView.animate(withDuration: 0.3) {
-                self.emptyStateView.alpha = 1
-            }
+            emptyStateView.show(animated: true)
         } else {
-            // Animate disappearance
-            UIView.animate(withDuration: 0.3, animations: {
-                self.emptyStateView.alpha = 0
-            }) { _ in
-                self.emptyStateView.isHidden = true
-                self.tableView.isHidden = false
+            emptyStateView.hide(animated: true) { [weak self] in
+                self?.tableView.isHidden = false
             }
         }
     }
@@ -510,6 +403,9 @@ public class SessionListViewController: BaseViewController {
             hasMoreSessions = true
             // Show skeleton loading for initial load and refresh
             showSkeletonLoading()
+            // Also show cyberpunk loading indicator with message
+            // TODO: Fix CyberpunkLoadingIndicator import
+            // showCyberpunkLoading(message: "Loading sessions...")
         } else {
             // For pagination, just set the flag
             isLoadingMore = true
@@ -546,6 +442,7 @@ public class SessionListViewController: BaseViewController {
                     self.currentOffset += fetchedSessions.count
                     self.isLoadingMore = false
                     self.hideSkeletonLoading()  // Hide skeleton loading
+                    // self.hideCyberpunkLoading()  // Hide cyberpunk loading indicator
                     self.refreshControl.endRefreshing()
                     self.tableView.reloadData()
                     self.updateEmptyStateVisibility()
@@ -565,6 +462,7 @@ public class SessionListViewController: BaseViewController {
                 await MainActor.run {
                     self.isLoadingMore = false
                     self.hideSkeletonLoading()  // Hide skeleton loading
+                    // self.hideCyberpunkLoading()  // Hide cyberpunk loading indicator on error
                     
                     // Error haptic feedback if refreshing
                     if self.refreshControl.isRefreshing {

@@ -177,6 +177,7 @@
 				DEB1925DDFEE49489CD64FDD /* Terminal */,
 				2A1B3C4D5E6F7A8B9C0D1E2E /* PlaceholderViewControllers.swift */,
 				140FBE3E28D7F6FC1251D5AC /* Projects */,
+				418F9C5702FE198B60853757 /* Search */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -317,6 +318,13 @@
 				1D1A2B632C60A1230001A234 /* UI */,
 			);
 			name = ClaudeCodeUI;
+			sourceTree = "<group>";
+		};
+		418F9C5702FE198B60853757 /* Search */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Search;
 			sourceTree = "<group>";
 		};
 		6CA3F607BF8144BDB7856FC3 /* Sessions */ = {

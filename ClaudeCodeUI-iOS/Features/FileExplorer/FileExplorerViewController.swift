@@ -31,6 +31,8 @@ class FileExplorerViewController: BaseViewController {
         return tableView
     }()
     
+    private let refreshControl = UIRefreshControl()
+    
     private lazy var toolbar: UIToolbar = {
         let toolbar = UIToolbar()
         toolbar.translatesAutoresizingMaskIntoConstraints = false
@@ -81,42 +83,7 @@ class FileExplorerViewController: BaseViewController {
         return searchBar
     }()
     
-    private lazy var emptyStateView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.isHidden = true
-        
-        let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = CyberpunkTheme.secondaryText
-        
-        let config = UIImage.SymbolConfiguration(pointSize: 60, weight: .thin)
-        imageView.image = UIImage(systemName: "folder", withConfiguration: config)
-        
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "No files in this project"
-        label.font = CyberpunkTheme.headlineFont
-        label.textColor = CyberpunkTheme.secondaryText
-        label.textAlignment = .center
-        
-        view.addSubview(imageView)
-        view.addSubview(label)
-        
-        NSLayoutConstraint.activate([
-            imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -40),
-            imageView.widthAnchor.constraint(equalToConstant: 80),
-            imageView.heightAnchor.constraint(equalToConstant: 80),
-            
-            label.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 16),
-            label.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
-        ])
-        
-        return view
-    }()
+    private let emptyStateView = NoDataView()
     
     // MARK: - Initialization
     
@@ -144,6 +111,10 @@ class FileExplorerViewController: BaseViewController {
     private func setupUI() {
         view.backgroundColor = CyberpunkTheme.background
         
+        // Setup refresh control with custom cyberpunk styling
+        setupRefreshControl()
+        tableView.refreshControl = refreshControl
+        
         view.addSubview(searchBar)
         view.addSubview(tableView)
         view.addSubview(toolbar)
@@ -164,11 +135,105 @@ class FileExplorerViewController: BaseViewController {
             toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             toolbar.heightAnchor.constraint(equalToConstant: 44),
             
-            emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            emptyStateView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
+            emptyStateView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
+            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            emptyStateView.bottomAnchor.constraint(equalTo: toolbar.topAnchor)
         ])
+        
+        setupEmptyState()
+    }
+    
+    private func setupEmptyState() {
+        emptyStateView.configure(
+            artStyle: .noData,
+            title: "No Files in Project",
+            message: "Create your first file or folder to get started",
+            buttonTitle: "Create New File",
+            buttonAction: { [weak self] in
+                self?.createNewFile()
+            }
+        )
+        emptyStateView.isHidden = true
+    }
+    
+    // MARK: - Refresh Control Setup
+    private func setupRefreshControl() {
+        refreshControl.tintColor = CyberpunkTheme.primaryCyan
+        refreshControl.addTarget(self, action: #selector(handlePullToRefresh), for: .valueChanged)
+        
+        // Customize the refresh control's background
+        refreshControl.backgroundColor = CyberpunkTheme.background.withAlphaComponent(0.95)
+        refreshControl.layer.cornerRadius = 16
+        refreshControl.layer.masksToBounds = true
+        
+        // Add a subtle border with glow effect
+        refreshControl.layer.borderWidth = 1
+        refreshControl.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor
+        
+        // Create custom refresh view with enhanced cyberpunk animation
+        let refreshContainer = UIView(frame: CGRect(x: 0, y: 0, width: 200, height: 60))
+        refreshContainer.backgroundColor = .clear
+        
+        // Add animated loading bars
+        let barWidth: CGFloat = 3
+        let barHeight: CGFloat = 20
+        let numberOfBars = 5
+        let spacing: CGFloat = 8
+        let totalWidth = CGFloat(numberOfBars) * barWidth + CGFloat(numberOfBars - 1) * spacing
+        let startX = (200 - totalWidth) / 2
+        
+        for i in 0..<numberOfBars {
+            let bar = UIView()
+            bar.backgroundColor = CyberpunkTheme.primaryCyan
+            bar.frame = CGRect(
+                x: startX + CGFloat(i) * (barWidth + spacing),
+                y: 20,
+                width: barWidth,
+                height: barHeight
+            )
+            bar.layer.cornerRadius = barWidth / 2
+            
+            // Add glow to each bar
+            bar.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
+            bar.layer.shadowRadius = 4
+            bar.layer.shadowOpacity = 0.8
+            bar.layer.shadowOffset = .zero
+            
+            // Animate each bar with delay
+            let animation = CABasicAnimation(keyPath: "transform.scale.y")
+            animation.duration = 0.6
+            animation.fromValue = 0.4
+            animation.toValue = 1.0
+            animation.autoreverses = true
+            animation.repeatCount = .infinity
+            animation.timeOffset = Double(i) * 0.1
+            animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            bar.layer.add(animation, forKey: "pulse")
+            
+            refreshContainer.addSubview(bar)
+        }
+        
+        // Add "SYNCING" text below the bars
+        let loadingLabel = UILabel()
+        loadingLabel.text = "⟲ SYNCING FILES"
+        loadingLabel.font = .monospacedSystemFont(ofSize: 10, weight: .medium)
+        loadingLabel.textColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.8)
+        loadingLabel.textAlignment = .center
+        loadingLabel.frame = CGRect(x: 0, y: 45, width: 200, height: 12)
+        refreshContainer.addSubview(loadingLabel)
+        
+        // Add text glow animation
+        let textGlowAnimation = CABasicAnimation(keyPath: "opacity")
+        textGlowAnimation.duration = 1.2
+        textGlowAnimation.fromValue = 0.5
+        textGlowAnimation.toValue = 1.0
+        textGlowAnimation.autoreverses = true
+        textGlowAnimation.repeatCount = .infinity
+        textGlowAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        loadingLabel.layer.add(textGlowAnimation, forKey: "textGlow")
+        
+        refreshControl.addSubview(refreshContainer)
     }
     
     private func setupNavigationBar() {
@@ -304,7 +369,16 @@ class FileExplorerViewController: BaseViewController {
             
             hideFileExplorerSkeleton()
             tableView.reloadData()
-            emptyStateView.isHidden = rootNode != nil && !(rootNode?.children?.isEmpty ?? true)
+            
+            // Update empty state visibility
+            if rootNode == nil || rootNode?.children?.isEmpty ?? true {
+                tableView.isHidden = true
+                emptyStateView.show(animated: true)
+            } else {
+                emptyStateView.hide(animated: true) { [weak self] in
+                    self?.tableView.isHidden = false
+                }
+            }
         } catch {
             Logger.shared.error("Failed to load file tree: \(error)")
             hideFileExplorerSkeleton()
@@ -312,7 +386,8 @@ class FileExplorerViewController: BaseViewController {
             // Show error to user instead of fake data
             await MainActor.run {
                 self.showError("Failed to load file tree: \(error.localizedDescription)")
-                self.emptyStateView.isHidden = false
+                self.tableView.isHidden = true
+                self.emptyStateView.show(animated: true)
                 self.tableView.reloadData()
             }
         }
@@ -351,6 +426,85 @@ class FileExplorerViewController: BaseViewController {
         generator.impactOccurred()
     }
     
+    @objc private func handlePullToRefresh() {
+        // Add haptic feedback when refresh starts
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
+        
+        // Log refresh action
+        print("🔄 Pull-to-refresh triggered for file explorer")
+        
+        Task {
+            await refreshFileTreeWithFeedback()
+        }
+    }
+    
+    @MainActor
+    private func refreshFileTreeWithFeedback() async {
+        // Show loading indicator while scanning files
+        showCyberpunkLoading(message: "Scanning file tree...")
+        
+        do {
+            // Call backend API to get file tree
+            let endpoint = APIEndpoint(
+                path: "/api/projects/\(project.name)/files",
+                method: .get
+            )
+            
+            // The backend returns an array of file tree nodes
+            let treeNodes: [FileTreeNodeDTO] = try await apiClient.request(endpoint)
+            
+            // Convert DTOs to our internal model
+            rootNode = FileTreeNode(name: project.name, path: project.path, isDirectory: true, children: treeNodes.map { convertToFileTreeNode($0) })
+            
+            tableView.reloadData()
+            
+            // Update empty state visibility
+            if rootNode == nil || rootNode?.children?.isEmpty ?? true {
+                tableView.isHidden = true
+                emptyStateView.show(animated: true)
+            } else {
+                emptyStateView.hide(animated: true) { [weak self] in
+                    self?.tableView.isHidden = false
+                }
+            }
+            
+            // Haptic feedback on successful refresh
+            let successFeedback = UINotificationFeedbackGenerator()
+            successFeedback.prepare()
+            successFeedback.notificationOccurred(.success)
+            
+            print("✅ File tree refreshed successfully")
+            
+            // Hide loading indicator on success
+            hideCyberpunkLoading()
+            refreshControl.endRefreshing()
+        } catch {
+            Logger.shared.error("Failed to refresh file tree: \(error)")
+            
+            // Error haptic feedback
+            let errorFeedback = UINotificationFeedbackGenerator()
+            errorFeedback.prepare()
+            errorFeedback.notificationOccurred(.error)
+            
+            print("❌ File tree refresh failed: \(error.localizedDescription)")
+            
+            // Hide loading indicator on error
+            hideCyberpunkLoading()
+            refreshControl.endRefreshing()
+            
+            // Show error alert
+            let alert = UIAlertController(
+                title: "Refresh Failed",
+                message: "Could not refresh file tree: \(error.localizedDescription)",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        }
+    }
+    
     private func showCreateDialog(isDirectory: Bool) {
         let title = isDirectory ? "New Folder" : "New File"
         let placeholder = isDirectory ? "Folder name" : "File name"
@@ -380,11 +534,59 @@ class FileExplorerViewController: BaseViewController {
     }
     
     private func createFileOrFolder(name: String, isDirectory: Bool) {
-        // TODO: Implement actual file/folder creation via API
-        Logger.shared.info("Creating \(isDirectory ? "folder" : "file"): \(name)")
-        
-        // For now, just refresh
-        loadFileTree()
+        Task {
+            // Show loading indicator while creating
+            await MainActor.run {
+                showCyberpunkLoading(message: "Creating \(isDirectory ? "folder" : "file")...")
+            }
+            
+            do {
+                // Get current selected path or use root
+                let basePath = selectedNode?.isDirectory == true ? selectedNode?.path : ""
+                let fullPath = basePath?.isEmpty == false ? "\(basePath!)/\(name)" : name
+                
+                if isDirectory {
+                    // For directories, create via the file API with special marker
+                    try await apiClient.writeFile(
+                        projectName: project.name,
+                        path: "\(fullPath)/.gitkeep",  // Create a placeholder file in the directory
+                        content: ""
+                    )
+                } else {
+                    // For files, create with initial content
+                    let initialContent = name.hasSuffix(".swift") ? 
+                        "//\n//  \(name)\n//  \(project.name)\n//\n//  Created on \(Date())\n//\n\nimport Foundation\n\n" : ""
+                    
+                    try await apiClient.writeFile(
+                        projectName: project.name,
+                        path: fullPath,
+                        content: initialContent
+                    )
+                }
+                
+                await MainActor.run {
+                    Logger.shared.info("Successfully created \(isDirectory ? "folder" : "file"): \(name)")
+                    
+                    // Hide loading indicator
+                    self.hideCyberpunkLoading()
+                    
+                    // Refresh the file tree
+                    self.loadFileTree()
+                    
+                    // Show success feedback
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                }
+            } catch {
+                await MainActor.run {
+                    // Hide loading indicator on error
+                    self.hideCyberpunkLoading()
+                    
+                    Logger.shared.error("Failed to create \(isDirectory ? "folder" : "file"): \(error)")
+                    self.showError("Failed to create \(isDirectory ? "folder" : "file"): \(error.localizedDescription)")
+                }
+            }
+        }
     }
     
     private func deleteNode(_ node: FileTreeNode) {
@@ -395,9 +597,31 @@ class FileExplorerViewController: BaseViewController {
         )
         
         let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-            // TODO: Implement actual deletion via API
-            Logger.shared.info("Deleting: \(node.path)")
-            self?.loadFileTree()
+            guard let self = self else { return }
+            
+            Task {
+                do {
+                    // Call the delete file API endpoint
+                    try await self.apiClient.deleteFile(
+                        projectName: self.project.name,
+                        path: node.path
+                    )
+                    
+                    await MainActor.run {
+                        Logger.shared.info("Successfully deleted: \(node.path)")
+                        self.loadFileTree()
+                        
+                        // Show success feedback
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                } catch {
+                    await MainActor.run {
+                        Logger.shared.error("Failed to delete: \(error)")
+                        self.showError("Failed to delete '\(node.name)': \(error.localizedDescription)")
+                    }
+                }
+            }
         }
         
         alert.addAction(deleteAction)
@@ -421,10 +645,52 @@ class FileExplorerViewController: BaseViewController {
         }
         
         let renameAction = UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
-            guard let newName = alert.textFields?.first?.text, !newName.isEmpty else { return }
-            // TODO: Implement actual renaming via API
-            Logger.shared.info("Renaming \(node.name) to \(newName)")
-            self?.loadFileTree()
+            guard let self = self,
+                  let newName = alert.textFields?.first?.text, 
+                  !newName.isEmpty,
+                  newName != node.name else { return }
+            
+            Task {
+                do {
+                    // Get the directory path and construct new path
+                    let components = node.path.components(separatedBy: "/")
+                    let directory = components.dropLast().joined(separator: "/")
+                    let newPath = directory.isEmpty ? newName : "\(directory)/\(newName)"
+                    
+                    // Read the file content first
+                    let content = try await self.apiClient.readFile(
+                        projectName: self.project.name,
+                        path: node.path
+                    )
+                    
+                    // Write to new location
+                    try await self.apiClient.writeFile(
+                        projectName: self.project.name,
+                        path: newPath,
+                        content: content
+                    )
+                    
+                    // Delete old file
+                    try await self.apiClient.deleteFile(
+                        projectName: self.project.name,
+                        path: node.path
+                    )
+                    
+                    await MainActor.run {
+                        Logger.shared.info("Successfully renamed \(node.name) to \(newName)")
+                        self.loadFileTree()
+                        
+                        // Show success feedback
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                } catch {
+                    await MainActor.run {
+                        Logger.shared.error("Failed to rename: \(error)")
+                        self.showError("Failed to rename '\(node.name)': \(error.localizedDescription)")
+                    }
+                }
+            }
         }
         renameAction.setValue(CyberpunkTheme.primaryCyan, forKey: "titleTextColor")
         

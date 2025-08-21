@@ -24,56 +24,7 @@ public class ProjectsViewController: BaseViewController {
         return collectionView
     }()
     
-    private lazy var emptyStateView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.isHidden = true
-        
-        let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = CyberpunkTheme.secondaryText
-        
-        let config = UIImage.SymbolConfiguration(pointSize: 60, weight: .thin)
-        imageView.image = UIImage(systemName: "folder.badge.plus", withConfiguration: config)
-        
-        let titleLabel = UILabel()
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = "No Projects Yet"
-        titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
-        titleLabel.textColor = CyberpunkTheme.primaryText
-        titleLabel.textAlignment = .center
-        
-        let subtitleLabel = UILabel()
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel.text = "Create your first project to get started"
-        subtitleLabel.font = CyberpunkTheme.bodyFont
-        subtitleLabel.textColor = CyberpunkTheme.secondaryText
-        subtitleLabel.textAlignment = .center
-        subtitleLabel.numberOfLines = 0
-        
-        view.addSubview(imageView)
-        view.addSubview(titleLabel)
-        view.addSubview(subtitleLabel)
-        
-        NSLayoutConstraint.activate([
-            imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            imageView.topAnchor.constraint(equalTo: view.topAnchor),
-            imageView.widthAnchor.constraint(equalToConstant: 80),
-            imageView.heightAnchor.constraint(equalToConstant: 80),
-            
-            titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 24),
-            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
-            subtitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            subtitleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            subtitleLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-        
-        return view
-    }()
+    private let emptyStateView = NoDataView()
     
     // MARK: - Properties
     
@@ -137,14 +88,13 @@ public class ProjectsViewController: BaseViewController {
     private func setupUI() {
         view.backgroundColor = CyberpunkTheme.background
         
-        // Setup refresh control
-        refreshControl.tintColor = CyberpunkTheme.primaryCyan
-        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        // Setup refresh control with custom cyberpunk styling
+        setupRefreshControl()
         collectionView.refreshControl = refreshControl
         
         // Add long press gesture for deletion
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
-        longPressGesture.minimumPressDuration = 1.0  // Increased to 1.0 second to prevent accidental triggers
+        longPressGesture.minimumPressDuration = 1.5  // Increased to 1.5 seconds to prevent accidental triggers
         longPressGesture.delaysTouchesBegan = false  // Prevent tap delay
         longPressGesture.cancelsTouchesInView = false  // Allow normal taps to work
         collectionView.addGestureRecognizer(longPressGesture)
@@ -158,11 +108,105 @@ public class ProjectsViewController: BaseViewController {
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
-            emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            emptyStateView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
-            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32)
+            emptyStateView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            emptyStateView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        
+        setupEmptyState()
+    }
+    
+    // MARK: - Refresh Control Setup
+    private func setupRefreshControl() {
+        refreshControl.tintColor = CyberpunkTheme.primaryCyan
+        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        
+        // Customize the refresh control's background
+        refreshControl.backgroundColor = CyberpunkTheme.background.withAlphaComponent(0.95)
+        refreshControl.layer.cornerRadius = 16
+        refreshControl.layer.masksToBounds = true
+        
+        // Add a subtle border with glow effect
+        refreshControl.layer.borderWidth = 1
+        refreshControl.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor
+        
+        // Create custom refresh view with enhanced cyberpunk animation
+        let refreshContainer = UIView(frame: CGRect(x: 0, y: 0, width: 200, height: 60))
+        refreshContainer.backgroundColor = .clear
+        
+        // Add animated loading bars
+        let barWidth: CGFloat = 3
+        let barHeight: CGFloat = 20
+        let numberOfBars = 5
+        let spacing: CGFloat = 8
+        let totalWidth = CGFloat(numberOfBars) * barWidth + CGFloat(numberOfBars - 1) * spacing
+        let startX = (200 - totalWidth) / 2
+        
+        for i in 0..<numberOfBars {
+            let bar = UIView()
+            bar.backgroundColor = CyberpunkTheme.primaryCyan
+            bar.frame = CGRect(
+                x: startX + CGFloat(i) * (barWidth + spacing),
+                y: 20,
+                width: barWidth,
+                height: barHeight
+            )
+            bar.layer.cornerRadius = barWidth / 2
+            
+            // Add glow to each bar
+            bar.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
+            bar.layer.shadowRadius = 4
+            bar.layer.shadowOpacity = 0.8
+            bar.layer.shadowOffset = .zero
+            
+            // Animate each bar with delay
+            let animation = CABasicAnimation(keyPath: "transform.scale.y")
+            animation.duration = 0.6
+            animation.fromValue = 0.4
+            animation.toValue = 1.0
+            animation.autoreverses = true
+            animation.repeatCount = .infinity
+            animation.timeOffset = Double(i) * 0.1
+            animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            bar.layer.add(animation, forKey: "pulse")
+            
+            refreshContainer.addSubview(bar)
+        }
+        
+        // Add "SYNCING" text below the bars
+        let loadingLabel = UILabel()
+        loadingLabel.text = "⟲ SYNCING PROJECTS"
+        loadingLabel.font = .monospacedSystemFont(ofSize: 10, weight: .medium)
+        loadingLabel.textColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.8)
+        loadingLabel.textAlignment = .center
+        loadingLabel.frame = CGRect(x: 0, y: 45, width: 200, height: 12)
+        refreshContainer.addSubview(loadingLabel)
+        
+        // Add text glow animation
+        let textGlowAnimation = CABasicAnimation(keyPath: "opacity")
+        textGlowAnimation.duration = 1.2
+        textGlowAnimation.fromValue = 0.5
+        textGlowAnimation.toValue = 1.0
+        textGlowAnimation.autoreverses = true
+        textGlowAnimation.repeatCount = .infinity
+        textGlowAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        loadingLabel.layer.add(textGlowAnimation, forKey: "textGlow")
+        
+        refreshControl.addSubview(refreshContainer)
+    }
+    
+    private func setupEmptyState() {
+        emptyStateView.configure(
+            artStyle: .noData,
+            title: "No Projects Yet",
+            message: "Create your first project to get started",
+            buttonTitle: "Create New Project",
+            buttonAction: { [weak self] in
+                self?.createNewProject()
+            }
+        )
+        emptyStateView.isHidden = true
     }
     
     private func setupNavigationBar() {
@@ -244,9 +288,10 @@ public class ProjectsViewController: BaseViewController {
         hasPerformedInitialLoad = true
         isLoadingProjects = true
         
-        // Show skeleton loading instead of regular loading indicator
+        // Show both skeleton loading and cyberpunk loading indicator
         DispatchQueue.main.async { [weak self] in
             self?.showSkeletonLoading()
+            self?.showCyberpunkLoading(message: "Initializing project database...")
         }
         
         print("📱 Starting initial project load...")
@@ -286,6 +331,7 @@ public class ProjectsViewController: BaseViewController {
                 // Already on main thread due to @MainActor
                 self.projects = remoteProjects
                 self.hideSkeletonLoading()
+                self.hideCyberpunkLoading()  // Hide the loading indicator
                 self.updateUI()
                 self.isLoadingProjects = false  // Reset loading flag
                 print("🎨 UI updated with \(self.projects.count) projects")
@@ -312,8 +358,9 @@ public class ProjectsViewController: BaseViewController {
                     }
                 }
                 
-                // Hide skeleton loading on error
+                // Hide skeleton loading and loading indicator on error
                 self.hideSkeletonLoading()
+                self.hideCyberpunkLoading()
                 self.isLoadingProjects = false  // Reset loading flag on error
                 
                 // Fall back to local data if available
@@ -355,6 +402,14 @@ public class ProjectsViewController: BaseViewController {
         
         print("🔄 DEBUG: refreshProjects() called - manual refresh")
         
+        // Add haptic feedback when refresh starts
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
+        
+        // Log refresh action
+        print("🔄 Pull-to-refresh triggered for projects")
+        
         // Don't show skeleton for pull-to-refresh, just use the refresh control indicator
         
         Task { @MainActor in
@@ -368,6 +423,12 @@ public class ProjectsViewController: BaseViewController {
                 // Already on main thread
                 self.projects = remoteProjects
                 self.updateUI()
+                
+                // Haptic feedback on successful refresh
+                let successFeedback = UINotificationFeedbackGenerator()
+                successFeedback.prepare()
+                successFeedback.notificationOccurred(.success)
+                
                 self.refreshControl.endRefreshing()
                 
                 // Update local cache in background
@@ -380,7 +441,14 @@ public class ProjectsViewController: BaseViewController {
                 }
             } catch {
                 print("⚠️ Refresh failed: \(error)")
+                
+                // Error haptic feedback
+                let errorFeedback = UINotificationFeedbackGenerator()
+                errorFeedback.prepare()
+                errorFeedback.notificationOccurred(.error)
+                
                 self.refreshControl.endRefreshing()
+                
                 // Don't show error on refresh, just keep existing data
                 Logger.shared.error("Failed to refresh projects: \(error)")
             }
@@ -416,7 +484,16 @@ public class ProjectsViewController: BaseViewController {
         print("🔴 DEBUG: updateUI() called")
         print("🔴 DEBUG: projects.count = \(projects.count)")
         print("🔴 DEBUG: projects = \(projects)")
-        emptyStateView.isHidden = !projects.isEmpty
+        
+        if projects.isEmpty && !isShowingSkeletons {
+            collectionView.isHidden = true
+            emptyStateView.show(animated: true)
+        } else {
+            emptyStateView.hide(animated: true) { [weak self] in
+                self?.collectionView.isHidden = false
+            }
+        }
+        
         collectionView.reloadData()
         print("🔴 DEBUG: collectionView reloaded")
     }

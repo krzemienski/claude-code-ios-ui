@@ -80,7 +80,42 @@ public class SettingsViewController: BaseTableViewController {
                     SettingsItem(
                         title: "Haptic Feedback",
                         value: AppConfig.enableHapticFeedback ? "On" : "Off",
-                        action: nil
+                        action: { [weak self] in
+                            self?.toggleHapticFeedback()
+                        }
+                    ),
+                    SettingsItem(
+                        title: "Code Font Size",
+                        value: "\(Int(AppConfig.codeFontSize))pt",
+                        action: { [weak self] in
+                            self?.showFontSizeSelector()
+                        }
+                    )
+                ]
+            ),
+            SettingsSection(
+                title: "Data & Storage",
+                items: [
+                    SettingsItem(
+                        title: "Clear Cache",
+                        value: nil,
+                        action: { [weak self] in
+                            self?.clearCache()
+                        }
+                    ),
+                    SettingsItem(
+                        title: "Export Settings",
+                        value: nil,
+                        action: { [weak self] in
+                            self?.exportSettings()
+                        }
+                    ),
+                    SettingsItem(
+                        title: "Import Settings",
+                        value: nil,
+                        action: { [weak self] in
+                            self?.importSettings()
+                        }
                     )
                 ]
             ),
@@ -253,6 +288,165 @@ public class SettingsViewController: BaseTableViewController {
     // MARK: - Test Runner
     private func showTestRunner() {
         TestRunnerViewController.present(from: self)
+    }
+    
+    // MARK: - Display Settings
+    private func toggleHapticFeedback() {
+        AppConfig.enableHapticFeedback.toggle()
+        UserDefaults.standard.set(AppConfig.enableHapticFeedback, forKey: "enableHapticFeedback")
+        
+        // Update the display
+        if let displaySection = sections.first(where: { $0.title == "Display" }),
+           let hapticItem = displaySection.items.first(where: { $0.title == "Haptic Feedback" }) {
+            hapticItem.value = AppConfig.enableHapticFeedback ? "On" : "Off"
+        }
+        tableView.reloadData()
+        
+        // Give feedback for the change
+        if AppConfig.enableHapticFeedback {
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+        }
+    }
+    
+    private func showFontSizeSelector() {
+        let alert = UIAlertController(
+            title: "Code Font Size",
+            message: "Select the font size for code display",
+            preferredStyle: .actionSheet
+        )
+        
+        let sizes: [CGFloat] = [10, 12, 14, 16, 18, 20]
+        for size in sizes {
+            let action = UIAlertAction(title: "\(Int(size))pt", style: .default) { [weak self] _ in
+                AppConfig.codeFontSize = size
+                UserDefaults.standard.set(size, forKey: "codeFontSize")
+                
+                // Update display
+                if let displaySection = self?.sections.first(where: { $0.title == "Display" }),
+                   let fontItem = displaySection.items.first(where: { $0.title == "Code Font Size" }) {
+                    fontItem.value = "\(Int(size))pt"
+                }
+                self?.tableView.reloadData()
+            }
+            
+            if size == AppConfig.codeFontSize {
+                action.setValue(true, forKey: "checked")
+            }
+            alert.addAction(action)
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // For iPad
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        present(alert, animated: true)
+    }
+    
+    // MARK: - Data & Storage
+    private func clearCache() {
+        let alert = UIAlertController(
+            title: "Clear Cache",
+            message: "This will clear all cached data. Are you sure?",
+            preferredStyle: .alert
+        )
+        
+        let clearAction = UIAlertAction(title: "Clear", style: .destructive) { [weak self] _ in
+            // Clear URLCache
+            URLCache.shared.removeAllCachedResponses()
+            
+            // Clear image cache if using one
+            // Clear any other app-specific caches
+            
+            // Show loading indicator
+            self?.showCyberpunkLoading(message: "Clearing cache...")
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self?.hideCyberpunkLoading()
+                
+                let successAlert = UIAlertController(
+                    title: "Success",
+                    message: "Cache cleared successfully",
+                    preferredStyle: .alert
+                )
+                successAlert.addAction(UIAlertAction(title: "OK", style: .default))
+                self?.present(successAlert, animated: true)
+                
+                // Haptic feedback
+                if AppConfig.enableHapticFeedback {
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                }
+            }
+        }
+        
+        alert.addAction(clearAction)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+    
+    private func exportSettings() {
+        // Create settings dictionary
+        let settings: [String: Any] = [
+            "backendURL": AppConfig.backendURL,
+            "enableHapticFeedback": AppConfig.enableHapticFeedback,
+            "codeFontSize": AppConfig.codeFontSize,
+            "isDebugMode": AppConfig.isDebugMode,
+            "exportDate": Date().timeIntervalSince1970,
+            "appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        ]
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: settings, options: .prettyPrinted)
+            
+            // Create activity controller
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let fileURL = documentsPath.appendingPathComponent("claude-code-settings.json")
+            try jsonData.write(to: fileURL)
+            
+            let activityController = UIActivityViewController(
+                activityItems: [fileURL],
+                applicationActivities: nil
+            )
+            
+            // For iPad
+            if let popover = activityController.popoverPresentationController {
+                popover.sourceView = view
+                popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            
+            present(activityController, animated: true)
+        } catch {
+            showError("Failed to export settings: \(error.localizedDescription)")
+        }
+    }
+    
+    private func importSettings() {
+        let alert = UIAlertController(
+            title: "Import Settings",
+            message: "This feature will import settings from a JSON file. Coming soon!",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+        
+        // TODO: Implement document picker for importing settings
+    }
+    
+    private func showError(_ message: String) {
+        let alert = UIAlertController(
+            title: "Error",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 

@@ -16,8 +16,10 @@ class SearchViewController: UIViewController {
     private let searchBar = UISearchBar()
     private let tableView = UITableView()
     private let segmentedControl = UISegmentedControl(items: ["Files", "Code", "All"])
+    private let emptyStateView = NoDataView()
     
     private var searchResults: [SearchResult] = []
+    private var hasSearched = false
     
     // MARK: - Initialization
     init(project: Project? = nil) {
@@ -70,6 +72,10 @@ class SearchViewController: UIViewController {
         view.addSubview(searchBar)
         view.addSubview(segmentedControl)
         view.addSubview(tableView)
+        view.addSubview(emptyStateView)
+        
+        // Configure empty state
+        setupEmptyState()
     }
     
     private func setupConstraints() {
@@ -89,8 +95,38 @@ class SearchViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 12),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            // Empty state view
+            emptyStateView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 12),
+            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            emptyStateView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+    }
+    
+    private func setupEmptyState() {
+        emptyStateView.configure(
+            artStyle: .noResults,
+            title: "No Results Found",
+            message: "Try adjusting your search terms or filters",
+            buttonTitle: nil,
+            buttonAction: nil
+        )
+        emptyStateView.isHidden = true
+    }
+    
+    private func updateEmptyStateVisibility() {
+        let shouldShowEmpty = hasSearched && searchResults.isEmpty
+        
+        if shouldShowEmpty {
+            tableView.isHidden = true
+            emptyStateView.show(animated: true)
+        } else {
+            emptyStateView.hide(animated: true) { [weak self] in
+                self?.tableView.isHidden = false
+            }
+        }
     }
     
     private func applyTheme() {
@@ -141,10 +177,12 @@ class SearchViewController: UIViewController {
     }
     
     private func performSearch(_ query: String) {
+        hasSearched = true
         viewModel.search(query: query) { [weak self] results in
             DispatchQueue.main.async {
                 self?.searchResults = results
                 self?.tableView.reloadData()
+                self?.updateEmptyStateVisibility()
             }
         }
     }

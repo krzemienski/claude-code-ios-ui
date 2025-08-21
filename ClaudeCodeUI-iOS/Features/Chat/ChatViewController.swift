@@ -380,6 +380,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private var hasMoreMessages = true
     private let messagePageSize = 50
     private var currentSessionId: String?
+    private let emptyStateView = NoDataView()
     
     // Add isLoading property needed by BaseViewController
     override var isLoading: Bool {
@@ -538,11 +539,15 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         
         // Add subviews
         view.addSubview(tableView)
+        view.addSubview(emptyStateView)
         view.addSubview(inputContainerView)
         inputContainerView.addSubview(attachButton)
         inputContainerView.addSubview(inputTextView)
         inputContainerView.addSubview(sendButton)
         inputTextView.addSubview(placeholderLabel)
+        
+        // Configure empty state
+        setupEmptyState()
         
         // Setup constraints
         inputContainerBottomConstraint = inputContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
@@ -581,8 +586,38 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             
             // Placeholder
             placeholderLabel.leadingAnchor.constraint(equalTo: inputTextView.leadingAnchor, constant: 20),
-            placeholderLabel.centerYAnchor.constraint(equalTo: inputTextView.centerYAnchor)
+            placeholderLabel.centerYAnchor.constraint(equalTo: inputTextView.centerYAnchor),
+            
+            // Empty state view
+            emptyStateView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            emptyStateView.bottomAnchor.constraint(equalTo: inputContainerView.topAnchor)
         ])
+    }
+    
+    private func setupEmptyState() {
+        emptyStateView.configure(
+            artStyle: .noResults,
+            title: "No Messages Yet",
+            message: "Start a conversation with Claude by typing a message below",
+            buttonTitle: nil,
+            buttonAction: nil
+        )
+        emptyStateView.isHidden = true
+    }
+    
+    private func updateEmptyStateVisibility() {
+        let shouldShowEmpty = messages.isEmpty && !isLoading && !isLoadingMore
+        
+        if shouldShowEmpty {
+            tableView.isHidden = true
+            emptyStateView.show(animated: true)
+        } else {
+            emptyStateView.hide(animated: true) { [weak self] in
+                self?.tableView.isHidden = false
+            }
+        }
     }
     
     private func setupNavigationBar() {
@@ -676,6 +711,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             messages = []
             hideChatSkeletonLoading()  // Hide skeleton if no session
             tableView.reloadData()
+            updateEmptyStateVisibility()
         }
     }
     
@@ -757,6 +793,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     print("📊 Total messages in view: \(self.messages.count)")
                     print("🔄 Reloading table view...")
                     self.tableView.reloadData()
+                    self.updateEmptyStateVisibility()
                     
                     if !append && !self.messages.isEmpty {
                         print("⬇️ Scrolling to bottom")

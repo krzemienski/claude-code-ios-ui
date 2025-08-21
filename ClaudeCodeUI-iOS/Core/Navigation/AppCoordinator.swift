@@ -199,112 +199,13 @@ class AppCoordinator: NSObject, Coordinator {
     // MARK: - View Controller Creation
     
     private func createProjectsViewController() -> UIViewController {
-        // Use the ProjectsListViewController that calls the real API
-        let projectsVC = ProjectsListViewController()
+        // FIX: Use the actual ProjectsViewController from Features folder instead of ProjectsListViewController
+        let projectsVC = ProjectsViewController()
         projectsVC.title = "Projects"
         projectsVC.onProjectSelected = { [weak self] project in
             self?.selectProject(project)
         }
         return projectsVC
-    }
-    
-    // Simple Projects List View Controller
-    class ProjectsListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-        var onProjectSelected: ((Project) -> Void)?
-        private var projects: [Project] = []
-        private let tableView = UITableView()
-        
-        // UI elements for adding project (if any)
-        private let addProjectButton = UIButton(type: .system)
-        private let projectNameField = UITextField()
-        private let projectPathField = UITextField()
-        private let createProjectConfirmButton = UIButton(type: .system)
-        private let deleteProjectButton = UIButton(type: .system)
-        
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            setupUI()
-            loadProjects()
-        }
-        
-        private func setupUI() {
-            view.backgroundColor = CyberpunkTheme.background
-            
-            tableView.backgroundColor = CyberpunkTheme.background
-            tableView.separatorColor = CyberpunkTheme.border
-            tableView.delegate = self
-            tableView.dataSource = self
-            tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ProjectCell")
-            
-            view.addSubview(tableView)
-            tableView.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-                tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-            ])
-            
-            // Setup addProjectButton if it's part of UI
-            addProjectButton.setTitle("Add Project", for: .normal)
-            addProjectButton.accessibilityIdentifier = "addProjectButton"
-            
-            // Setup projectNameField
-            projectNameField.placeholder = "Project Name"
-            projectNameField.borderStyle = .roundedRect
-            projectNameField.accessibilityIdentifier = "projectNameField"
-            
-            // Setup projectPathField
-            projectPathField.placeholder = "Project Path"
-            projectPathField.borderStyle = .roundedRect
-            projectPathField.accessibilityIdentifier = "projectPathField"
-            
-            // Setup createProjectConfirmButton
-            createProjectConfirmButton.setTitle("Create", for: .normal)
-            createProjectConfirmButton.accessibilityIdentifier = "createProjectConfirmButton"
-            
-            // Setup deleteProjectButton if applicable
-            deleteProjectButton.setTitle("Delete", for: .normal)
-            deleteProjectButton.accessibilityIdentifier = "deleteProjectButton"
-        }
-        
-        private func loadProjects() {
-            Task {
-                do {
-                    let fetchedProjects = try await APIClient.shared.fetchProjects()
-                    await MainActor.run {
-                        self.projects = fetchedProjects
-                        self.tableView.reloadData()
-                    }
-                } catch {
-                    print("Failed to load projects: \(error)")
-                }
-            }
-        }
-        
-        // MARK: - UITableViewDataSource
-        
-        func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-            return projects.count
-        }
-        
-        func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "ProjectCell", for: indexPath)
-            let project = projects[indexPath.row]
-            cell.textLabel?.text = project.displayName
-            cell.accessibilityIdentifier = "projectCell_\(indexPath.row)"
-            cell.textLabel?.textColor = CyberpunkTheme.primaryText
-            cell.backgroundColor = CyberpunkTheme.surface
-            return cell
-        }
-        
-        // MARK: - UITableViewDelegate
-        
-        func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-            tableView.deselectRow(at: indexPath, animated: true)
-            let project = projects[indexPath.row]
-            onProjectSelected?(project)
-        }
     }
     
     private func createPlaceholderViewController(title: String, color: UIColor) -> UIViewController {
