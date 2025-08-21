@@ -530,6 +530,15 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        
+        // Clean up message status timers
+        for (_, timer) in messageStatusTimers {
+            timer.invalidate()
+        }
+        messageStatusTimers.removeAll()
+        
+        // Clean up streaming handler
+        streamingHandler.reset()
     }
     
     // MARK: - UI Setup
@@ -1019,6 +1028,17 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         )
         print("   Message ID: \(messageId)")
         
+        // Track this message ID for status updates
+        lastSentMessageId = messageId
+        
+        // Set up a timeout timer for this specific message
+        let timer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: false) { [weak self] _ in
+            self?.updateUserMessageStatus(to: .failed, messageId: messageId)
+            self?.messageStatusTimers.removeValue(forKey: messageId)
+            print("⏱️ [ChatVC] Message timeout for ID: \(messageId)")
+        }
+        messageStatusTimers[messageId] = timer
+        
         // Add to messages array with animation
         messages.append(userMessage)
         print("   Total messages: \(messages.count)")
@@ -1065,9 +1085,20 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         ]
         
         print("📡 [ChatVC] Sending WebSocket message:")
+        print("   Original text: \(text)")
+        print("   Text length: \(text.count) chars")
+        
         if let jsonData = try? JSONSerialization.data(withJSONObject: messageData, options: .prettyPrinted),
            let jsonString = String(data: jsonData, encoding: .utf8) {
+            print("   JSON payload to send:")
             print(jsonString)
+            
+            // Verify content field is present and correct
+            if let parsedBack = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+               let contentInJSON = parsedBack["content"] as? String {
+                print("   ✅ Verified content field: \(contentInJSON)")
+            }
+            
             webSocketManager.send(jsonString)
             print("   ✅ Message sent via WebSocket")
         } else {
@@ -1393,18 +1424,19 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             if message.type == .claudeResponse {
                 // Check if the content is just a status or ID
                 if let content = message.payload?["content"] as? String {
-                    let lowercased = content.lowercased()
-                    // Skip messages that are just status indicators or IDs
-                    if lowercased == "success" || 
-                       lowercased == "assistant" || 
-                       lowercased == "result" ||
-                       lowercased == "thinking" ||
-                       content.contains("-") && content.count == 36 || // UUID format
-                       content.hasPrefix("claude-") || // Model identifiers
-                       content.count < 3 { // Very short status messages
-                        print("🚫 Skipping metadata message: \(content)")
+                    // Only skip if it's JUST a UUID (exactly 36 chars with dashes in right positions)
+                    let isUUID = content.count == 36 && 
+                                content.replacingOccurrences(of: "-", with: "").count == 32 &&
+                                CharacterSet(charactersIn: content).isSubset(of: CharacterSet(charactersIn: "0123456789abcdefABCDEF-"))
+                    
+                    if isUUID {
+                        print("🚫 Skipping UUID-only metadata: \(content)")
                         return
                     }
+                    
+                    // Don't filter short legitimate responses - even "OK" or "Yes" are valid
+                    // The backend will send actual content, not these metadata strings
+                    print("✅ Allowing assistant response: \(content.prefix(100))...")
                 }
             }
             
@@ -1455,11 +1487,21 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     print("🌊 Streaming chunk: \(content)")
                 }
                 
+                // Mark user message as delivered when we start receiving stream
+                if let messageId = self.lastSentMessageId {
+                    self.updateUserMessageStatus(to: .delivered, messageId: messageId)
+                }
+                
                 self.handleClaudeStreamingOutput(content: content)
                 
             case .claudeResponse:
                 // Handle complete Claude response
                 var displayContent = content
+                
+                // Mark the last sent message as delivered since we got a response
+                if let messageId = self.lastSentMessageId {
+                    self.updateUserMessageStatus(to: .delivered, messageId: messageId)
+                }
                 
                 // Add raw JSON in debug mode (show the entire payload for debugging)
                 if self.showRawJSON,
@@ -1679,8 +1721,18 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     private func handleClaudeCompleteResponse(content: String) {
+        print("🤖 [ChatVC] handleClaudeCompleteResponse - \(Date().timeIntervalSince1970)")
+        print("   Content length: \(content.count) chars")
+        print("   Content preview: \(content.prefix(200))...")
+        
         // Hide typing indicator
         hideTypingIndicator()
+        
+        // Mark user message as delivered since we got a response
+        if let messageId = lastSentMessageId {
+            updateUserMessageStatus(to: .delivered, messageId: messageId)
+            print("   ✅ Marked user message \(messageId) as delivered")
+        }
         
         // Check if we have a streaming message to complete
         if let lastMessage = messages.last,
@@ -1698,6 +1750,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             if let cell = tableView.cellForRow(at: indexPath) as? EnhancedMessageCell {
                 cell.configure(with: lastMessage)
             }
+            print("   Updated existing streaming message")
         } else {
             // Create new complete message with animation
             let chatMessage = EnhancedChatMessage(
@@ -1843,8 +1896,34 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     // MARK: - Message Status Updates
     
-    private func updateUserMessageStatus(to status: MessageStatus) {
-        // Find the most recent user message that's in sending state
+    // Track the last sent message ID to update its status correctly
+    private var lastSentMessageId: String?
+    private var messageStatusTimers: [String: Timer] = [:]
+    
+    private func updateUserMessageStatus(to status: MessageStatus, messageId: String? = nil) {
+        // If specific message ID provided, update that message
+        if let messageId = messageId ?? lastSentMessageId {
+            if let index = messages.firstIndex(where: { $0.id == messageId }) {
+                messages[index].status = status
+                
+                // Cancel status timer if message succeeded
+                if status == .delivered || status == .read {
+                    messageStatusTimers[messageId]?.invalidate()
+                    messageStatusTimers.removeValue(forKey: messageId)
+                }
+                
+                // Update the cell if visible
+                let indexPath = IndexPath(row: index, section: 0)
+                if let cell = tableView.cellForRow(at: indexPath) as? EnhancedMessageCell {
+                    cell.configure(with: messages[index])
+                }
+                
+                print("✅ [ChatVC] Updated message \(messageId) status to: \(status)")
+                return
+            }
+        }
+        
+        // Fallback: Find the most recent user message that's in sending state
         for message in messages.reversed() where message.isUser && message.status == .sending {
             message.status = status
             

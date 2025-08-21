@@ -494,7 +494,10 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
     
     /// Send a string message to satisfy WebSocketProtocol conformance
     func send(_ message: String) {
+        // ChatViewController sends pre-formatted JSON string, send it directly
+        // Don't double-encode or wrap it
         sendRawText(message)
+        logInfo("Sent message via string interface: \(message.prefix(200))...", category: "WebSocket")
     }
     
     /// Send a raw message dictionary directly without WebSocketMessage wrapper

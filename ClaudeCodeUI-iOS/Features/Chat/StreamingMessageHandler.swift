@@ -145,8 +145,9 @@ class StreamingMessageHandler {
             return .thinking
         }
         
-        // Error detection - only for explicit error messages
-        if content.hasPrefix("Error:") || content.hasPrefix("❌") {
+        // Error detection - only for explicit error messages, not status indicators
+        // FIX: Don't treat messages with "❌" as errors if they're status prefixes
+        if content.hasPrefix("Error:") || (content.hasPrefix("❌") && content.contains("Error")) {
             return .error
         }
         
@@ -156,6 +157,24 @@ class StreamingMessageHandler {
         }
         
         return .text
+    }
+    
+    // MARK: - Message Status Management
+    
+    func updateMessageStatus(messageId: String, status: String) -> MessageStatus {
+        // Convert backend status strings to MessageStatus enum
+        switch status.lowercased() {
+        case "delivered", "success", "sent":
+            return .delivered
+        case "read", "seen":
+            return .read
+        case "sending", "pending":
+            return .sending
+        case "failed", "error":
+            return .failed
+        default:
+            return .sending
+        }
     }
     
     // MARK: - Extract Structured Content
