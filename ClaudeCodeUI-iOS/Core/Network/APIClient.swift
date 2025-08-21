@@ -82,13 +82,18 @@ actor APIClient: APIClientProtocol {
         print("✅ [APIClient] Successfully decoded \(dtos.count) ProjectDTOs")
         
         return dtos.map { dto in
-            Project(
+            // Calculate session count from sessions array or sessionMeta
+            let sessionCount = dto.sessions?.count ?? dto.sessionMeta?.total ?? 0
+            print("📊 [APIClient] Project '\(dto.name)' has \(sessionCount) sessions")
+            
+            return Project(
                 id: dto.name, // Use name as ID since backend doesn't provide ID
                 name: dto.name,
                 path: dto.path,
                 displayName: dto.displayName ?? dto.name,
                 createdAt: Date(), // Default to current date since backend doesn't provide
-                updatedAt: Date()  // Default to current date since backend doesn't provide
+                updatedAt: Date(),  // Default to current date since backend doesn't provide
+                actualSessionCount: sessionCount
             )
         }
     }

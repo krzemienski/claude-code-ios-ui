@@ -21,6 +21,9 @@ final class Project: Codable {
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
     
+    // Store the actual session count from the API
+    var actualSessionCount: Int = 0
+    
     // Temporarily disabled due to circular dependency
     // @Relationship(deleteRule: .cascade, inverse: \Session.project)
     // @Transient
@@ -28,8 +31,8 @@ final class Project: Codable {
     
     @Transient
     var sessionCount: Int {
-        // Temporarily return 0 until sessions relationship is fixed
-        return 0
+        // Return the actual session count from the API
+        return actualSessionCount
     }
     
     @Transient
@@ -44,7 +47,8 @@ final class Project: Codable {
          fullPath: String? = nil,
          displayName: String? = nil,
          createdAt: Date = Date(),
-         updatedAt: Date = Date()) {
+         updatedAt: Date = Date(),
+         actualSessionCount: Int = 0) {
         self.id = id
         self.name = name
         self.path = path
@@ -52,6 +56,7 @@ final class Project: Codable {
         self.displayName = displayName
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.actualSessionCount = actualSessionCount
         // self.sessions = [] // Temporarily disabled
     }
     

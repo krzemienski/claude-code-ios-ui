@@ -176,6 +176,8 @@ class ProjectCard: UIView {
         
         if let lastDate = project.lastSessionDate {
             lastActiveLabel.text = formatRelativeDate(lastDate)
+        } else if sessionCount > 0 {
+            lastActiveLabel.text = "Active"
         } else {
             lastActiveLabel.text = "No sessions"
         }

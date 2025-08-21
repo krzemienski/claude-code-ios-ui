@@ -36,12 +36,8 @@ public class MainTabBarController: UITabBarController {
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        // Force the Projects tab to load its view if it's the selected tab
-        if selectedIndex == 0 {
-            print("🔴 DEBUG: MainTabBarController.viewDidAppear - Projects tab is selected")
-            // Force the ProjectsViewController to refresh when the tab bar appears
-            projectsVC.forceRefresh()
-        }
+        // No longer needed - viewDidLoad is called when we force load the view in setupViewControllers
+        // The Projects tab will load automatically
     }
     
     // MARK: - Setup

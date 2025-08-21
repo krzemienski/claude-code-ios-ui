@@ -88,6 +88,9 @@ public class ProjectsViewController: BaseViewController {
     // Track if we're showing skeleton loading
     private var isShowingSkeletons = false
     
+    // Track if a load is currently in progress
+    private var isLoadingProjects = false
+    
     // Callback for project selection
     var onProjectSelected: ((Project) -> Void)?
     
@@ -215,6 +218,8 @@ public class ProjectsViewController: BaseViewController {
     // Public method to force a refresh from outside
     public func forceRefresh() {
         print("🔴🔴🔴 FORCE REFRESH CALLED FROM MAINTABBARCONTROLLER")
+        // Reset the flag to force a fresh load
+        hasPerformedInitialLoad = false
         performInitialLoad()
     }
     
@@ -225,10 +230,16 @@ public class ProjectsViewController: BaseViewController {
             return 
         }
         
+        guard !isLoadingProjects else {
+            print("⚠️ DEBUG: performInitialLoad() skipped - already loading")
+            return
+        }
+        
         print("🚀 DEBUG: performInitialLoad() called on thread: \(Thread.isMainThread ? "Main" : "Background")")
         
         // Mark that we're performing initial load
         hasPerformedInitialLoad = true
+        isLoadingProjects = true
         
         // Show skeleton loading instead of regular loading indicator
         DispatchQueue.main.async { [weak self] in
@@ -273,6 +284,7 @@ public class ProjectsViewController: BaseViewController {
                 self.projects = remoteProjects
                 self.hideSkeletonLoading()
                 self.updateUI()
+                self.isLoadingProjects = false  // Reset loading flag
                 print("🎨 UI updated with \(self.projects.count) projects")
                 
                 // Log success message
@@ -299,6 +311,7 @@ public class ProjectsViewController: BaseViewController {
                 
                 // Hide skeleton loading on error
                 self.hideSkeletonLoading()
+                self.isLoadingProjects = false  // Reset loading flag on error
                 
                 // Fall back to local data if available
                 if let dataContainer = dataContainer {
@@ -590,11 +603,15 @@ public class ProjectsViewController: BaseViewController {
     }
     
     private func openProject(_ project: Project) {
+        print("🚀 openProject called for: \(project.name)")
+        
         // Use callback if available (for tab-based navigation)
         // Otherwise push directly (for standalone usage)
         if let onProjectSelected = onProjectSelected {
+            print("📱 Using onProjectSelected callback")
             onProjectSelected(project)
         } else if let navigationController = navigationController {
+            print("🔀 Pushing SessionListViewController to navigation stack")
             // Navigate to sessions list for the project
             let sessionsVC = SessionListViewController(project: project)
             navigationController.pushViewController(sessionsVC, animated: true)
@@ -647,13 +664,20 @@ extension ProjectsViewController: UICollectionViewDataSource {
 
 extension ProjectsViewController: UICollectionViewDelegate {
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        print("🎯 didSelectItemAt called - indexPath: \(indexPath.item)")
+        
         // Don't handle taps while showing skeletons
-        guard !isShowingSkeletons else { return }
+        guard !isShowingSkeletons else { 
+            print("⚠️ Tap ignored - showing skeletons")
+            return 
+        }
         
         if indexPath.item == projects.count {
+            print("➕ Creating new project")
             createNewProject()
         } else {
             let project = projects[indexPath.item]
+            print("📂 Opening project: \(project.name) at index \(indexPath.item)")
             openProject(project)
         }
     }
@@ -678,6 +702,9 @@ class ProjectCollectionViewCell: UICollectionViewCell {
     private func setupUI() {
         contentView.addSubview(projectCard)
         projectCard.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Disable user interaction on projectCard to let collection view handle taps
+        projectCard.isUserInteractionEnabled = false
         
         NSLayoutConstraint.activate([
             projectCard.topAnchor.constraint(equalTo: contentView.topAnchor),
