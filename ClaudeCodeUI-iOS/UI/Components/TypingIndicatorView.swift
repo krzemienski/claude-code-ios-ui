@@ -20,6 +20,7 @@ public class TypingIndicatorView: UIView {
     
     private var dots: [UIView] = []
     private var isAnimating = false
+    private var hideTimer: Timer?
     
     // MARK: - Initialization
     
@@ -164,8 +165,11 @@ public class TypingIndicatorView: UIView {
         containerView.layer.removeAllAnimations()
     }
     
-    /// Shows the typing indicator with animation
-    public func show() {
+    /// Shows the typing indicator with animation and optional timeout
+    public func show(timeout: TimeInterval = 30) {
+        // Cancel any existing timer
+        hideTimer?.invalidate()
+        
         isHidden = false
         alpha = 0
         transform = CGAffineTransform(scaleX: 0.8, y: 0.8).translatedBy(x: -20, y: 0)
@@ -183,10 +187,19 @@ public class TypingIndicatorView: UIView {
                 self.transform = .identity
             }
         )
+        
+        // Set timeout to automatically hide indicator
+        hideTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
+            self?.hide()
+        }
     }
     
     /// Hides the typing indicator with animation
     public func hide(completion: (() -> Void)? = nil) {
+        // Cancel any existing timer
+        hideTimer?.invalidate()
+        hideTimer = nil
+        
         UIView.animate(
             withDuration: 0.2,
             animations: {

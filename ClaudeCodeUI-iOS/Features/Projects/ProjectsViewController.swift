@@ -144,6 +144,9 @@ public class ProjectsViewController: BaseViewController {
         
         // Add long press gesture for deletion
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        longPressGesture.minimumPressDuration = 1.0  // Increased to 1.0 second to prevent accidental triggers
+        longPressGesture.delaysTouchesBegan = false  // Prevent tap delay
+        longPressGesture.cancelsTouchesInView = false  // Allow normal taps to work
         collectionView.addGestureRecognizer(longPressGesture)
         
         view.addSubview(collectionView)

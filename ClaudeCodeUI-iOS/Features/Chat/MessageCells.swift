@@ -31,6 +31,23 @@ class BaseMessageCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        
+        // Clear all content
+        contentStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        timeLabel.text = nil
+        statusImageView.image = nil
+        
+        // Reset constraints
+        bubbleLeadingConstraint?.isActive = false
+        bubbleTrailingConstraint?.isActive = false
+        
+        // Clear any animations
+        layer.removeAllAnimations()
+        bubbleView.layer.removeAllAnimations()
+    }
+    
     func setupUI() {
         backgroundColor = .clear
         selectionStyle = .none

@@ -87,20 +87,30 @@ class EnhancedChatMessage: ChatMessage {
     
     func detectMessageType() {
         // Auto-detect message type from content
+        // Strip leading emoji indicators first for better detection
+        let cleanContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "^[❌✅🔧📋🔔💭🎯📊]\\s*", with: "", options: .regularExpression)
+        
         if content.contains("```") {
             messageType = .code
-        } else if content.contains("Tool:") || content.contains("🔧") {
+        } else if cleanContent.contains("Using tool:") || cleanContent.contains("Tool:") || content.contains("🔧") {
             messageType = .toolUse
-        } else if content.contains("Todo") || content.contains("✅") || content.contains("📋") {
+        } else if cleanContent.contains("Result:") && (cleanContent.contains("executed") || cleanContent.contains("successfully")) {
+            messageType = .toolResult
+        } else if cleanContent.contains("Todo") || cleanContent.contains("Task") || content.contains("📋") {
             messageType = .todoUpdate
-        } else if content.hasPrefix("Error:") || content.hasPrefix("❌") {
+        } else if cleanContent.hasPrefix("Error:") || cleanContent.hasPrefix("Failed:") || cleanContent.hasPrefix("❌") {
             messageType = .error
-        } else if content.hasPrefix("System:") || content.hasPrefix("🔔") {
+        } else if cleanContent.hasPrefix("System:") || content.contains("🔔") {
             messageType = .system
         } else if content.contains("git ") || content.contains("commit") {
             messageType = .gitOperation
         } else if content.contains("$") || content.contains("npm") || content.contains("bash") {
             messageType = .terminalCommand
+        } else if cleanContent.contains("[assistant message]") {
+            messageType = .claudeResponse
+        } else {
+            messageType = .text
         }
     }
 }
@@ -950,7 +960,16 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     @objc private func sendMessage() {
         guard let text = inputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !text.isEmpty else { return }
+              !text.isEmpty else { 
+            print("❌ [ChatVC] sendMessage: Empty text, aborting")
+            return 
+        }
+        
+        // Log timestamp for debugging
+        let timestamp = Date()
+        print("📤 [ChatVC] sendMessage START - \(timestamp.timeIntervalSince1970)")
+        print("   Message: \(text)")
+        print("   Project: \(project.name) at \(project.path)")
         
         // Create user message with unique ID
         let messageId = UUID().uuidString
@@ -958,16 +977,19 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             id: messageId,
             content: text,
             isUser: true,
-            timestamp: Date(),
+            timestamp: timestamp,
             status: .sending
         )
+        print("   Message ID: \(messageId)")
         
         // Add to messages array with animation
         messages.append(userMessage)
+        print("   Total messages: \(messages.count)")
         
         // Insert with animation
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         tableView.insertRows(at: [indexPath], with: .fade)
+        print("   Inserted at row: \(indexPath.row)")
         
         // Animate the message cell after insertion
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -975,59 +997,44 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 // TODO: Add animations when MessageAnimator is added to project
                 // MessageAnimator.animateSend(view: cell.contentView)
                 // MessageAnimator.addGlowEffect(to: cell.contentView, color: CyberpunkTheme.primaryCyan)
+                print("   ✅ Cell animation triggered")
             }
         }
         
-        // Smooth scroll to bottom with momentum
-        // MessageAnimator.scrollToBottom(tableView: tableView, animated: true)
-        // Fallback scroll to bottom
-        if tableView.numberOfSections > 0 {
-            let lastSection = tableView.numberOfSections - 1
-            let lastRow = tableView.numberOfRows(inSection: lastSection) - 1
-            if lastRow >= 0 {
-                let indexPath = IndexPath(row: lastRow, section: lastSection)
-                tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
-            }
-        }
+        // Use debounced scroll to prevent jittery behavior
+        scrollToBottomDebounced(animated: true, delay: 0.1)
+        print("   📜 Scroll to bottom queued")
         
         // Clear input
         inputTextView.text = ""
         placeholderLabel.isHidden = false
         sendButton.isEnabled = false
+        print("   🧹 Input cleared")
         
         // Adjust text view height back to default
         inputTextViewHeightConstraint.constant = 44
         view.layoutIfNeeded()
         
-        // Send via WebSocket with project path and session ID
-        var payload: [String: Any] = [
-            "content": text,
-            "projectPath": project.path,
-            "messageId": messageId
-        ]
+        // CRITICAL FIX: Send the message with CORRECT format
+        // Backend expects 'content' field at top level, not nested in options
+        let sessionId = currentSessionId ?? UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)")
+        print("   Session ID: \(sessionId ?? "nil")")
         
-        // Include session ID if available
-        if let sessionId = currentSessionId ?? UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)") {
-            payload["sessionId"] = sessionId
-        }
-        
-        // Send the message with correct format matching backend expectations
-        // Backend expects 'command' field for the message content and 'options' object
-        let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)")
         let messageData: [String: Any] = [
             "type": "claude-command",
-            "command": text,  // Changed from "content" to "command"
-            "options": [      // Added options object
-                "projectPath": project.path,
-                "sessionId": sessionId as Any,
-                "resume": sessionId != nil,
-                "cwd": project.path
-            ] as [String: Any]
+            "content": text,  // ✅ FIXED: Using 'content' instead of 'command'
+            "projectPath": project.path,  // ✅ FIXED: Top-level field
+            "sessionId": sessionId as Any  // ✅ FIXED: Top-level field
         ]
         
-        if let jsonData = try? JSONSerialization.data(withJSONObject: messageData, options: []),
+        print("📡 [ChatVC] Sending WebSocket message:")
+        if let jsonData = try? JSONSerialization.data(withJSONObject: messageData, options: .prettyPrinted),
            let jsonString = String(data: jsonData, encoding: .utf8) {
+            print(jsonString)
             webSocketManager.send(jsonString)
+            print("   ✅ Message sent via WebSocket")
+        } else {
+            print("   ❌ Failed to serialize message data")
         }
         
         // Show typing indicator after a brief delay (Claude is processing)
@@ -1035,9 +1042,14 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             guard let self = self else { return }
             // Only show typing if we haven't received a response yet
             if userMessage.status == .sending {
+                print("   ⏳ Showing typing indicator (no response yet)")
                 self.showTypingIndicator()
+            } else {
+                print("   ✅ Response already received, skipping typing indicator")
             }
         }
+        
+        print("📤 [ChatVC] sendMessage END - \(Date().timeIntervalSince1970)")
     }
     
     @objc private func showAttachmentOptions() {
@@ -1134,14 +1146,94 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         let scrollViewHeight = tableView.bounds.height
         let scrollOffset = tableView.contentOffset.y
         
+        // Prevent NaN by checking for valid values
+        guard contentHeight > 0 && scrollViewHeight > 0 else {
+            return true // Consider it "near bottom" if no content
+        }
+        
+        // Handle case where content is smaller than viewport
+        if contentHeight <= scrollViewHeight {
+            return true // Always at bottom if content fits in view
+        }
+        
         let distanceFromBottom = contentHeight - scrollViewHeight - scrollOffset
         return distanceFromBottom < threshold
     }
     
-    private func scrollToBottom(animated: Bool = true) {
-        guard !messages.isEmpty else { return }
+    // MARK: - Message Status Handling
+    
+    private func handleSuccessfulMessageDelivery(messageId: String) {
+        if let message = messages.first(where: { $0.id == messageId && $0.status == .sending }) {
+            message.status = .delivered
+            if let index = messages.firstIndex(where: { $0.id == messageId }) {
+                let indexPath = IndexPath(row: index, section: 0)
+                if let cell = tableView.cellForRow(at: indexPath) as? BaseMessageCell {
+                    cell.updateStatusIcon(.delivered)
+                }
+            }
+        }
+    }
+    
+    private func shouldAutoScroll() -> Bool {
+        // Only auto-scroll if user is near bottom
+        let scrollPosition = tableView.contentOffset.y
+        let contentHeight = tableView.contentSize.height
+        let frameHeight = tableView.frame.height
+        
+        // Prevent NaN by checking for valid values
+        guard contentHeight > 0 && frameHeight > 0 else {
+            return true // Auto-scroll if no content
+        }
+        
+        // Handle case where content is smaller than viewport
+        if contentHeight <= frameHeight {
+            return true // Always auto-scroll if content fits in view
+        }
+        
+        let distanceFromBottom = contentHeight - scrollPosition - frameHeight
+        return distanceFromBottom < 100 // Within 100 points of bottom
+    }
+    
+    // MARK: - Scroll Management
+    
+    private var scrollWorkItem: DispatchWorkItem?
+    
+    /// Debounced scroll to bottom to prevent excessive calls
+    private func scrollToBottomDebounced(animated: Bool = true, delay: TimeInterval = 0.1) {
+        // Cancel any pending scroll request
+        scrollWorkItem?.cancel()
+        
+        // Create new debounced scroll work item
+        scrollWorkItem = DispatchWorkItem { [weak self] in
+            self?.scrollToBottom(animated: animated, force: true)
+        }
+        
+        // Execute after delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: scrollWorkItem!)
+    }
+    
+    private func scrollToBottom(animated: Bool = true, force: Bool = false) {
+        guard !messages.isEmpty else { 
+            print("📜 [ChatVC] scrollToBottom: No messages, skipping")
+            return 
+        }
+        
+        // Cancel any pending debounced scrolls if forcing
+        if force {
+            scrollWorkItem?.cancel()
+        }
+        
         let lastIndex = IndexPath(row: messages.count - 1, section: 0)
-        tableView.scrollToRow(at: lastIndex, at: .bottom, animated: animated)
+        print("📜 [ChatVC] scrollToBottom: Scrolling to row \(lastIndex.row), animated: \(animated)")
+        
+        // Ensure table view is ready and valid
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            if self.tableView.numberOfSections > 0 && 
+               self.tableView.numberOfRows(inSection: 0) > lastIndex.row {
+                self.tableView.scrollToRow(at: lastIndex, at: .bottom, animated: animated)
+            }
+        }
     }
     
     // MARK: - WebSocketManagerDelegate
@@ -1191,7 +1283,19 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     func webSocket(_ manager: any WebSocketProtocol, didReceiveMessage message: WebSocketMessage) {
-        print("WebSocket received message: \(message)")
+        print("📥 [ChatVC] WebSocket received message - \(Date().timeIntervalSince1970)")
+        print("   Type: \(message.type)")
+        print("   Session ID: \(message.sessionId ?? "nil")")
+        
+        // Log payload summary (avoid logging huge content)
+        if let payload = message.payload {
+            if let content = payload["content"] as? String {
+                let preview = String(content.prefix(100))
+                print("   Content preview: \(preview)...")
+            }
+            print("   Payload keys: \(payload.keys.joined(separator: ", "))")
+        }
+        
         // Handle the message based on its type
         handleWebSocketMessage(message)
     }
@@ -1485,9 +1589,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     hideTypingIndicator()
                 }
                 
-                // Auto-scroll if near bottom
-                if isNearBottom() {
-                    scrollToBottom(animated: false)
+                // Auto-scroll only if user is near bottom
+                if shouldAutoScroll() {
+                    scrollToBottomDebounced(animated: false)
                 }
             }
         } else {
@@ -1718,10 +1822,22 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         }
     }
     
-    private func updatePendingMessagesToFailed() {
-        // Update all pending messages to failed state
+    private func updatePendingMessagesToFailed(excludeMessageId: String? = nil) {
+        // Only mark messages as failed if they've been sending for too long
+        let timeoutInterval: TimeInterval = 30.0 // 30 seconds timeout
+        let now = Date()
+        
         for message in messages where message.status == .sending {
-            message.status = .failed
+            // Skip if this is the message we just received a response for
+            if let excludeId = excludeMessageId, message.id == excludeId {
+                continue
+            }
+            
+            // Only mark as failed if it's been sending for too long
+            if now.timeIntervalSince(message.timestamp) > timeoutInterval {
+                message.status = .failed
+                print("⚠️ [ChatVC] Marking message as failed due to timeout: \(message.id)")
+            }
         }
         tableView.reloadData()
     }
@@ -1779,9 +1895,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     cell.configure(with: lastMessage)
                 }
                 
-                // Auto-scroll if near bottom
-                if self.isNearBottom() {
-                    self.scrollToBottom(animated: false)
+                // Auto-scroll only if user is near bottom
+                if self.shouldAutoScroll() {
+                    self.scrollToBottomDebounced(animated: false)
                 }
             }
             
@@ -1816,6 +1932,16 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         let contentHeight = tableView.contentSize.height
         let tableHeight = tableView.frame.height
         let scrollOffset = tableView.contentOffset.y
+        
+        // Prevent NaN by checking for valid values
+        guard contentHeight > 0 && tableHeight > 0 else {
+            return true // Consider at bottom if no content
+        }
+        
+        // Handle case where content is smaller than viewport
+        if contentHeight <= tableHeight {
+            return true // Always at bottom if content fits in view
+        }
         
         // Consider "near bottom" if within 100 points of the bottom
         return scrollOffset >= (contentHeight - tableHeight - 100)
@@ -1891,6 +2017,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         }
         
         // Check if we need to load more messages (pagination)
+        // Using improved threshold of 500 points
         if let maxRow = indexPaths.map({ $0.row }).max(),
            maxRow > messages.count - 10,
            !isLoadingMore,
@@ -1914,11 +2041,23 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         let contentHeight = scrollView.contentSize.height
         let frameHeight = scrollView.frame.size.height
         
-        // Load more when scrolled near the top (within 100 points)
-        if offsetY < 100 && !isLoadingMore && hasMoreMessages && messages.count >= messagePageSize {
+        // Calculate distance from top
+        let distanceFromTop = offsetY
+        
+        // Log scroll position for debugging (throttled)
+        if Int(offsetY) % 50 == 0 {  // Log every 50 points
+            print("📜 [ChatVC] Scroll position: offset=\(Int(offsetY)), content=\(Int(contentHeight)), frame=\(Int(frameHeight))")
+            print("   Distance from top: \(Int(distanceFromTop))")
+            print("   Loading more: \(isLoadingMore), Has more: \(hasMoreMessages)")
+        }
+        
+        // IMPROVED: Load more when scrolled near the top (increased threshold to 500 points for better UX)
+        if offsetY < 500 && !isLoadingMore && hasMoreMessages && messages.count >= messagePageSize {
             // Load more historical messages
             if let sessionId = currentSessionId ?? currentSession?.id {
-                print("📜 Loading more messages... (offset: \(messages.count))")
+                print("📜 [ChatVC] PAGINATION TRIGGERED - Loading more messages...")
+                print("   Current message count: \(messages.count)")
+                print("   Offset Y: \(offsetY)")
                 loadSessionMessages(sessionId: sessionId, append: true)
             }
         }

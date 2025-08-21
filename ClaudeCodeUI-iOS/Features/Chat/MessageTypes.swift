@@ -260,21 +260,31 @@ class EnhancedChatMessage: ChatMessage {
     
     private func detectMessageType() {
         // Auto-detect message type from content
+        // Strip leading emoji indicators first for better detection
+        let cleanContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "^[❌✅🔧📋🔔💭🎯📊]\\s*", with: "", options: .regularExpression)
+        
         if content.contains("```") {
             messageType = .code
             extractCodeBlock()
-        } else if content.contains("Tool:") || content.contains("🔧") {
+        } else if cleanContent.contains("Using tool:") || cleanContent.contains("Tool:") || content.contains("🔧") {
             messageType = .toolUse
-        } else if content.contains("Todo") || content.contains("✅") || content.contains("📋") {
+        } else if cleanContent.contains("Result:") && (cleanContent.contains("executed") || cleanContent.contains("successfully")) {
+            messageType = .toolResult
+        } else if cleanContent.contains("Todo") || cleanContent.contains("Task") || content.contains("📋") {
             messageType = .todoUpdate
-        } else if content.hasPrefix("Error:") || content.hasPrefix("❌") {
+        } else if cleanContent.hasPrefix("Error:") || cleanContent.hasPrefix("Failed:") || cleanContent.hasPrefix("❌") {
             messageType = .error
-        } else if content.hasPrefix("System:") || content.hasPrefix("🔔") {
+        } else if cleanContent.hasPrefix("System:") || content.contains("🔔") {
             messageType = .system
         } else if content.contains("git ") || content.contains("commit") {
             messageType = .gitOperation
         } else if content.contains("$") || content.contains("npm") || content.contains("bash") {
             messageType = .terminalCommand
+        } else if cleanContent.contains("[assistant message]") {
+            messageType = .claudeResponse
+        } else {
+            messageType = .text
         }
     }
     

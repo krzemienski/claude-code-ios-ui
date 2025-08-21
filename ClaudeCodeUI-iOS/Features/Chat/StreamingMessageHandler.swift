@@ -145,8 +145,8 @@ class StreamingMessageHandler {
             return .thinking
         }
         
-        // Error detection
-        if content.hasPrefix("Error:") || content.hasPrefix("❌") || content.contains("error") {
+        // Error detection - only for explicit error messages
+        if content.hasPrefix("Error:") || content.hasPrefix("❌") {
             return .error
         }
         
