@@ -75,16 +75,16 @@ class Project: Codable {
 // Simple DIContainer
 class DIContainer {
     static let shared = DIContainer()
-    let apiClient = APIClient()
+    let apiClient = SimpleAPIClient()  // Use SimpleAPIClient to avoid conflict with real APIClient
     let errorHandler = ErrorHandlingService()
 }
 
-// Real API Client with Backend Connectivity
-class APIClient {
-    var baseURL = "http://localhost:3004"
+// Simple API Client stub - renamed to avoid conflict with the real APIClient in Core/Network/APIClient.swift
+class SimpleAPIClient {
+    var baseURL = "http://192.168.0.43:3004"  // Fixed for iOS simulator
     private var authToken: String?
     
-    init(baseURL: String = "http://localhost:3004") {
+    init(baseURL: String = "http://192.168.0.43:3004") {
         self.baseURL = baseURL
         // Retrieve saved token from UserDefaults
         self.authToken = UserDefaults.standard.string(forKey: "authToken")
@@ -181,10 +181,10 @@ class Logger {
     }
 }
 
-// Simple AppConfig
-struct AppConfig {
-    static let backendURL = "http://localhost:3004"
-}
+// Simple AppConfig - Commented out to avoid conflict with the real AppConfig in Core/Config/AppConfig.swift
+// struct AppConfig {
+//     static let backendURL = "http://localhost:3004"
+// }
 
 // Simple SwiftDataContainer
 class SwiftDataContainer {
@@ -208,7 +208,7 @@ class SwiftDataContainer {
 }
 
 class Settings {
-    var apiBaseURL = "http://localhost:3004"
+    var apiBaseURL = "http://192.168.0.43:3004"  // Fixed for iOS simulator
 }
 
 // Simple ProjectCard component
@@ -255,7 +255,7 @@ public class ChatViewController: UIViewController {
         textView.textColor = .white
         textView.font = UIFont.systemFont(ofSize: 14)
         textView.isEditable = false
-        textView.text = "Connecting to backend at localhost:3004...\n\n"
+        textView.text = "Connecting to backend at 192.168.0.43:3004...\n\n"
         
         // Setup input field
         inputField.backgroundColor = UIColor(red: 0.1, green: 0.1, blue: 0.15, alpha: 1.0)
@@ -284,7 +284,7 @@ public class ChatViewController: UIViewController {
     }
     
     private func connectWebSocket() {
-        guard let url = URL(string: "ws://localhost:3004/ws") else { return }
+        guard let url = URL(string: "ws://192.168.0.43:3004/ws") else { return }
         
         let session = URLSession(configuration: .default)
         webSocketTask = session.webSocketTask(with: url)

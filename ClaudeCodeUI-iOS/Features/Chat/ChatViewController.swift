@@ -352,7 +352,7 @@ class ChatMessageCell: UITableViewCell {
     }
 }
 
-class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDataSource, UITextViewDelegate, WebSocketManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate {
+class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching, UITextViewDelegate, WebSocketManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate {
     
     // MARK: - Properties
     
@@ -378,10 +378,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         }
     }
     
-    // Streaming message accumulator
-    private var streamingMessageId: String?
-    private var streamingMessageContent: String = ""
-    private var streamingMessageIndex: Int?
+    // Streaming message handler
+    private let streamingHandler = StreamingMessageHandler()
+    private var activeStreamingMessageId: String?
     
     // MARK: - UI Components
     
@@ -396,11 +395,21 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         tableView.separatorStyle = .none
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.prefetchDataSource = self
+        
+        // Register all message cell types
+        tableView.register(TextMessageCell.self, forCellReuseIdentifier: TextMessageCell.identifier)
+        tableView.register(ToolUseMessageCell.self, forCellReuseIdentifier: ToolUseMessageCell.identifier)
+        tableView.register(ThinkingMessageCell.self, forCellReuseIdentifier: ThinkingMessageCell.identifier)
+        tableView.register(CodeMessageCell.self, forCellReuseIdentifier: CodeMessageCell.identifier)
+        tableView.register(ErrorMessageCell.self, forCellReuseIdentifier: ErrorMessageCell.identifier)
+        tableView.register(SystemMessageCell.self, forCellReuseIdentifier: SystemMessageCell.identifier)
+        tableView.register(TypingIndicatorCell.self, forCellReuseIdentifier: TypingIndicatorCell.identifier)
+        
+        // Legacy cells for backward compatibility
         tableView.register(EnhancedMessageCell.self, forCellReuseIdentifier: EnhancedMessageCell.identifier)
         tableView.register(ChatMessageCell.self, forCellReuseIdentifier: ChatMessageCell.identifier)
-        tableView.register(TypingIndicatorCell.self, forCellReuseIdentifier: TypingIndicatorCell.identifier)
-        // TODO: Implement UITableViewDataSourcePrefetching
-        // tableView.prefetchDataSource = self
+        
         tableView.estimatedRowHeight = 100
         tableView.rowHeight = UITableView.automaticDimension
         tableView.keyboardDismissMode = .interactive
@@ -667,8 +676,33 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         
         let offset = append ? messages.count : 0
         
-        // Create comprehensive test messages if no backend connection
         Task {
+            // First try to load from cache if not appending
+            if !append && ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == nil {
+                let cachedMessages = await MessagePersistenceService.shared.loadMessages(for: sessionId)
+                if !cachedMessages.isEmpty {
+                    await MainActor.run {
+                        print("📱 Loaded \(cachedMessages.count) cached messages")
+                        self.messages = cachedMessages.map { message in
+                            let enhanced = EnhancedChatMessage(
+                                id: message.id,
+                                content: message.content,
+                                isUser: message.role == .user,
+                                timestamp: message.timestamp,
+                                status: .delivered
+                            )
+                            enhanced.detectMessageType()
+                            return enhanced
+                        }
+                        self.hideChatSkeletonLoading()
+                        self.tableView.reloadData()
+                        if !self.messages.isEmpty {
+                            self.scrollToBottom(animated: false)
+                        }
+                    }
+                }
+            }
+            
             do {
                 // Try to load from backend first
                 let backendMessages = try await APIClient.shared.fetchSessionMessages(
@@ -717,6 +751,14 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     if !append && !self.messages.isEmpty {
                         print("⬇️ Scrolling to bottom")
                         self.scrollToBottom(animated: false)
+                    }
+                    
+                    // Save to cache for offline access
+                    if !append && !backendMessages.isEmpty {
+                        Task {
+                            await MessagePersistenceService.shared.saveMessages(backendMessages, for: sessionId)
+                            print("💾 Saved \(backendMessages.count) messages to cache")
+                        }
                     }
                     
                     print("✅ Successfully loaded \(backendMessages.count) messages for session \(sessionId)")
@@ -1087,6 +1129,15 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         present(alert, animated: true)
     }
     
+    private func isNearBottom(threshold: CGFloat = 100) -> Bool {
+        let contentHeight = tableView.contentSize.height
+        let scrollViewHeight = tableView.bounds.height
+        let scrollOffset = tableView.contentOffset.y
+        
+        let distanceFromBottom = contentHeight - scrollViewHeight - scrollOffset
+        return distanceFromBottom < threshold
+    }
+    
     private func scrollToBottom(animated: Bool = true) {
         guard !messages.isEmpty else { return }
         let lastIndex = IndexPath(row: messages.count - 1, section: 0)
@@ -1376,8 +1427,78 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - Claude Response Handlers
     
     private func handleClaudeStreamingOutput(content: String) {
-        // Log incoming streaming content
-        print("🔄 Claude streaming output: \(content)")
+        // Process through streaming handler
+        if let data = content.data(using: .utf8),
+           let result = streamingHandler.processStreamingChunk(data) {
+            
+            print("🔄 Streaming: id=\(result.messageId), complete=\(result.isComplete)")
+            
+            // Find or create message
+            if let existingIndex = messages.firstIndex(where: { $0.id == result.messageId }) {
+                // Update existing message
+                let message = messages[existingIndex]
+                message.content = result.content
+                
+                // Detect and update message type
+                let structured = streamingHandler.extractStructuredContent(from: result.content)
+                message.messageType = structured.type
+                
+                if result.isComplete {
+                    message.status = .delivered
+                    activeStreamingMessageId = nil
+                    hideTypingIndicator()
+                }
+                
+                // Update cell
+                let indexPath = IndexPath(row: existingIndex, section: 0)
+                if let cell = tableView.cellForRow(at: indexPath) {
+                    if let baseCell = cell as? BaseMessageCell {
+                        baseCell.configure(with: message)
+                    } else if let systemCell = cell as? SystemMessageCell {
+                        systemCell.configure(with: message)
+                    }
+                }
+            } else {
+                // Create new streaming message
+                showTypingIndicator()
+                let chatMessage = EnhancedChatMessage(
+                    id: result.messageId,
+                    content: result.content,
+                    isUser: false,
+                    timestamp: Date(),
+                    status: result.isComplete ? .delivered : .sending
+                )
+                
+                // Set message type
+                let structured = streamingHandler.extractStructuredContent(from: result.content)
+                chatMessage.messageType = structured.type
+                
+                messages.append(chatMessage)
+                activeStreamingMessageId = result.messageId
+                
+                // Insert with animation
+                let indexPath = IndexPath(row: messages.count - 1, section: 0)
+                tableView.insertRows(at: [indexPath], with: .fade)
+                
+                if result.isComplete {
+                    activeStreamingMessageId = nil
+                    hideTypingIndicator()
+                }
+                
+                // Auto-scroll if near bottom
+                if isNearBottom() {
+                    scrollToBottom(animated: false)
+                }
+            }
+        } else {
+            // Fallback to simple text appending
+            handleClaudeStreamingOutputLegacy(content: content)
+        }
+    }
+    
+    private func handleClaudeStreamingOutputLegacy(content: String) {
+        // Legacy streaming handler for backward compatibility
+        print("🔄 Claude streaming output (legacy): \(content)")
         
         // Check if we have an active streaming message
         if let lastMessage = messages.last,
@@ -1389,8 +1510,10 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             
             // Update only the last cell for performance
             let indexPath = IndexPath(row: messages.count - 1, section: 0)
-            if let cell = tableView.cellForRow(at: indexPath) as? EnhancedMessageCell {
-                cell.configure(with: lastMessage)
+            if let cell = tableView.cellForRow(at: indexPath) {
+                if let baseCell = cell as? BaseMessageCell {
+                    baseCell.configure(with: lastMessage)
+                }
             }
             
             // Keep typing indicator visible
@@ -1712,17 +1835,75 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             return cell
         }
         
-        // Regular message cell
+        // Get message and determine cell type
         let message = messages[indexPath.row]
-        let cell = tableView.dequeueReusableCell(withIdentifier: EnhancedMessageCell.identifier, for: indexPath) as! EnhancedMessageCell
-        cell.configure(with: message)
-        return cell
+        
+        // Select appropriate cell based on message type
+        let cellIdentifier: String
+        switch message.messageType {
+        case .toolUse, .toolResult:
+            cellIdentifier = ToolUseMessageCell.identifier
+        case .thinking:
+            cellIdentifier = ThinkingMessageCell.identifier
+        case .code:
+            cellIdentifier = CodeMessageCell.identifier
+        case .error:
+            cellIdentifier = ErrorMessageCell.identifier
+        case .system:
+            cellIdentifier = SystemMessageCell.identifier
+        default:
+            cellIdentifier = TextMessageCell.identifier
+        }
+        
+        // Dequeue and configure appropriate cell
+        if let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? BaseMessageCell {
+            cell.configure(with: message)
+            return cell
+        } else if message.messageType == .system,
+                  let cell = tableView.dequeueReusableCell(withIdentifier: SystemMessageCell.identifier, for: indexPath) as? SystemMessageCell {
+            cell.configure(with: message)
+            return cell
+        } else {
+            // Fallback to text cell
+            let cell = tableView.dequeueReusableCell(withIdentifier: TextMessageCell.identifier, for: indexPath) as! TextMessageCell
+            cell.configure(with: message)
+            return cell
+        }
     }
     
     // MARK: - UITableViewDelegate
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return UITableView.automaticDimension
+    }
+    
+    // MARK: - UITableViewDataSourcePrefetching
+    
+    func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
+        // Prefetch messages for smooth scrolling
+        for indexPath in indexPaths {
+            if indexPath.row < messages.count {
+                let message = messages[indexPath.row]
+                // Pre-calculate any expensive operations here
+                // For example, pre-parse code blocks or format timestamps
+                message.detectMessageType()
+            }
+        }
+        
+        // Check if we need to load more messages (pagination)
+        if let maxRow = indexPaths.map({ $0.row }).max(),
+           maxRow > messages.count - 10,
+           !isLoadingMore,
+           hasMoreMessages {
+            // Load more messages when approaching the end
+            if let sessionId = currentSessionId ?? currentSession?.id {
+                loadSessionMessages(sessionId: sessionId, append: true)
+            }
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, cancelPrefetchingForRowsAt indexPaths: [IndexPath]) {
+        // Cancel any pending operations for these rows if needed
     }
     
     // MARK: - Pagination Support

@@ -33,6 +33,17 @@ public class MainTabBarController: UITabBarController {
         setupProjectSelectionHandler()
     }
     
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // Force the Projects tab to load its view if it's the selected tab
+        if selectedIndex == 0 {
+            print("🔴 DEBUG: MainTabBarController.viewDidAppear - Projects tab is selected")
+            // Force the ProjectsViewController to refresh when the tab bar appears
+            projectsVC.forceRefresh()
+        }
+    }
+    
     // MARK: - Setup
     private func setupTabBar() {
         // Configure tab bar appearance
@@ -63,6 +74,10 @@ public class MainTabBarController: UITabBarController {
             image: createTabIcon(systemName: "folder.fill"),
             selectedImage: createTabIcon(systemName: "folder.fill.badge.plus")
         )
+        
+        // Force load the Projects view controller's view to trigger viewDidLoad
+        _ = projectsVC.view
+        print("🔴 DEBUG: Forced loading of ProjectsViewController view")
         
         // Search Tab - Project-wide search functionality
         searchVC.title = "Search"

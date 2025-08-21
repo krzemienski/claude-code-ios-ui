@@ -8,15 +8,7 @@
 import UIKit
 
 // MARK: - ProjectsViewController
-class ProjectsViewController: UIViewController {
-    var onProjectSelected: ((Project) -> Void)?
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Projects"
-    }
-}
+// REMOVED - Using the real implementation from Features/Projects/ProjectsViewController.swift
 
 // MARK: - SettingsViewController  
 class SettingsViewController: UIViewController {

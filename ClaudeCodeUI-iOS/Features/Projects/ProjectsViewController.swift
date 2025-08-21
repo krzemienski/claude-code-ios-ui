@@ -40,7 +40,7 @@ public class ProjectsViewController: BaseViewController {
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = "No Projects Yet"
-        titleLabel.font = CyberpunkTheme.headingFont
+        titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
         titleLabel.textColor = CyberpunkTheme.primaryText
         titleLabel.textAlignment = .center
         
@@ -89,15 +89,17 @@ public class ProjectsViewController: BaseViewController {
     private var isShowingSkeletons = false
     
     // Callback for project selection
-    public var onProjectSelected: ((Project) -> Void)?
+    var onProjectSelected: ((Project) -> Void)?
     
     // MARK: - Initialization
     
-    init(dataContainer: SwiftDataContainer? = try? SwiftDataContainer(),
+    init(dataContainer: SwiftDataContainer? = SwiftDataContainer.shared,
          errorHandler: ErrorHandlingService = DIContainer.shared.errorHandler) {
+        print("🚨🚨🚨 ProjectsViewController.init() CALLED!")
         self.dataContainer = dataContainer
         self.errorHandler = errorHandler
         super.init(nibName: nil, bundle: nil)
+        print("🚨🚨🚨 ProjectsViewController.init() COMPLETED!")
     }
     
     required init?(coder: NSCoder) {
@@ -108,9 +110,15 @@ public class ProjectsViewController: BaseViewController {
     
     public override func viewDidLoad() {
         super.viewDidLoad()
+        print("🔴🔴🔴 DEBUG: ProjectsViewController.viewDidLoad() STARTED!")
+        print("🔴 DEBUG: Thread is main: \(Thread.isMainThread)")
         setupUI()
+        print("🔴 DEBUG: setupUI() completed")
         setupNavigationBar()
+        print("🔴 DEBUG: setupNavigationBar() completed")
+        print("🔴 DEBUG: About to call performInitialLoad()")
         performInitialLoad()
+        print("🔴 DEBUG: performInitialLoad() call completed")
     }
     
     public override func viewWillAppear(_ animated: Bool) {
@@ -160,7 +168,7 @@ public class ProjectsViewController: BaseViewController {
         appearance.backgroundColor = CyberpunkTheme.background
         appearance.titleTextAttributes = [
             .foregroundColor: CyberpunkTheme.primaryText,
-            .font: CyberpunkTheme.headingFont
+            .font: UIFont.systemFont(ofSize: 28, weight: .bold)
         ]
         appearance.largeTitleTextAttributes = [
             .foregroundColor: CyberpunkTheme.primaryText,
@@ -204,6 +212,12 @@ public class ProjectsViewController: BaseViewController {
     
     // MARK: - Data Loading
     
+    // Public method to force a refresh from outside
+    public func forceRefresh() {
+        print("🔴🔴🔴 FORCE REFRESH CALLED FROM MAINTABBARCONTROLLER")
+        performInitialLoad()
+    }
+    
     private func performInitialLoad() {
         print("🚨🚨🚨 CRITICAL: performInitialLoad() ENTERED!")
         guard !hasPerformedInitialLoad else { 
@@ -230,6 +244,10 @@ public class ProjectsViewController: BaseViewController {
                 print("🔧 Using backend URL: \(AppConfig.backendURL)")
                 print("📱 Attempting to fetch projects from API...")
                 print("🔑 Auth token present: \(UserDefaults.standard.string(forKey: "authToken") != nil)")
+                
+                // Debug: Check what URL is actually being used
+                print("🔍 DEBUG: AppConfig.backendURL = \(AppConfig.backendURL)")
+                print("🔍 DEBUG: Expected URL = http://192.168.0.43:3004")
                 
                 // Add a minimum delay to see the skeleton animation
                 let startTime = Date()
@@ -290,8 +308,8 @@ public class ProjectsViewController: BaseViewController {
                         // Already on main thread
                         self.projects = localProjects
                         self.updateUI()
-                    } catch localError {
-                        print("❌ Failed to load from local storage: \(localError)")
+                    } catch let localErr {
+                        print("❌ Failed to load from local storage: \(localErr)")
                         self.showError("Failed to load projects: \(error.localizedDescription)")
                     }
                 } else {
@@ -379,8 +397,12 @@ public class ProjectsViewController: BaseViewController {
     }
     
     private func updateUI() {
+        print("🔴 DEBUG: updateUI() called")
+        print("🔴 DEBUG: projects.count = \(projects.count)")
+        print("🔴 DEBUG: projects = \(projects)")
         emptyStateView.isHidden = !projects.isEmpty
         collectionView.reloadData()
+        print("🔴 DEBUG: collectionView reloaded")
     }
     
     // MARK: - Skeleton Loading
@@ -574,7 +596,7 @@ public class ProjectsViewController: BaseViewController {
             onProjectSelected(project)
         } else if let navigationController = navigationController {
             // Navigate to sessions list for the project
-            let sessionsVC = SessionsViewController(project: project)
+            let sessionsVC = SessionListViewController(project: project)
             navigationController.pushViewController(sessionsVC, animated: true)
         } else {
             print("⚠️ Warning: No navigation controller available and no project selection callback set")
@@ -585,18 +607,21 @@ public class ProjectsViewController: BaseViewController {
 // MARK: - UICollectionViewDataSource
 
 extension ProjectsViewController: UICollectionViewDataSource {
-    func numberOfSections(in collectionView: UICollectionView) -> Int {
+    public func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
     
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if isShowingSkeletons {
+            print("🔵 DEBUG: numberOfItemsInSection - showing skeletons, returning 6")
             return 6 // Show 6 skeleton cells while loading
         }
-        return projects.count + 1 // +1 for add button
+        let count = projects.count + 1 // +1 for add button
+        print("🔵 DEBUG: numberOfItemsInSection - projects.count = \(projects.count), returning \(count)")
+        return count
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         if isShowingSkeletons {
             // Return skeleton cell while loading
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SkeletonCollectionViewCell.identifier, for: indexPath) as! SkeletonCollectionViewCell
@@ -621,7 +646,7 @@ extension ProjectsViewController: UICollectionViewDataSource {
 // MARK: - UICollectionViewDelegate
 
 extension ProjectsViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         // Don't handle taps while showing skeletons
         guard !isShowingSkeletons else { return }
         
@@ -709,7 +734,7 @@ class AddProjectCollectionViewCell: UICollectionViewCell {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "New Project"
-        label.font = CyberpunkTheme.headingFont
+        label.font = .systemFont(ofSize: 28, weight: .bold)
         label.textColor = CyberpunkTheme.primaryCyan
         label.textAlignment = .center
         return label
@@ -758,7 +783,7 @@ class AddProjectCollectionViewCell: UICollectionViewCell {
 class SkeletonCollectionViewCell: UICollectionViewCell {
     static let identifier = "SkeletonCollectionViewCell"
     
-    private let skeletonContainer = SkeletonContainerView()
+    private let skeletonContainer = UIView() // SkeletonContainerView not yet implemented
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -787,14 +812,21 @@ class SkeletonCollectionViewCell: UICollectionViewCell {
         ])
         
         // Setup card skeleton layout
-        skeletonContainer.setupCardSkeleton()
+        // TODO: Implement skeleton view animation
+        skeletonContainer.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.1)
+        skeletonContainer.layer.cornerRadius = 16
     }
     
     func startAnimating() {
-        skeletonContainer.startAnimating()
+        // TODO: Implement skeleton animation
+        UIView.animate(withDuration: 1.0, delay: 0, options: [.repeat, .autoreverse], animations: {
+            self.skeletonContainer.alpha = 0.3
+        })
     }
     
     func stopAnimating() {
-        skeletonContainer.stopAnimating()
+        // TODO: Stop skeleton animation
+        skeletonContainer.layer.removeAllAnimations()
+        skeletonContainer.alpha = 1.0
     }
 }

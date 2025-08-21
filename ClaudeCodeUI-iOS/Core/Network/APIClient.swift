@@ -74,7 +74,13 @@ actor APIClient: APIClientProtocol {
     
     // MARK: - Convenience Methods
     func fetchProjects() async throws -> [Project] {
+        print("🔍 [APIClient] fetchProjects() called")
+        print("🔍 [APIClient] Using baseURL: \(baseURL)")
+        print("🔍 [APIClient] Full URL will be: \(baseURL)/api/projects")
+        
         let dtos: [ProjectDTO] = try await request(.getProjects())
+        print("✅ [APIClient] Successfully decoded \(dtos.count) ProjectDTOs")
+        
         return dtos.map { dto in
             Project(
                 id: dto.name, // Use name as ID since backend doesn't provide ID
@@ -148,48 +154,15 @@ actor APIClient: APIClientProtocol {
             let timestamp: String
             let sessionId: String?
             let type: String?
-            let message: MessagePayload
+            let message: MessagePayload?
             
             struct MessagePayload: Codable {
                 let role: String
-                let content: String?  // For user messages (simple string)
-                let contentArray: [ContentItem]?  // For assistant messages (array)
+                let content: AnyCodable?  // Can be string or array
                 
-                // Custom decoding to handle both string and array content
                 private enum CodingKeys: String, CodingKey {
                     case role
                     case content
-                }
-                
-                init(from decoder: Decoder) throws {
-                    let container = try decoder.container(keyedBy: CodingKeys.self)
-                    self.role = try container.decode(String.self, forKey: .role)
-                    
-                    // Try to decode as string first (user messages)
-                    if let stringContent = try? container.decode(String.self, forKey: .content) {
-                        self.content = stringContent
-                        self.contentArray = nil
-                    } 
-                    // Try to decode as array (assistant messages)
-                    else if let arrayContent = try? container.decode([ContentItem].self, forKey: .content) {
-                        self.contentArray = arrayContent
-                        self.content = nil
-                    } 
-                    // Default to empty
-                    else {
-                        self.content = ""
-                        self.contentArray = nil
-                    }
-                }
-                
-                func encode(to encoder: Encoder) throws {
-                    var container = encoder.container(keyedBy: CodingKeys.self)
-                    try container.encode(role, forKey: .role)
-                    if let content = content {
-                        try container.encode(content, forKey: .content)
-                    } else if let contentArray = contentArray {
-                        try container.encode(contentArray, forKey: .content)
-                    }
                 }
             }
             
@@ -197,7 +170,8 @@ actor APIClient: APIClientProtocol {
                 let type: String
                 let text: String?
                 let name: String?  // For tool_use
-                let input: [String: AnyCodable]?  // For tool_use parameters
+                let input: AnyCodable?  // For tool_use parameters
+                let id: String?  // For tool_use
             }
         }
         
@@ -207,48 +181,125 @@ actor APIClient: APIClientProtocol {
             let hasMore: Bool?
         }
         
-        let response: MessagesResponse = try await request(endpoint)
-        
-        return response.messages.map { backendMsg in
-            // Extract content based on message structure
-            var messageContent = ""
+        do {
+            let response: MessagesResponse = try await request(endpoint)
             
-            if let userContent = backendMsg.message.content {
-                // Simple user message
-                messageContent = userContent
-            } else if let contentArray = backendMsg.message.contentArray {
-                // Assistant message with content array - extract text content
-                messageContent = contentArray
-                    .compactMap { item in
-                        if item.type == "text" {
-                            return item.text
-                        } else if item.type == "tool_use", let name = item.name {
-                            return "🔧 Using tool: \(name)"
-                        }
-                        return nil
+            print("📥 Fetched \(response.messages.count) messages for session \(sessionId)")
+            
+            return response.messages.compactMap { backendMsg in
+                // Safely extract content based on message structure
+                var messageContent = ""
+                var messageType = "text"
+                
+                if let messagePayload = backendMsg.message,
+                   let content = messagePayload.content {
+                    
+                    // Handle string content (user messages)
+                    if let stringContent = content.value as? String {
+                        messageContent = stringContent
                     }
-                    .joined(separator: "\n\n")
+                    // Handle array content (assistant messages with multiple parts)
+                    else if let arrayContent = content.value as? [[String: Any]] {
+                        var contentParts: [String] = []
+                        
+                        for item in arrayContent {
+                            if let type = item["type"] as? String {
+                                switch type {
+                                case "text":
+                                    if let text = item["text"] as? String {
+                                        contentParts.append(text)
+                                    }
+                                case "tool_use":
+                                    messageType = "tool_use"
+                                    if let name = item["name"] as? String {
+                                        var toolText = "🔧 Using tool: \(name)"
+                                        if let id = item["id"] as? String {
+                                            toolText += " (\(id))"
+                                        }
+                                        if let input = item["input"] {
+                                            toolText += "\n📝 Input: \(String(describing: input))"
+                                        }
+                                        contentParts.append(toolText)
+                                    }
+                                case "tool_result":
+                                    messageType = "tool_result"
+                                    if let content = item["content"] as? String {
+                                        contentParts.append("✅ Result: \(content)")
+                                    } else if let content = item["content"] as? [[String: Any]] {
+                                        // Handle nested content in tool results
+                                        for resultItem in content {
+                                            if let text = resultItem["text"] as? String {
+                                                contentParts.append("✅ Result: \(text)")
+                                            }
+                                        }
+                                    }
+                                case "thinking":
+                                    messageType = "thinking"
+                                    if let text = item["text"] as? String {
+                                        contentParts.append("💭 \(text)")
+                                    }
+                                default:
+                                    // Handle unknown content types
+                                    contentParts.append("[\(type) content]")
+                                }
+                            }
+                        }
+                        
+                        messageContent = contentParts.joined(separator: "\n\n")
+                    }
+                    // Handle direct object content
+                    else if let dictContent = content.value as? [String: Any] {
+                        if let text = dictContent["text"] as? String {
+                            messageContent = text
+                        } else if let type = dictContent["type"] as? String {
+                            messageContent = "[\(type) content]" 
+                        } else {
+                            messageContent = String(describing: dictContent)
+                        }
+                    }
+                }
+                
+                // Default to showing type if no content found
+                if messageContent.isEmpty {
+                    if let type = backendMsg.type {
+                        messageContent = "[\(type) message]"
+                    } else {
+                        messageContent = "[Empty message]"
+                    }
+                }
+                
+                let message = Message(
+                    id: backendMsg.uuid,
+                    role: MessageRole(rawValue: backendMsg.message?.role ?? "user") ?? .user,
+                    content: messageContent
+                )
+                
+                // Store message type in metadata for UI differentiation
+                message.metadata = MessageMetadata(
+                    model: nil,
+                    temperature: nil,
+                    maxTokens: nil,
+                    stopSequence: nil,
+                    toolUse: nil
+                )
+                
+                // Parse timestamp from ISO string
+                if let date = ISO8601DateFormatter().date(from: backendMsg.timestamp) {
+                    message.timestamp = date
+                } else {
+                    message.timestamp = Date()
+                }
+                
+                return message
             }
-            
-            // Default to empty string if no content found
-            if messageContent.isEmpty {
-                messageContent = "[No content]"
+        } catch {
+            print("❌ Failed to fetch messages: \(error)")
+            // Check if it's a 404 (session/project doesn't exist yet)
+            if let urlError = error as? URLError, urlError.code == .fileDoesNotExist {
+                // Return empty array for new sessions
+                return []
             }
-            
-            let message = Message(
-                id: backendMsg.uuid,
-                role: MessageRole(rawValue: backendMsg.message.role) ?? .user,
-                content: messageContent
-            )
-            
-            // Parse timestamp from ISO string
-            if let date = ISO8601DateFormatter().date(from: backendMsg.timestamp) {
-                message.timestamp = date
-            } else {
-                message.timestamp = Date()
-            }
-            
-            return message
+            throw error
         }
     }
     
@@ -651,7 +702,14 @@ actor APIClient: APIClientProtocol {
     
     // MARK: - Request Methods
     func request<T: Decodable>(_ endpoint: APIEndpoint) async throws -> T {
+        print("🌐 [APIClient] Making request to: \(baseURL)\(endpoint.path)")
+        print("🌐 [APIClient] Method: \(endpoint.method)")
+        print("🌐 [APIClient] Auth token present: \(authToken != nil)")
+        
         let data = try await requestWithRetry(endpoint)
+        
+        print("📦 [APIClient] Received data: \(data.count) bytes")
+        
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .custom { decoder in
