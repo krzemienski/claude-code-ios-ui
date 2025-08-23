@@ -233,6 +233,12 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
     private var messageQueue: [WebSocketMessage] = []
     private let messageQueueLimit = 100
     
+    // Message batching for performance
+    private var messageBatch: [WebSocketMessage] = []
+    private var batchTimer: Timer?
+    private let batchSize = 10
+    private let batchDelay: TimeInterval = 0.1
+    
     var isConnected: Bool {
         return connectionState == .connected
     }
@@ -272,12 +278,13 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
     }
     
     func connect(to urlString: String) {
+        logInfo("🔌🔌🔌 WebSocketManager.connect() called with URL: \(urlString)", category: "WebSocket")
         connectionQueue.async { [weak self] in
             guard let self = self else { return }
             
             // Prevent multiple simultaneous connection attempts
             guard self.connectionState == .disconnected || self.connectionState == .failed else {
-                logInfo("WebSocket already connecting/connected, ignoring connect request", category: "WebSocket")
+                logWarning("⚠️ WebSocket already connecting/connected (state: \(self.connectionState)), ignoring connect request", category: "WebSocket")
                 return
             }
             
@@ -290,9 +297,13 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
             // Add JWT token to URL if available
             var finalUrlString = urlString
             if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+                logDebug("🔑 Found auth token: \(authToken.prefix(20))...", category: "WebSocket")
                 // Add token as query parameter for WebSocket connection
                 let separator = urlString.contains("?") ? "&" : "?"
                 finalUrlString = "\(urlString)\(separator)token=\(authToken)"
+                logDebug("📡 Final WebSocket URL with token: \(finalUrlString.prefix(100))...", category: "WebSocket")
+            } else {
+                logWarning("⚠️ No auth token found in UserDefaults", category: "WebSocket")
             }
             
             guard let url = URL(string: finalUrlString) else {
@@ -319,22 +330,25 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
             
             self.webSocketTask = self.session.webSocketTask(with: request)
             self.webSocketTask?.resume()
+            logInfo("🚀 WebSocketTask created and resumed", category: "WebSocket")
             
             // Send a test ping to verify connection before marking as connected
+            logInfo("🏓 Sending initial ping to verify connection...", category: "WebSocket")
             self.webSocketTask?.sendPing { [weak self] error in
                 guard let self = self else { return }
                 
                 if let error = error {
-                    logError("WebSocket initial ping failed: \(error)", category: "WebSocket")
+                    logError("❌❌❌ WebSocket initial ping FAILED: \(error.localizedDescription)", category: "WebSocket")
                     self.handleError(error)
                 } else {
+                    logInfo("✅✅✅ WebSocket ping successful! Connection verified.", category: "WebSocket")
                     // Connection is truly established
                     self.connectionState = .connected
                     self.reconnectAttempts = 0
                     self.intentionalDisconnect = false // Reset on successful connection
+                    logInfo("🎉🎉🎉 WebSocket CONNECTED successfully to \(finalUrlString)", category: "WebSocket")
                     self.delegate?.webSocketDidConnect(self as WebSocketProtocol)
                     self.flushMessageQueue()
-                    logInfo("WebSocket connected and verified: \(finalUrlString)", category: "WebSocket")
                     
                     // Start receiving messages ONLY after successful connection
                     self.receiveMessage()
@@ -534,24 +548,31 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
     /// Send a raw text string directly without any JSON encoding
     /// Used for shell WebSocket which expects specific JSON format
     func sendRawText(_ text: String) {
+        logInfo("📤📤📤 sendRawText called with: \(text.prefix(200))...", category: "WebSocket")
         guard isConnected else {
+            logError("❌ Cannot send - WebSocket not connected (state: \(connectionState))", category: "WebSocket")
             // Attempt reconnection if enabled
             if enableAutoReconnect && connectionState != .reconnecting {
+                logInfo("🔄 Attempting auto-reconnection...", category: "WebSocket")
                 attemptReconnection()
             }
             return
         }
         
-        guard let webSocketTask = webSocketTask else { return }
+        guard let webSocketTask = webSocketTask else { 
+            logError("❌ WebSocketTask is nil!", category: "WebSocket")
+            return 
+        }
         
         let wsMessage = URLSessionWebSocketTask.Message.string(text)
+        logInfo("📨 Sending WebSocket message...", category: "WebSocket")
         
         webSocketTask.send(wsMessage) { [weak self] error in
             if let error = error {
-                logError("WebSocket send error: \(error)", category: "WebSocket")
+                logError("❌❌❌ WebSocket send FAILED: \(error)", category: "WebSocket")
                 self?.handleError(error)
             } else {
-                logInfo("Successfully sent raw text message", category: "WebSocket")
+                logInfo("✅✅✅ WebSocket message SENT successfully!", category: "WebSocket")
             }
         }
     }
@@ -650,6 +671,7 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
     }
     
     private func handleTextMessage(_ text: String) {
+        logInfo("📥📥📥 WebSocket received message: \(text.prefix(200))...", category: "WebSocket")
         // First, notify delegate of raw text for shell WebSocket handling
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
@@ -823,7 +845,8 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
     private func handleError(_ error: Error) {
         stopPingTimer()
         
-        let wasConnected = isConnected
+        // FIX: Check if we were connected OR connecting (not just connected)
+        let wasConnectedOrConnecting = connectionState == .connected || connectionState == .connecting
         let previousState = connectionState
         connectionState = .disconnected
         
@@ -833,11 +856,11 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
         }
         
         // Attempt reconnection only if:
-        // 1. We were previously connected
+        // 1. We were previously connected OR connecting (FIXED)
         // 2. Auto-reconnect is enabled
         // 3. This was NOT an intentional disconnect
         // 4. We're not already reconnecting
-        if wasConnected && enableAutoReconnect && !intentionalDisconnect && previousState != .reconnecting {
+        if wasConnectedOrConnecting && enableAutoReconnect && !intentionalDisconnect && previousState != .reconnecting {
             attemptReconnection()
         }
     }

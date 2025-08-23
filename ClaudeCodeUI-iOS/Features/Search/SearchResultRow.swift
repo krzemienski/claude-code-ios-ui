@@ -7,6 +7,37 @@
 
 import SwiftUI
 
+// Search result models
+struct SearchResult: Identifiable {
+    let id = UUID()
+    let fileName: String
+    let filePath: String
+    let fileType: String
+    let matchCount: Int
+    let matches: [SearchMatch]
+    let matchPreview: String?
+    
+    var fileIcon: String {
+        switch fileType {
+        case "swift": return "swift"
+        case "js", "javascript": return "curlybraces"
+        case "json": return "doc.text"
+        case "md": return "doc.richtext"
+        case "yaml", "yml": return "doc.badge.gearshape"
+        default: return "doc"
+        }
+    }
+}
+
+struct SearchMatch: Identifiable {
+    let id = UUID()
+    let lineNumber: Int
+    let columnNumber: Int
+    let lineContent: String
+    let contextBefore: String?
+    let contextAfter: String?
+}
+
 struct SearchResultRow: View {
     let result: SearchResult
     let searchText: String
@@ -20,19 +51,19 @@ struct SearchResultRow: View {
                     // File icon
                     Image(systemName: result.fileIcon)
                         .font(.system(size: 16))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                         .frame(width: 24)
                     
                     VStack(alignment: .leading, spacing: 4) {
                         // File name with highlighting
                         Text(result.fileName)
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                            .foregroundColor(Color(CyberpunkTheme.textPrimary))
                         
                         // File path
                         Text(result.filePath)
                             .font(.system(size: 12))
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                            .foregroundColor(Color(CyberpunkTheme.textTertiary))
                             .lineLimit(1)
                     }
                     
@@ -45,22 +76,22 @@ struct SearchResultRow: View {
                         Text(result.matchCount == 1 ? "match" : "matches")
                             .font(.system(size: 11))
                     }
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.primaryPink))
+                    .foregroundColor(Color(CyberpunkTheme.primaryPink))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(Color(UIColor.CyberpunkTheme.primaryPink).opacity(0.15))
+                            .fill(Color(CyberpunkTheme.primaryPink).opacity(0.15))
                             .overlay(
                                 Capsule()
-                                    .stroke(Color(UIColor.CyberpunkTheme.primaryPink).opacity(0.3), lineWidth: 1)
+                                    .stroke(Color(CyberpunkTheme.primaryPink).opacity(0.3), lineWidth: 1)
                             )
                     )
                     
                     // Expand indicator
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 12))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                        .foregroundColor(Color(CyberpunkTheme.textTertiary))
                         .padding(.leading, 8)
                 }
                 .padding()
@@ -71,7 +102,7 @@ struct SearchResultRow: View {
             if !isExpanded, let preview = result.matchPreview {
                 HStack {
                     Rectangle()
-                        .fill(Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.3))
+                        .fill(Color(CyberpunkTheme.primaryCyan).opacity(0.3))
                         .frame(width: 3)
                     
                     highlightedText(preview, searchText: searchText)
@@ -98,20 +129,20 @@ struct SearchResultRow: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(
                             isExpanded ?
-                            Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.3) :
-                            Color(UIColor.CyberpunkTheme.border),
+                            Color(CyberpunkTheme.primaryCyan).opacity(0.3) :
+                            Color(CyberpunkTheme.border),
                             lineWidth: 1
                         )
                 )
         )
         .padding(.horizontal)
         .shadow(
-            color: isExpanded ? Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.2) : Color.clear,
+            color: isExpanded ? Color(CyberpunkTheme.primaryCyan).opacity(0.2) : Color.clear,
             radius: 8,
             y: 2
         )
@@ -123,7 +154,7 @@ struct SearchResultRow: View {
         
         if range.location != NSNotFound {
             attributedString.addAttribute(.foregroundColor, 
-                                         value: UIColor.CyberpunkTheme.primaryCyan,
+                                         value: CyberpunkTheme.primaryCyan,
                                          range: range)
             attributedString.addAttribute(.font,
                                          value: UIFont.systemFont(ofSize: 12, weight: .bold),
@@ -131,7 +162,7 @@ struct SearchResultRow: View {
         }
         
         return Text(AttributedString(attributedString))
-            .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+            .foregroundColor(Color(CyberpunkTheme.textSecondary))
     }
 }
 
@@ -144,7 +175,7 @@ struct SearchMatchRow: View {
             // Line number
             Text("\(match.lineNumber)")
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                .foregroundColor(Color(CyberpunkTheme.textTertiary))
                 .frame(minWidth: 40, alignment: .trailing)
             
             VStack(alignment: .leading, spacing: 4) {
@@ -152,7 +183,7 @@ struct SearchMatchRow: View {
                 if let contextBefore = match.contextBefore {
                     Text(contextBefore)
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary).opacity(0.7))
+                        .foregroundColor(Color(CyberpunkTheme.textTertiary).opacity(0.7))
                         .lineLimit(1)
                 }
                 
@@ -163,14 +194,14 @@ struct SearchMatchRow: View {
                     .padding(.horizontal, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.1))
+                            .fill(Color(CyberpunkTheme.primaryCyan).opacity(0.1))
                     )
                 
                 // Context after (if available)
                 if let contextAfter = match.contextAfter {
                     Text(contextAfter)
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary).opacity(0.7))
+                        .foregroundColor(Color(CyberpunkTheme.textTertiary).opacity(0.7))
                         .lineLimit(1)
                 }
             }
@@ -181,13 +212,13 @@ struct SearchMatchRow: View {
             if match.columnNumber > 0 {
                 Text("col \(match.columnNumber)")
                     .font(.system(size: 10))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary).opacity(0.5))
+                    .foregroundColor(Color(CyberpunkTheme.textTertiary).opacity(0.5))
             }
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(
-            Color(UIColor.CyberpunkTheme.background).opacity(0.3)
+            Color(CyberpunkTheme.background).opacity(0.3)
         )
     }
     
@@ -198,14 +229,14 @@ struct SearchMatchRow: View {
         return HStack(spacing: 0) {
             ForEach(0..<components.count, id: \.self) { index in
                 Text(components[index])
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 
                 if index < lastIndex {
                     Text(searchText)
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                         .fontWeight(.bold)
                         .background(
-                            Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.2)
+                            Color(CyberpunkTheme.primaryCyan).opacity(0.2)
                                 .cornerRadius(2)
                         )
                 }
@@ -243,7 +274,7 @@ struct SearchResultRow_Previews: PreviewProvider {
         )
         
         ZStack {
-            Color(UIColor.CyberpunkTheme.background)
+            Color(CyberpunkTheme.background)
                 .ignoresSafeArea()
             
             VStack {

@@ -32,6 +32,7 @@
 		1D1A2B722C60A1230001A234 /* FileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A2B732C60A1230001A234 /* FileNode.swift */; };
 		1D783A051CDD52B1C1500C93 /* ProjectsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F59C225057FB7906D618B56 /* ProjectsViewController.swift */; };
 		2A1B3C4D5E6F7A8B9C0D1E2F /* PlaceholderViewControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1B3C4D5E6F7A8B9C0D1E2E /* PlaceholderViewControllers.swift */; };
+		380AC94582371EAD8D70F9AA /* NoDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C9DCE55CC1E1977D248B34 /* NoDataView.swift */; };
 		3B692F99B4F0149A40D4E437 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA20E2A91D59F7BFD98A5C6E /* AppConfig.swift */; };
 		3FCDBEF6DA4A72B49371A7D9 /* SettingsExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C2FC9F5058A817D083EBB3 /* SettingsExportManager.swift */; };
 		3FD7C8E12D3A4F5B9E8C6A2D /* SessionPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD7C8E02D3A4F5B9E8C6A2C /* SessionPersistenceService.swift */; };
@@ -45,6 +46,7 @@
 		7B1EADDE2BAEEA18ADE89ACC /* StreamingMessageHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 533EDB899614FC42E3128D5A /* StreamingMessageHandler.swift */; };
 		8B7179BBC13BCA839F2001B5 /* MessagePersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0ADC419AA63A72F5D0645E /* MessagePersistenceService.swift */; };
 		9C4D3B2E8F6A7C5D2B4A9F1E /* SessionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3F2A1C9D5E7B4F1A6C8E2D /* SessionTableViewCell.swift */; };
+		C852847112FA1B5034B7F293 /* MessageStatusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA01D8A5308B275AAF9F0E8 /* MessageStatusManager.swift */; };
 		CF1CDCE8201B4681BC26C272 /* FileExplorerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC926D40F67449184C94AA8 /* FileExplorerViewController.swift */; };
 		D70C021BC80AF1F1A7BD8B65 /* ShellWebSocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45A8268B173D82A282EC8BF2 /* ShellWebSocketManager.swift */; };
 		E4B319C67B0FD466024E7227 /* MessageCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157CE7E11CB35254C5B72124 /* MessageCells.swift */; };
@@ -93,8 +95,10 @@
 		8D7D6C565E0FF75EDE0F057E /* TerminalOutputParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TerminalOutputParser.swift; sourceTree = "<group>"; };
 		8F59C225057FB7906D618B56 /* ProjectsViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProjectsViewController.swift; path = Projects/ProjectsViewController.swift; sourceTree = "<group>"; };
 		908A0FC3A7394AEDABD41BAE /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
+		B5C9DCE55CC1E1977D248B34 /* NoDataView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NoDataView.swift; sourceTree = "<group>"; };
 		BA20E2A91D59F7BFD98A5C6E /* AppConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppConfig.swift; path = Core/Config/AppConfig.swift; sourceTree = SOURCE_ROOT; };
 		C2B39A42D2EAE5FE7B6D6731 /* CacheManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
+		CAA01D8A5308B275AAF9F0E8 /* MessageStatusManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MessageStatusManager.swift; path = MessageStatusManager.swift; sourceTree = "<group>"; };
 		DB0ADC419AA63A72F5D0645E /* MessagePersistenceService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MessagePersistenceService.swift; sourceTree = "<group>"; };
 		E4026CAF3B7A46A2AC1AD9B2 /* TerminalViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalViewController.swift; sourceTree = "<group>"; };
 		F3C2FC9F5058A817D083EBB3 /* SettingsExportManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsExportManager.swift; sourceTree = "<group>"; };
@@ -290,6 +294,7 @@
 			children = (
 				1D1A2B5B2C60A1230001A234 /* MessageBubble.swift */,
 				1D1A2B592C60A1230001A234 /* ProjectCard.swift */,
+				B5C9DCE55CC1E1977D248B34 /* NoDataView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -350,6 +355,7 @@
 				908A0FC3A7394AEDABD41BAE /* ChatViewController.swift */,
 				157CE7E11CB35254C5B72124 /* MessageCells.swift */,
 				533EDB899614FC42E3128D5A /* StreamingMessageHandler.swift */,
+				CAA01D8A5308B275AAF9F0E8 /* MessageStatusManager.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -479,6 +485,8 @@
 				7B1EADDE2BAEEA18ADE89ACC /* StreamingMessageHandler.swift in Sources */,
 				8B7179BBC13BCA839F2001B5 /* MessagePersistenceService.swift in Sources */,
 				1D783A051CDD52B1C1500C93 /* ProjectsViewController.swift in Sources */,
+				380AC94582371EAD8D70F9AA /* NoDataView.swift in Sources */,
+				C852847112FA1B5034B7F293 /* MessageStatusManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

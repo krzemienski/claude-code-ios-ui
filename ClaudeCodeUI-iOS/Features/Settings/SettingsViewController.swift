@@ -171,19 +171,49 @@ public class SettingsViewController: BaseTableViewController {
         }
         
         let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
-            if let url = alert.textFields?.first?.text, !url.isEmpty {
-                AppConfig.updateBackendURL(url)
-                self?.updateBackendURLDisplay()
-                self?.tableView.reloadData()
-                
-                // Show success message
-                let successAlert = UIAlertController(
-                    title: "Success",
-                    message: "Backend URL updated",
-                    preferredStyle: .alert
-                )
-                successAlert.addAction(UIAlertAction(title: "OK", style: .default))
-                self?.present(successAlert, animated: true)
+            if let urlString = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines), 
+               !urlString.isEmpty {
+                // Validate URL format
+                if self?.validateURL(urlString) == true {
+                    AppConfig.updateBackendURL(urlString)
+                    self?.updateBackendURLDisplay()
+                    self?.tableView.reloadData()
+                    
+                    // Show success with haptic feedback
+                    if AppConfig.enableHapticFeedback {
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                    
+                    // Brief success notification
+                    let successView = UIView(frame: CGRect(x: 0, y: -60, width: self?.view.bounds.width ?? 0, height: 60))
+                    successView.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.9)
+                    
+                    let label = UILabel(frame: successView.bounds)
+                    label.text = "✅ Backend URL Updated"
+                    label.textColor = .black
+                    label.textAlignment = .center
+                    label.font = .systemFont(ofSize: 16, weight: .semibold)
+                    successView.addSubview(label)
+                    
+                    self?.view.addSubview(successView)
+                    
+                    UIView.animate(withDuration: 0.3, animations: {
+                        successView.frame.origin.y = 0
+                    }) { _ in
+                        UIView.animate(withDuration: 0.3, delay: 1.5, options: [], animations: {
+                            successView.frame.origin.y = -60
+                        }) { _ in
+                            successView.removeFromSuperview()
+                        }
+                    }
+                } else {
+                    // Show validation error using ErrorAlertView
+                    self?.showValidationError(message: "Invalid URL format. Please enter a valid URL starting with http:// or https://")
+                }
+            } else {
+                // Show empty field error
+                self?.showValidationError(message: "URL cannot be empty. Please enter a valid backend URL.")
             }
         }
         
@@ -198,6 +228,25 @@ public class SettingsViewController: BaseTableViewController {
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         
         present(alert, animated: true)
+    }
+    
+    private func validateURL(_ urlString: String) -> Bool {
+        // Check if URL starts with http:// or https://
+        guard urlString.lowercased().hasPrefix("http://") || urlString.lowercased().hasPrefix("https://") else {
+            return false
+        }
+        
+        // Check if URL can be parsed
+        guard let url = URL(string: urlString) else {
+            return false
+        }
+        
+        // Check if URL has a host
+        guard url.host != nil else {
+            return false
+        }
+        
+        return true
     }
     
     private func testBackendConnection() {
@@ -263,18 +312,52 @@ public class SettingsViewController: BaseTableViewController {
     }
     
     private func showConnectionResult(success: Bool, message: String) {
-        let alert = UIAlertController(
-            title: success ? "✅ Connection Successful" : "❌ Connection Failed",
-            message: message,
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
-        
-        // Generate haptic feedback
-        if AppConfig.enableHapticFeedback {
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(success ? .success : .error)
+        if success {
+            // Show success notification with animation
+            let successView = UIView(frame: CGRect(x: 0, y: -100, width: view.bounds.width, height: 100))
+            successView.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.95)
+            
+            let iconLabel = UILabel(frame: CGRect(x: 0, y: 20, width: view.bounds.width, height: 30))
+            iconLabel.text = "✅"
+            iconLabel.textAlignment = .center
+            iconLabel.font = .systemFont(ofSize: 28)
+            successView.addSubview(iconLabel)
+            
+            let messageLabel = UILabel(frame: CGRect(x: 20, y: 50, width: view.bounds.width - 40, height: 40))
+            messageLabel.text = message
+            messageLabel.textColor = .black
+            messageLabel.textAlignment = .center
+            messageLabel.font = .systemFont(ofSize: 14, weight: .medium)
+            messageLabel.numberOfLines = 2
+            successView.addSubview(messageLabel)
+            
+            view.addSubview(successView)
+            
+            // Animate in
+            UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5, options: .curveEaseOut, animations: {
+                successView.frame.origin.y = 0
+            }) { _ in
+                // Animate out after delay
+                UIView.animate(withDuration: 0.3, delay: 2.0, options: .curveEaseIn, animations: {
+                    successView.frame.origin.y = -100
+                }) { _ in
+                    successView.removeFromSuperview()
+                }
+            }
+            
+            // Haptic feedback
+            if AppConfig.enableHapticFeedback {
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+            }
+        } else {
+            // Show error using ErrorAlertView with retry option
+            showNetworkError(
+                message: message,
+                retryAction: { [weak self] in
+                    self?.testBackendConnection()
+                }
+            )
         }
     }
     
@@ -364,10 +447,10 @@ public class SettingsViewController: BaseTableViewController {
             // Clear any other app-specific caches
             
             // Show loading indicator
-            self?.showCyberpunkLoading(message: "Clearing cache...")
+            self?.showLoading(message: "Clearing cache...")
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self?.hideCyberpunkLoading()
+                self?.hideLoading()
                 
                 let successAlert = UIAlertController(
                     title: "Success",

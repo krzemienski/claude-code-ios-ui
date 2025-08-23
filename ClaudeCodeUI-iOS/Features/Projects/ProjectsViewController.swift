@@ -291,7 +291,7 @@ public class ProjectsViewController: BaseViewController {
         // Show both skeleton loading and cyberpunk loading indicator
         DispatchQueue.main.async { [weak self] in
             self?.showSkeletonLoading()
-            self?.showCyberpunkLoading(message: "Initializing project database...")
+            self?.showLoading(message: "Initializing project database...")
         }
         
         print("📱 Starting initial project load...")
@@ -331,7 +331,7 @@ public class ProjectsViewController: BaseViewController {
                 // Already on main thread due to @MainActor
                 self.projects = remoteProjects
                 self.hideSkeletonLoading()
-                self.hideCyberpunkLoading()  // Hide the loading indicator
+                self.hideLoading()  // Hide the loading indicator
                 self.updateUI()
                 self.isLoadingProjects = false  // Reset loading flag
                 print("🎨 UI updated with \(self.projects.count) projects")
@@ -360,7 +360,7 @@ public class ProjectsViewController: BaseViewController {
                 
                 // Hide skeleton loading and loading indicator on error
                 self.hideSkeletonLoading()
-                self.hideCyberpunkLoading()
+                self.hideLoading()
                 self.isLoadingProjects = false  // Reset loading flag on error
                 
                 // Fall back to local data if available
@@ -597,6 +597,8 @@ public class ProjectsViewController: BaseViewController {
             textField.font = CyberpunkTheme.bodyFont
             textField.textColor = CyberpunkTheme.primaryText
             textField.tintColor = CyberpunkTheme.primaryCyan
+            textField.autocorrectionType = .no
+            textField.autocapitalizationType = .words
         }
         
         alert.addTextField { textField in
@@ -604,11 +606,41 @@ public class ProjectsViewController: BaseViewController {
             textField.font = CyberpunkTheme.codeFont
             textField.textColor = CyberpunkTheme.primaryText
             textField.tintColor = CyberpunkTheme.primaryCyan
+            textField.autocorrectionType = .no
+            textField.autocapitalizationType = .none
         }
         
         let createAction = UIAlertAction(title: "Create", style: .default) { [weak self] _ in
-            guard let name = alert.textFields?[0].text, !name.isEmpty,
-                  let path = alert.textFields?[1].text, !path.isEmpty else {
+            let name = alert.textFields?[0].text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let path = alert.textFields?[1].text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            
+            // Validate inputs
+            if name.isEmpty {
+                self?.showValidationError(message: "Project name cannot be empty. Please enter a valid name.")
+                return
+            }
+            
+            if path.isEmpty {
+                self?.showValidationError(message: "Project path cannot be empty. Please enter a valid path.")
+                return
+            }
+            
+            // Validate project name (no special characters that could cause issues)
+            let invalidCharacters = CharacterSet(charactersIn: "/\\:*?\"<>|")
+            if name.rangeOfCharacter(from: invalidCharacters) != nil {
+                self?.showValidationError(message: "Project name contains invalid characters. Please use only letters, numbers, spaces, and basic punctuation.")
+                return
+            }
+            
+            // Validate path format
+            if !self?.isValidPath(path) ?? false {
+                self?.showValidationError(message: "Invalid project path format. Use absolute paths (e.g., /Users/name/Projects) or tilde paths (e.g., ~/Projects).")
+                return
+            }
+            
+            // Check for duplicate project names
+            if self?.projects.contains(where: { $0.name.lowercased() == name.lowercased() }) ?? false {
+                self?.showValidationError(message: "A project with this name already exists. Please choose a different name.")
                 return
             }
             
@@ -623,6 +655,25 @@ public class ProjectsViewController: BaseViewController {
         alert.addAction(cancelAction)
         
         present(alert, animated: true)
+    }
+    
+    private func isValidPath(_ path: String) -> Bool {
+        // Accept absolute paths starting with /
+        if path.hasPrefix("/") {
+            return true
+        }
+        
+        // Accept tilde paths starting with ~
+        if path.hasPrefix("~") {
+            return true
+        }
+        
+        // Accept relative paths with ./ or ../
+        if path.hasPrefix("./") || path.hasPrefix("../") {
+            return true
+        }
+        
+        return false
     }
     
     private func createProject(name: String, path: String) {

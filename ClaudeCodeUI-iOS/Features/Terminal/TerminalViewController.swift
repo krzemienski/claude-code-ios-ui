@@ -19,6 +19,9 @@ class TerminalViewController: BaseViewController {
     private var isShellConnected = false
     private let maxHistorySize = 100
     
+    // UserDefaults key for command history persistence
+    private let commandHistoryKey = "TerminalCommandHistory"
+    
     // MARK: - UI Components
     
     private lazy var terminalTextView: UITextView = {
@@ -170,6 +173,23 @@ class TerminalViewController: BaseViewController {
         showWelcomeMessage()
         startScanlineAnimation()
         setupKeyboardObservers()
+        
+        // TODO[CM-Term-01]: Verify ShellWebSocketManager connection
+        // ACCEPTANCE: Connects to ws://192.168.0.43:3004/shell successfully
+        // PRIORITY: P1
+        // TEST: Send "ls -la" command and verify response
+        
+        // TODO[CM-Term-02]: Test ANSI color rendering
+        // ACCEPTANCE: All 16 colors + bright variants display correctly
+        // PRIORITY: P1
+        // DEPENDENCIES: ANSIColorParser.swift
+        
+        // ✅ COMPLETED[CM-Term-03]: Implement command history navigation
+        // IMPLEMENTATION: Arrow keys navigate history via UIKeyCommand
+        // - History persists to UserDefaults with project-specific keys
+        // - Up/down arrows and toolbar buttons both work
+        // - Maximum 100 commands stored per project
+        
         connectShellWebSocket()
     }
     
@@ -184,6 +204,73 @@ class TerminalViewController: BaseViewController {
         if isShellConnected {
             sendTerminalResize()
         }
+    }
+    
+    // MARK: - Orientation Change Handling (CM-Term-03)
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        
+        // Handle orientation change
+        coordinator.animate(alongsideTransition: { _ in
+            // Update during animation
+            if self.isShellConnected {
+                print("📱 Device orientation changing, preparing terminal resize")
+            }
+        }, completion: { _ in
+            // After rotation completes, send resize command
+            if self.isShellConnected {
+                self.sendTerminalResize()
+                print("📱 Orientation change complete, terminal resized")
+            }
+        })
+    }
+    
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        
+        // Handle size class changes (e.g., split screen on iPad)
+        if previousTraitCollection?.horizontalSizeClass != traitCollection.horizontalSizeClass ||
+           previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass {
+            if isShellConnected {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    self?.sendTerminalResize()
+                    print("📱 Size class changed, terminal resized")
+                }
+            }
+        }
+    }
+    
+    // MARK: - Keyboard Commands (CM-Term-03)
+    
+    override var keyCommands: [UIKeyCommand]? {
+        return [
+            // Up arrow - navigate to previous command
+            UIKeyCommand(
+                input: UIKeyCommand.inputUpArrow,
+                modifierFlags: [],
+                action: #selector(navigateHistoryUp),
+                discoverabilityTitle: "Previous Command"
+            ),
+            // Down arrow - navigate to next command
+            UIKeyCommand(
+                input: UIKeyCommand.inputDownArrow,
+                modifierFlags: [],
+                action: #selector(navigateHistoryDown),
+                discoverabilityTitle: "Next Command"
+            ),
+            // Cmd+K - clear terminal (CM-Term-02)
+            UIKeyCommand(
+                input: "k",
+                modifierFlags: .command,
+                action: #selector(clearTerminal),
+                discoverabilityTitle: "Clear Terminal"
+            )
+        ]
+    }
+    
+    override var canBecomeFirstResponder: Bool {
+        return true
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -856,6 +943,12 @@ extension TerminalViewController: ShellWebSocketManagerDelegate {
     }
     
     func shellWebSocket(_ manager: ShellWebSocketManager, didReceiveOutput output: String) {
+        // TODO[CM-Term-02]: Test ANSI color rendering
+        // ACCEPTANCE: All 16 colors + bright variants display correctly
+        // PRIORITY: P1
+        // DEPENDENCIES: ANSIColorParser.swift
+        // NOTES: Use comprehensive color test string
+        
         // Use TerminalOutputParser for ANSI code handling
         let parsedOutput = TerminalOutputParser.shared.parseOutput(output)
         appendAttributedText(parsedOutput)

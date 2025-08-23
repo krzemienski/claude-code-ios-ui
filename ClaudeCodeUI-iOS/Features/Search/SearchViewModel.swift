@@ -66,15 +66,65 @@ class SearchViewModel: ObservableObject {
     private var currentProjectPath: String = ""
     private var currentProjectName: String = ""
     
+    // MARK: - Search Caching (CM-Search-03)
+    private struct CacheKey: Hashable {
+        let projectName: String
+        let query: String
+        let scope: String
+        let fileTypes: [String]
+    }
+    
+    private struct CacheEntry {
+        let results: [SearchResult]
+        let timestamp: Date
+    }
+    
+    private var searchCache: [CacheKey: CacheEntry] = [:]
+    private let cacheTimeout: TimeInterval = 300 // 5 minutes in seconds
+    
+    // MARK: - Search Debouncing (CM-Search-02)
+    private var debounceTimer: Timer?
+    private let debounceDelay: TimeInterval = 0.3 // 300ms
+    private var pendingSearchParams: (query: String, scope: SearchScope, fileTypes: [FileType])?
+    
     init() {
         loadRecentSearches()
     }
     
     // MARK: - Public Methods
     
+    /// Debounced search method - delays execution by 300ms
+    func searchWithDebounce(query: String, scope: SearchScope, fileTypes: [FileType]) {
+        // Store pending search parameters
+        pendingSearchParams = (query, scope, fileTypes)
+        
+        // Cancel existing timer
+        debounceTimer?.invalidate()
+        
+        // If query is empty, clear results immediately
+        if query.isEmpty {
+            searchTask?.cancel()
+            results = []
+            isSearching = false
+            errorMessage = nil
+            return
+        }
+        
+        // Start new timer with 300ms delay
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: debounceDelay, repeats: false) { [weak self] _ in
+            guard let self = self,
+                  let params = self.pendingSearchParams else { return }
+            
+            // Execute the actual search
+            self.search(query: params.query, scope: params.scope, fileTypes: params.fileTypes)
+        }
+    }
+    
+    /// Immediate search method (used internally after debouncing)
     func search(query: String, scope: SearchScope, fileTypes: [FileType]) {
         // Cancel any existing search
         searchTask?.cancel()
+        debounceTimer?.invalidate()
         
         // Start new search
         isSearching = true
@@ -87,8 +137,8 @@ class SearchViewModel: ObservableObject {
                 // Add to recent searches
                 addToRecentSearches(query)
                 
-                // Perform search
-                let searchResults = try await performSearch(
+                // Perform search (with caching)
+                let searchResults = try await performSearchWithCache(
                     query: query,
                     scope: scope,
                     fileTypes: fileTypes
@@ -122,7 +172,63 @@ class SearchViewModel: ObservableObject {
     
     // MARK: - Private Methods
     
+    /// Performs search with caching support
+    private func performSearchWithCache(query: String, scope: SearchScope, fileTypes: [FileType]) async throws -> [SearchResult] {
+        // Create cache key
+        let cacheKey = CacheKey(
+            projectName: currentProjectName,
+            query: query.lowercased(),
+            scope: scope.rawValue,
+            fileTypes: fileTypes.map { $0.rawValue }.sorted()
+        )
+        
+        // Check cache first
+        if let cachedEntry = searchCache[cacheKey] {
+            let cacheAge = Date().timeIntervalSince(cachedEntry.timestamp)
+            if cacheAge < cacheTimeout {
+                print("🗄️ Returning cached search results (age: \(Int(cacheAge))s)")
+                return cachedEntry.results
+            } else {
+                // Cache expired, remove it
+                searchCache.removeValue(forKey: cacheKey)
+                print("🗑️ Cache expired for search query, fetching fresh results")
+            }
+        }
+        
+        // Perform actual search
+        let results = try await performSearch(query: query, scope: scope, fileTypes: fileTypes)
+        
+        // Cache the results
+        searchCache[cacheKey] = CacheEntry(results: results, timestamp: Date())
+        print("💾 Cached search results for future use")
+        
+        // Clean up old cache entries (keep max 50 entries)
+        if searchCache.count > 50 {
+            cleanupOldCacheEntries()
+        }
+        
+        return results
+    }
+    
+    /// Cleans up old cache entries beyond the limit
+    private func cleanupOldCacheEntries() {
+        let sortedEntries = searchCache.sorted { $0.value.timestamp > $1.value.timestamp }
+        let entriesToKeep = sortedEntries.prefix(30) // Keep 30 most recent
+        searchCache = Dictionary(uniqueKeysWithValues: entriesToKeep)
+        print("🧹 Cleaned up old cache entries, kept \(searchCache.count) entries")
+    }
+    
+    /// Clears the search cache (call when project changes)
+    func clearSearchCache() {
+        searchCache.removeAll()
+        print("🗑️ Cleared all search cache entries")
+    }
+    
     private func performSearch(query: String, scope: SearchScope, fileTypes: [FileType]) async throws -> [SearchResult] {
+        // ✅ COMPLETED[CM-Search-01]: Already using real API, not mock data
+        // ✅ COMPLETED[CM-Search-02]: Caching implemented in performSearchWithCache
+        // ✅ COMPLETED[CM-Search-03]: Debouncing implemented in searchWithDebounce
+        
         // Check if cancelled
         if Task.isCancelled {
             return []
@@ -189,6 +295,11 @@ class SearchViewModel: ObservableObject {
         }
     }
     
+    // TODO[CM-Search-02]: Implement search result caching
+    // ACCEPTANCE: Cache for 5 minutes, invalidate on project change
+    // PRIORITY: P1
+    // KEY: "{projectName}_{query}_{scope}"
+    
     private func getFirstProject() async throws -> Project {
         return try await withCheckedThrowingContinuation { continuation in
             APIClient.shared.getProjects { result in
@@ -250,8 +361,17 @@ class SearchViewModel: ObservableObject {
     
     /// Sets the current project context for search
     public func setProjectContext(name: String, path: String) {
+        // Check if project actually changed
+        let projectChanged = currentProjectName != name || currentProjectPath != path
+        
         currentProjectName = name
         currentProjectPath = path
+        
+        // Clear cache when project changes
+        if projectChanged {
+            clearSearchCache()
+            print("🔄 Project changed to '\(name)', cleared search cache")
+        }
     }
     
     private func generateMockResults(query: String, scope: SearchScope) -> [SearchResult] {

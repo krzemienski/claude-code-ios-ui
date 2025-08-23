@@ -17,10 +17,12 @@ class BaseMessageCell: UITableViewCell {
     let contentStackView = UIStackView()
     let timeLabel = UILabel()
     let statusImageView = UIImageView()
+    let retryButton = UIButton(type: .system)
     
     var isUserMessage = false
     var bubbleLeadingConstraint: NSLayoutConstraint?
     var bubbleTrailingConstraint: NSLayoutConstraint?
+    var onRetryTapped: (() -> Void)?
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -38,6 +40,8 @@ class BaseMessageCell: UITableViewCell {
         contentStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         timeLabel.text = nil
         statusImageView.image = nil
+        retryButton.isHidden = true
+        onRetryTapped = nil
         
         // Reset constraints
         bubbleLeadingConstraint?.isActive = false
@@ -46,6 +50,16 @@ class BaseMessageCell: UITableViewCell {
         // Clear any animations
         layer.removeAllAnimations()
         bubbleView.layer.removeAllAnimations()
+    }
+    
+    @objc private func retryButtonTapped() {
+        // Haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
+        
+        // Call retry handler
+        onRetryTapped?()
     }
     
     func setupUI() {
@@ -77,6 +91,18 @@ class BaseMessageCell: UITableViewCell {
         statusImageView.translatesAutoresizingMaskIntoConstraints = false
         statusImageView.contentMode = .scaleAspectFit
         statusImageView.tintColor = CyberpunkTheme.primaryCyan
+        
+        // Retry button setup
+        retryButton.translatesAutoresizingMaskIntoConstraints = false
+        retryButton.setTitle("Retry", for: .normal)
+        retryButton.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
+        retryButton.setTitleColor(CyberpunkTheme.accentPink, for: .normal)
+        retryButton.layer.borderWidth = 1
+        retryButton.layer.borderColor = CyberpunkTheme.accentPink.cgColor
+        retryButton.layer.cornerRadius = 12
+        retryButton.contentEdgeInsets = UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12)
+        retryButton.isHidden = true
+        retryButton.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
         
         setupConstraints()
     }
@@ -136,28 +162,81 @@ class BaseMessageCell: UITableViewCell {
         if isUserMessage {
             statusImageView.isHidden = false
             updateStatusIcon(message.status)
+            
+            // Show retry button for failed messages
+            retryButton.isHidden = message.status != .failed
         } else {
             statusImageView.isHidden = true
+            retryButton.isHidden = true
         }
     }
     
+    // Add updateStatus method as an alias to updateStatusIcon for compatibility
+    func updateStatus(_ status: MessageStatus) {
+        updateStatusIcon(status)
+    }
+    
     func updateStatusIcon(_ status: MessageStatus) {
+        // Make status icon visible for user messages
+        statusImageView.isHidden = !isUserMessage
+        
         switch status {
         case .sending:
             statusImageView.image = UIImage(systemName: "clock")
             statusImageView.tintColor = CyberpunkTheme.secondaryText
+            
+            // Add pulsing animation for sending
+            UIView.animate(withDuration: 0.8,
+                          delay: 0,
+                          options: [.repeat, .autoreverse],
+                          animations: {
+                self.statusImageView.alpha = 0.5
+            })
         case .sent:
             statusImageView.image = UIImage(systemName: "checkmark")
-            statusImageView.tintColor = CyberpunkTheme.primaryCyan
+            statusImageView.tintColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.7)
+            statusImageView.layer.removeAllAnimations()
+            statusImageView.alpha = 1.0
+            
+            // Brief scale animation
+            UIView.animate(withDuration: 0.2, animations: {
+                self.statusImageView.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
+            }) { _ in
+                UIView.animate(withDuration: 0.1) {
+                    self.statusImageView.transform = .identity
+                }
+            }
         case .delivered:
-            statusImageView.image = UIImage(systemName: "checkmark.circle")
-            statusImageView.tintColor = CyberpunkTheme.primaryCyan
-        case .read:
             statusImageView.image = UIImage(systemName: "checkmark.circle.fill")
             statusImageView.tintColor = CyberpunkTheme.primaryCyan
+            statusImageView.layer.removeAllAnimations()
+            statusImageView.alpha = 1.0
+            
+            // Pulse animation for delivered
+            UIView.animate(withDuration: 0.3, animations: {
+                self.statusImageView.transform = CGAffineTransform(scaleX: 1.3, y: 1.3)
+            }) { _ in
+                UIView.animate(withDuration: 0.2) {
+                    self.statusImageView.transform = .identity
+                }
+            }
+        case .read:
+            statusImageView.image = UIImage(systemName: "eye.fill")
+            statusImageView.tintColor = CyberpunkTheme.success
+            statusImageView.layer.removeAllAnimations()
+            statusImageView.alpha = 1.0
         case .failed:
             statusImageView.image = UIImage(systemName: "exclamationmark.circle")
             statusImageView.tintColor = CyberpunkTheme.accentPink
+            statusImageView.layer.removeAllAnimations()
+            statusImageView.alpha = 1.0
+            
+            // Shake animation for failed
+            let animation = CAKeyframeAnimation(keyPath: "transform.translation.x")
+            animation.timingFunction = CAMediaTimingFunction(name: .linear)
+            animation.duration = 0.5
+            animation.values = [-10, 10, -10, 10, -5, 5, -3, 3, 0]
+            statusImageView.layer.add(animation, forKey: "shake")
         }
     }
 }
@@ -178,7 +257,7 @@ class TextMessageCell: BaseMessageCell {
         contentStackView.addArrangedSubview(contentLabel)
         
         // Add time and status in a horizontal stack
-        let bottomStack = UIStackView(arrangedSubviews: [timeLabel, statusImageView])
+        let bottomStack = UIStackView(arrangedSubviews: [timeLabel, statusImageView, retryButton])
         bottomStack.axis = .horizontal
         bottomStack.spacing = 4
         bottomStack.alignment = .center

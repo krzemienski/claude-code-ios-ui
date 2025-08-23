@@ -403,10 +403,6 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private let streamingHandler = StreamingMessageHandler()
     private var activeStreamingMessageId: String?
     
-    // FIX #1: Per-message status tracking with timers
-    private var messageStatusTimers: [String: Timer] = [:]
-    private var lastSentMessageId: String?
-    
     // MARK: - UI Components
     
     // Typing indicator for showing when Claude is responding
@@ -534,7 +530,6 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("🚀🚀🚀 ChatViewController.viewDidLoad() started")
         setupUI()
         setupNavigationBar()
         setupKeyboardObservers()
@@ -553,11 +548,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             object: nil
         )
         
-        print("🔌 Calling connectWebSocket()...")
         connectWebSocket()
-        print("📦 Loading initial messages...")
         loadInitialMessages()
-        print("✅ ChatViewController.viewDidLoad() completed")
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -974,25 +966,14 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - WebSocket
     
     private func connectWebSocket() {
-        print("🔌🔌🔌 connectWebSocket() called")
         webSocketManager.delegate = self
-        print("🎯 WebSocket delegate set to self")
-        
         // Use correct WebSocket path from AppConfig
         let wsURL = AppConfig.websocketURL
-        print("🌐 WebSocket URL from config: \(wsURL)")
         
         // Connect with token parameter (WebSocketProtocol requires both parameters)
         let token = UserDefaults.standard.string(forKey: "authToken")
-        if let token = token {
-            print("🔑 Found auth token: \(token.prefix(20))...")
-        } else {
-            print("⚠️ No auth token found, connecting without token")
-        }
-        
-        print("🚀 Calling webSocketManager.connect()...")
         webSocketManager.connect(to: wsURL, with: token)
-        print("✅ connectWebSocket() completed")
+        print("🔌 Connecting to WebSocket at: \(wsURL)")
     }
     
     // MARK: - Data Loading
@@ -1358,46 +1339,6 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         scrollWorkItem = nil
     }
     
-    // FIX #1: Update message status with per-message timer tracking
-    private func updateMessageStatus(messageId: String, to status: MessageStatus) {
-        print("📊 [ChatVC] Updating message \(messageId) status to: \(status)")
-        
-        guard let index = messages.firstIndex(where: { $0.id == messageId }) else {
-            print("⚠️ [ChatVC] Message \(messageId) not found for status update")
-            return
-        }
-        
-        messages[index].status = status
-        
-        // Cancel timer if message succeeded
-        if status == .delivered || status == .read || status == .failed {
-            messageStatusTimers[messageId]?.invalidate()
-            messageStatusTimers.removeValue(forKey: messageId)
-        }
-        
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            let indexPath = IndexPath(row: index, section: 0)
-            if let cell = self.tableView.cellForRow(at: indexPath) as? BaseMessageCell {
-                cell.updateStatus(status)
-            }
-        }
-    }
-    
-    // FIX #1: Start timeout timer for message delivery confirmation
-    private func startMessageStatusTimer(for messageId: String) {
-        // Cancel any existing timer
-        messageStatusTimers[messageId]?.invalidate()
-        
-        // Start new timer - 30 seconds timeout
-        let timer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: false) { [weak self] _ in
-            self?.updateMessageStatus(messageId: messageId, to: .failed)
-            self?.messageStatusTimers.removeValue(forKey: messageId)
-        }
-        
-        messageStatusTimers[messageId] = timer
-    }
-    
     @objc private func sendMessage() {
         // TODO[CM-CHAT-02]: Fix message status updates not showing in UI
         // ACCEPTANCE: Messages show sending → sent → delivered status with icons
@@ -1405,17 +1346,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // DEPENDENCIES: StreamingMessageHandler.updateMessageStatus(), MessageCell.updateStatusIcon()
         // NOTES: Track individual message status, update cells when backend confirms delivery
         
-        print("📤📤📤 sendMessage() called")
-        
         guard let text = inputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !text.isEmpty else { 
             print("❌ [ChatVC] sendMessage: Empty text, aborting")
             return 
         }
-        
-        print("📤 Message text: \(text)")
-        print("🎯 Project: \(project.name) at path: \(project.path)")
-        print("🆔 Project ID: \(project.id)")
         
         // Log timestamp for debugging
         let timestamp = Date()
@@ -1434,11 +1369,12 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         )
         print("   Message ID: \(messageId)")
         
-        // FIX #1: Track this message ID for status updates
+        // Track this message ID for status updates using MessageStatusManager
         lastSentMessageId = messageId
+        MessageStatusManager.shared.trackMessage(messageId, initialStatus: .sending)
         
-        // FIX #1: Start per-message status timer
-        startMessageStatusTimer(for: messageId)
+        // MessageStatusManager now handles timeout automatically
+        // Old timer code replaced with centralized status management
         
         // Add to messages array with animation
         messages.append(userMessage)
@@ -1480,37 +1416,34 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // CRITICAL FIX: Send the message with CORRECT format
         // Backend expects 'content' field at top level, not nested in options
         let sessionId = currentSessionId ?? UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)")
-        Logger.shared.info("   Session ID: \(sessionId ?? "nil")", category: "ChatVC")
+        print("   Session ID: \(sessionId ?? "nil")")
         
         let messageData: [String: Any] = [
             "type": "claude-command",
-            "content": text,  // ✅ FIXED: Using 'content' as backend expects
-            "projectPath": project.path,  // ✅ FIXED: At top level, not nested
-            "sessionId": sessionId as Any  // ✅ FIXED: At top level, not nested
+            "content": text,  // ✅ FIXED: Using 'content' instead of 'command'
+            "projectPath": project.path,  // ✅ FIXED: Top-level field
+            "sessionId": sessionId as Any  // ✅ FIXED: Top-level field
         ]
         
-        Logger.shared.info("📡📡📡 [ChatVC] Preparing WebSocket message:", category: "ChatVC")
-        Logger.shared.info("   Original text: \(text)", category: "ChatVC")
-        Logger.shared.info("   Text length: \(text.count) chars", category: "ChatVC")
-        Logger.shared.info("   Project path: \(project.path)", category: "ChatVC")
-        Logger.shared.info("   Session ID: \(sessionId ?? "nil")", category: "ChatVC")
+        print("📡 [ChatVC] Sending WebSocket message:")
+        print("   Original text: \(text)")
+        print("   Text length: \(text.count) chars")
         
         if let jsonData = try? JSONSerialization.data(withJSONObject: messageData, options: .prettyPrinted),
            let jsonString = String(data: jsonData, encoding: .utf8) {
-            Logger.shared.info("📨 JSON payload created successfully:", category: "ChatVC")
-            Logger.shared.info(jsonString, category: "ChatVC")
+            print("   JSON payload to send:")
+            print(jsonString)
             
             // Verify content field is present and correct
             if let parsedBack = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
                let contentInJSON = parsedBack["content"] as? String {
-                Logger.shared.info("✅ Verified content field: \(contentInJSON)", category: "ChatVC")
+                print("   ✅ Verified content field: \(contentInJSON)")
             }
             
-            Logger.shared.info("🚀 Calling webSocketManager.send()...", category: "ChatVC")
             webSocketManager.send(jsonString)
-            Logger.shared.info("✅✅✅ Message sent to WebSocketManager", category: "ChatVC")
+            print("   ✅ Message sent via WebSocket")
         } else {
-            Logger.shared.error("❌❌❌ Failed to serialize message data!", category: "ChatVC")
+            print("   ❌ Failed to serialize message data")
         }
         
         // Show typing indicator after a brief delay (Claude is processing)
@@ -1715,9 +1648,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - WebSocketManagerDelegate
     
     func webSocketDidConnect(_ manager: any WebSocketProtocol) {
-        print("✅✅✅ WebSocketDidConnect delegate method called!")
-        print("   WebSocket is now CONNECTED")
-        print("   Manager: \(type(of: manager))")
+        print("✅ WebSocket connected successfully")
         updateConnectionStatus("Connected", color: UIColor.systemGreen)
         
         // Update connection status view
@@ -1740,9 +1671,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     func webSocketDidDisconnect(_ manager: any WebSocketProtocol, error: Error?) {
         let errorMessage = error?.localizedDescription ?? "Connection closed"
-        print("❌❌❌ WebSocketDidDisconnect delegate method called!")
-        print("   Error: \(errorMessage)")
-        print("   Manager: \(type(of: manager))")
+        print("❌ WebSocket disconnected: \(errorMessage)")
         updateConnectionStatus("Disconnected: \(errorMessage)", color: UIColor.systemRed)
         
         // Update connection status view
@@ -1761,21 +1690,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             )
             self.messages.append(disconnectionMessage)
             self.tableView.reloadData()
-            
-            // Show network error alert with retry option
-            self.showNetworkError(
-                message: "WebSocket connection lost. The app will automatically reconnect when the backend is available.",
-                retryAction: { [weak self] in
-                    // Force reconnection attempt
-                    self?.webSocketManager.connect()
-                }
-            )
         }
     }
     
     func webSocket(_ manager: any WebSocketProtocol, didReceiveMessage message: WebSocketMessage) {
-        print("📥📥📥 [ChatVC] WebSocket received message!")
-        print("   Timestamp: \(Date().timeIntervalSince1970)")
+        print("📥 [ChatVC] WebSocket received message - \(Date().timeIntervalSince1970)")
         print("   Type: \(message.type)")
         print("   Session ID: \(message.sessionId ?? "nil")")
         
@@ -1793,47 +1712,12 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     func webSocket(_ manager: any WebSocketProtocol, didReceiveData data: Data) {
-        print("📦 WebSocket received data: \(data.count) bytes")
+        print("WebSocket received data: \(data.count) bytes")
         // Handle raw data if needed
     }
     
-    func webSocket(_ manager: any WebSocketProtocol, didReceiveText text: String) {
-        print("📝📝📝 WebSocket received raw text!")
-        print("   Text length: \(text.count) characters")
-        print("   Text preview: \(text.prefix(200))...")
-        
-        // Try to parse as JSON for Claude responses
-        if let data = text.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-            print("   ✅ Successfully parsed as JSON")
-            if let type = json["type"] as? String {
-                print("   Message type: \(type)")
-            }
-            if let content = json["content"] as? String {
-                print("   Content preview: \(content.prefix(100))...")
-            }
-        } else {
-            print("   ⚠️ Could not parse as JSON, might be plain text response")
-        }
-    }
-    
     func webSocketConnectionStateChanged(_ state: WebSocketConnectionState) {
-        print("🔄🔄🔄 WebSocketConnectionStateChanged called!")
-        print("   New state: \(state)")
-        
-        // Log state transition for debugging
-        switch state {
-        case .disconnected:
-            print("   📵 State = DISCONNECTED")
-        case .connecting:
-            print("   🔄 State = CONNECTING...")
-        case .connected:
-            print("   ✅ State = CONNECTED")
-        case .reconnecting:
-            print("   🔁 State = RECONNECTING...")
-        case .failed:
-            print("   ❌ State = FAILED")
-        }
+        print("WebSocket connection state changed: \(state)")
         // Status updates will be handled in the individual connection methods
     }
     
@@ -1914,8 +1798,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     
                     // Also check for other metadata patterns (e.g., just numbers, just IDs)
                     let isJustNumber = Int(trimmedContent) != nil
-                    let isSessionId = trimmedContent.hasPrefix("session_") && trimmedContent.count < 50
-                    let isMetadata = isJustUUID || isJustNumber || isSessionId || trimmedContent.isEmpty
+                    let isMetadata = isJustUUID || isJustNumber || trimmedContent.isEmpty
                     
                     if isMetadata {
                         print("🚫 [ChatVC] Skipping metadata-only message: '\(trimmedContent)' at \(Date().timeIntervalSince1970)")
@@ -1991,10 +1874,13 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     print("   Streaming chunk preview: \(content.prefix(100))...")
                 }
                 
-                // FIX #2: Mark user message as delivered when we start receiving stream
-                if let lastMessageId = self.lastSentMessageId {
-                    print("   📊 Marking message \(lastMessageId) as delivered (streaming started)")
-                    self.updateMessageStatus(messageId: lastMessageId, to: .delivered)
+                // Mark user message as delivered when we start receiving stream
+                if let pendingMessage = self.messages.last(where: { $0.isUser && $0.status == .sending }) {
+                    print("   📊 Marking message \(messageId) as delivered (streaming started)")
+                    MessageStatusManager.shared.markAsDelivered(messageId)
+                    self.updateUserMessageStatus(to: .delivered, messageId: messageId)
+                    // Clear lastSentMessageId after marking to prevent duplicate updates
+                    self.lastSentMessageId = nil
                     print("   ✅ Message status updated to delivered")
                 }
                 
@@ -2008,10 +1894,13 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 print("   Content length: \(content.count) chars")
                 print("   Last sent message ID: \(self.lastSentMessageId ?? "none")")
                 
-                // FIX #2: Mark the last sent message as delivered
-                if let lastMessageId = self.lastSentMessageId {
-                    print("   📊 Marking message \(lastMessageId) as delivered")
-                    self.updateMessageStatus(messageId: lastMessageId, to: .delivered)
+                // Mark the last sent message as delivered using MessageStatusManager
+                if let messageId = self.lastSentMessageId {
+                    print("   📊 Marking message \(messageId) as delivered")
+                    MessageStatusManager.shared.markAsDelivered(messageId)
+                    self.updateUserMessageStatus(to: .delivered, messageId: messageId)
+                    // Clear lastSentMessageId to prevent marking wrong messages
+                    self.lastSentMessageId = nil
                     print("   ✅ Message status updated to delivered")
                 } else {
                     print("   ⚠️ No pending message to mark as delivered")
@@ -2256,17 +2145,10 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         hideTypingIndicator()
         
         // Mark user message as delivered since we got a response
-        // FIX: Find the most recent user message with 'sending' status instead of relying on lastSentMessageId
-        if let pendingMessage = messages.last(where: { $0.isUser && $0.status == .sending }) {
-            let messageId = pendingMessage.id
+        if let messageId = lastSentMessageId {
             updateUserMessageStatus(to: .delivered, messageId: messageId)
             print("   ✅ Marked user message \(messageId) as delivered")
-            // Update the message directly as well
-            pendingMessage.status = .delivered
-        } else if let messageId = lastSentMessageId {
-            // Fallback to lastSentMessageId if no pending message found
-            updateUserMessageStatus(to: .delivered, messageId: messageId)
-            print("   ✅ Marked user message \(messageId) as delivered (using lastSentMessageId)")
+            // Clear lastSentMessageId to prevent marking wrong messages
             lastSentMessageId = nil
         }
         
@@ -2432,7 +2314,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     // MARK: - Message Status Updates
     
-    // Note: lastSentMessageId and messageStatusTimers are already declared at line 408-409
+    // Track the last sent message ID to update its status correctly
+    private var lastSentMessageId: String?
+    private var messageStatusTimers: [String: Timer] = [:]
     
     private func updateUserMessageStatus(to status: MessageStatus, messageId: String? = nil) {
         // Use MessageStatusManager for centralized tracking
@@ -2537,18 +2421,12 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         switch message.type {
         case .streamStart:
             // Mark user message as delivered when streaming starts
-            // FIX: Find pending message first, then fallback to lastSentMessageId
-            if let pendingMessage = self.messages.last(where: { $0.isUser && $0.status == .sending }) {
-                let userMessageId = pendingMessage.id
+            if let userMessageId = self.lastSentMessageId {
                 MessageStatusManager.shared.markAsDelivered(userMessageId)
                 self.updateUserMessageStatus(to: .delivered, messageId: userMessageId)
-                pendingMessage.status = .delivered
                 print("✅ [Streaming] Marked user message \(userMessageId) as delivered on stream start")
-                // Don't clear lastSentMessageId yet - might be needed for other updates
-            } else if let userMessageId = self.lastSentMessageId {
-                MessageStatusManager.shared.markAsDelivered(userMessageId)
-                self.updateUserMessageStatus(to: .delivered, messageId: userMessageId)
-                print("✅ [Streaming] Marked user message \(userMessageId) as delivered on stream start (using lastSentMessageId)")
+                // Clear lastSentMessageId to prevent marking wrong messages
+                self.lastSentMessageId = nil
             }
             
             // Start a new streaming message with unique ID
@@ -2770,12 +2648,12 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // TODO: Implement message status timer
         // startMessageStatusTimer(for: messageId)
         
-        // Send via WebSocket with CORRECT format
+        // Send via WebSocket
         let messageDict: [String: Any] = [
             "type": "claude-command",
-            "content": messageContent,  // ✅ FIXED: Using 'content' instead of 'command'
-            "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
-            "sessionId": currentSessionId ?? ""  // ✅ FIXED: At top level, not nested
+            "content": messageContent,
+            "projectPath": project.fullPath,
+            "sessionId": currentSessionId ?? ""
         ]
         
         if let jsonData = try? JSONSerialization.data(withJSONObject: messageDict),

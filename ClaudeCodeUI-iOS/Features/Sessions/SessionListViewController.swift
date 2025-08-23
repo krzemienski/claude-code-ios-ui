@@ -238,7 +238,7 @@ public class SessionListViewController: BaseViewController {
             }
         )
         */
-        emptyStateView.backgroundColor = UIColor.CyberpunkTheme.surface
+        emptyStateView.backgroundColor = CyberpunkTheme.surface
         
         // Setup constraints
         emptyStateView.translatesAutoresizingMaskIntoConstraints = false
@@ -256,11 +256,10 @@ public class SessionListViewController: BaseViewController {
         
         if shouldShowEmpty {
             tableView.isHidden = true
-            emptyStateView.show(animated: true)
+            emptyStateView.isHidden = false
         } else {
-            emptyStateView.hide(animated: true) { [weak self] in
-                self?.tableView.isHidden = false
-            }
+            emptyStateView.isHidden = true
+            tableView.isHidden = false
         }
     }
     
@@ -481,16 +480,21 @@ public class SessionListViewController: BaseViewController {
                         self.tableView.reloadData()
                         self.updateEmptyStateVisibility()
                         
-                        // Show offline notice with more context
-                        let offlineAlert = UIAlertController(
+                        // Show offline notice with warning severity
+                        self.showErrorAlert(
+                            severity: .warning,
                             title: "Offline Mode",
                             message: "Showing cached sessions. Pull down to retry when online.",
-                            preferredStyle: .alert
+                            showRetry: false
                         )
-                        offlineAlert.addAction(UIAlertAction(title: "OK", style: .default))
-                        self.present(offlineAlert, animated: true)
                     } else {
-                        self.showError(error)
+                        // Show network error alert with retry option
+                        self.showNetworkError(
+                            message: "Unable to load sessions. Please check your connection.",
+                            retryAction: { [weak self] in
+                                self?.fetchSessions(append: append)
+                            }
+                        )
                         self.updateEmptyStateVisibility()
                     }
                 }
@@ -557,30 +561,54 @@ public class SessionListViewController: BaseViewController {
                     // Hide loading indicator
                     self.hideLoading()
                     
-                    // Show more detailed error message
-                    let errorMessage: String
+                    // Show more detailed error message with ErrorAlertView
                     if let apiError = error as? APIError {
                         switch apiError {
                         case .unauthorized:
-                            errorMessage = "Authentication required. Please log in again."
+                            self.showErrorAlert(
+                                severity: .critical,
+                                title: "Authentication Required",
+                                message: "Your session has expired. Please log in again.",
+                                showRetry: false
+                            )
                         case .networkError:
-                            errorMessage = "Network error. Please check your connection."
+                            self.showNetworkError(
+                                message: "Unable to create session. Please check your connection.",
+                                retryAction: { [weak self] in
+                                    self?.createNewSession()
+                                }
+                            )
                         case .serverError(let message):
-                            errorMessage = "Server error: \(message)"
+                            self.showErrorAlert(
+                                severity: .error,
+                                title: "Server Error",
+                                message: message,
+                                details: error.localizedDescription,
+                                showRetry: true,
+                                retryAction: { [weak self] in
+                                    self?.createNewSession()
+                                }
+                            )
                         default:
-                            errorMessage = "Failed to create session: \(error.localizedDescription)"
+                            self.showErrorAlert(
+                                title: "Session Creation Failed",
+                                message: error.localizedDescription,
+                                showRetry: true,
+                                retryAction: { [weak self] in
+                                    self?.createNewSession()
+                                }
+                            )
                         }
                     } else {
-                        errorMessage = "Failed to create session: \(error.localizedDescription)"
+                        self.showErrorAlert(
+                            title: "Session Creation Failed",
+                            message: error.localizedDescription,
+                            showRetry: true,
+                            retryAction: { [weak self] in
+                                self?.createNewSession()
+                            }
+                        )
                     }
-                    
-                    let alert = UIAlertController(
-                        title: "Session Creation Failed",
-                        message: errorMessage,
-                        preferredStyle: .alert
-                    )
-                    alert.addAction(UIAlertAction(title: "OK", style: .default))
-                    self.present(alert, animated: true)
                 }
             }
         }
@@ -835,7 +863,16 @@ extension SessionListViewController: UITableViewDelegate {
                     // Show error and don't delete from UI
                     await MainActor.run {
                         completion(false)
-                        self.showError(error)
+                        self.showErrorAlert(
+                            severity: .error,
+                            title: "Delete Failed",
+                            message: "Unable to delete session. Please try again.",
+                            details: error.localizedDescription,
+                            showRetry: true,
+                            retryAction: { [weak self] in
+                                self?.deleteSession(at: indexPath, completion: { _ in })
+                            }
+                        )
                     }
                 }
             }

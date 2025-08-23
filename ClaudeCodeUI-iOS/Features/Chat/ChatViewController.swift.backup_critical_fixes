@@ -403,10 +403,6 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private let streamingHandler = StreamingMessageHandler()
     private var activeStreamingMessageId: String?
     
-    // FIX #1: Per-message status tracking with timers
-    private var messageStatusTimers: [String: Timer] = [:]
-    private var lastSentMessageId: String?
-    
     // MARK: - UI Components
     
     // Typing indicator for showing when Claude is responding
@@ -1358,46 +1354,6 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         scrollWorkItem = nil
     }
     
-    // FIX #1: Update message status with per-message timer tracking
-    private func updateMessageStatus(messageId: String, to status: MessageStatus) {
-        print("📊 [ChatVC] Updating message \(messageId) status to: \(status)")
-        
-        guard let index = messages.firstIndex(where: { $0.id == messageId }) else {
-            print("⚠️ [ChatVC] Message \(messageId) not found for status update")
-            return
-        }
-        
-        messages[index].status = status
-        
-        // Cancel timer if message succeeded
-        if status == .delivered || status == .read || status == .failed {
-            messageStatusTimers[messageId]?.invalidate()
-            messageStatusTimers.removeValue(forKey: messageId)
-        }
-        
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            let indexPath = IndexPath(row: index, section: 0)
-            if let cell = self.tableView.cellForRow(at: indexPath) as? BaseMessageCell {
-                cell.updateStatus(status)
-            }
-        }
-    }
-    
-    // FIX #1: Start timeout timer for message delivery confirmation
-    private func startMessageStatusTimer(for messageId: String) {
-        // Cancel any existing timer
-        messageStatusTimers[messageId]?.invalidate()
-        
-        // Start new timer - 30 seconds timeout
-        let timer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: false) { [weak self] _ in
-            self?.updateMessageStatus(messageId: messageId, to: .failed)
-            self?.messageStatusTimers.removeValue(forKey: messageId)
-        }
-        
-        messageStatusTimers[messageId] = timer
-    }
-    
     @objc private func sendMessage() {
         // TODO[CM-CHAT-02]: Fix message status updates not showing in UI
         // ACCEPTANCE: Messages show sending → sent → delivered status with icons
@@ -1434,11 +1390,12 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         )
         print("   Message ID: \(messageId)")
         
-        // FIX #1: Track this message ID for status updates
+        // Track this message ID for status updates using MessageStatusManager
         lastSentMessageId = messageId
+        MessageStatusManager.shared.trackMessage(messageId, initialStatus: .sending)
         
-        // FIX #1: Start per-message status timer
-        startMessageStatusTimer(for: messageId)
+        // MessageStatusManager now handles timeout automatically
+        // Old timer code replaced with centralized status management
         
         // Add to messages array with animation
         messages.append(userMessage)
@@ -1761,15 +1718,6 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             )
             self.messages.append(disconnectionMessage)
             self.tableView.reloadData()
-            
-            // Show network error alert with retry option
-            self.showNetworkError(
-                message: "WebSocket connection lost. The app will automatically reconnect when the backend is available.",
-                retryAction: { [weak self] in
-                    // Force reconnection attempt
-                    self?.webSocketManager.connect()
-                }
-            )
         }
     }
     
@@ -1915,7 +1863,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     // Also check for other metadata patterns (e.g., just numbers, just IDs)
                     let isJustNumber = Int(trimmedContent) != nil
                     let isSessionId = trimmedContent.hasPrefix("session_") && trimmedContent.count < 50
-                    let isMetadata = isJustUUID || isJustNumber || isSessionId || trimmedContent.isEmpty
+                    let isMetadata = isJustUUID || isJustNumber || trimmedContent.isEmpty
                     
                     if isMetadata {
                         print("🚫 [ChatVC] Skipping metadata-only message: '\(trimmedContent)' at \(Date().timeIntervalSince1970)")
@@ -1991,10 +1939,13 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     print("   Streaming chunk preview: \(content.prefix(100))...")
                 }
                 
-                // FIX #2: Mark user message as delivered when we start receiving stream
-                if let lastMessageId = self.lastSentMessageId {
-                    print("   📊 Marking message \(lastMessageId) as delivered (streaming started)")
-                    self.updateMessageStatus(messageId: lastMessageId, to: .delivered)
+                // Mark user message as delivered when we start receiving stream
+                if let pendingMessage = self.messages.last(where: { $0.isUser && $0.status == .sending }) {
+                    let messageId = pendingMessage.id
+                    print("   📊 Marking message \(messageId) as delivered (streaming started)")
+                    MessageStatusManager.shared.markAsDelivered(messageId)
+                    // Clear lastSentMessageId after marking to prevent duplicate updates
+                    self.lastSentMessageId = nil
                     print("   ✅ Message status updated to delivered")
                 }
                 
@@ -2008,10 +1959,13 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 print("   Content length: \(content.count) chars")
                 print("   Last sent message ID: \(self.lastSentMessageId ?? "none")")
                 
-                // FIX #2: Mark the last sent message as delivered
-                if let lastMessageId = self.lastSentMessageId {
-                    print("   📊 Marking message \(lastMessageId) as delivered")
-                    self.updateMessageStatus(messageId: lastMessageId, to: .delivered)
+                // Mark the last sent message as delivered using MessageStatusManager
+                if let pendingMessage = self.messages.last(where: { $0.isUser && $0.status == .sending }) {
+                    let messageId = pendingMessage.id
+                    print("   📊 Marking message \(messageId) as delivered")
+                    MessageStatusManager.shared.markAsDelivered(messageId)
+                    // Clear lastSentMessageId to prevent marking wrong messages
+                    self.lastSentMessageId = nil
                     print("   ✅ Message status updated to delivered")
                 } else {
                     print("   ⚠️ No pending message to mark as delivered")
@@ -2256,17 +2210,10 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         hideTypingIndicator()
         
         // Mark user message as delivered since we got a response
-        // FIX: Find the most recent user message with 'sending' status instead of relying on lastSentMessageId
-        if let pendingMessage = messages.last(where: { $0.isUser && $0.status == .sending }) {
-            let messageId = pendingMessage.id
+        if let messageId = lastSentMessageId {
             updateUserMessageStatus(to: .delivered, messageId: messageId)
             print("   ✅ Marked user message \(messageId) as delivered")
-            // Update the message directly as well
-            pendingMessage.status = .delivered
-        } else if let messageId = lastSentMessageId {
-            // Fallback to lastSentMessageId if no pending message found
-            updateUserMessageStatus(to: .delivered, messageId: messageId)
-            print("   ✅ Marked user message \(messageId) as delivered (using lastSentMessageId)")
+            // Clear lastSentMessageId to prevent marking wrong messages
             lastSentMessageId = nil
         }
         
@@ -2432,7 +2379,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     // MARK: - Message Status Updates
     
-    // Note: lastSentMessageId and messageStatusTimers are already declared at line 408-409
+    // Track the last sent message ID to update its status correctly
+    private var lastSentMessageId: String?
+    private var messageStatusTimers: [String: Timer] = [:]
     
     private func updateUserMessageStatus(to status: MessageStatus, messageId: String? = nil) {
         // Use MessageStatusManager for centralized tracking
@@ -2537,18 +2486,12 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         switch message.type {
         case .streamStart:
             // Mark user message as delivered when streaming starts
-            // FIX: Find pending message first, then fallback to lastSentMessageId
-            if let pendingMessage = self.messages.last(where: { $0.isUser && $0.status == .sending }) {
-                let userMessageId = pendingMessage.id
+            if let userMessageId = self.lastSentMessageId {
                 MessageStatusManager.shared.markAsDelivered(userMessageId)
                 self.updateUserMessageStatus(to: .delivered, messageId: userMessageId)
-                pendingMessage.status = .delivered
                 print("✅ [Streaming] Marked user message \(userMessageId) as delivered on stream start")
-                // Don't clear lastSentMessageId yet - might be needed for other updates
-            } else if let userMessageId = self.lastSentMessageId {
-                MessageStatusManager.shared.markAsDelivered(userMessageId)
-                self.updateUserMessageStatus(to: .delivered, messageId: userMessageId)
-                print("✅ [Streaming] Marked user message \(userMessageId) as delivered on stream start (using lastSentMessageId)")
+                // Clear lastSentMessageId to prevent marking wrong messages
+                self.lastSentMessageId = nil
             }
             
             // Start a new streaming message with unique ID

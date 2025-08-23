@@ -443,7 +443,7 @@ class FileExplorerViewController: BaseViewController {
     @MainActor
     private func refreshFileTreeWithFeedback() async {
         // Show loading indicator while scanning files
-        showCyberpunkLoading(message: "Scanning file tree...")
+        showLoading(message: "Scanning file tree...")
         
         do {
             // Call backend API to get file tree
@@ -478,7 +478,7 @@ class FileExplorerViewController: BaseViewController {
             print("✅ File tree refreshed successfully")
             
             // Hide loading indicator on success
-            hideCyberpunkLoading()
+            hideLoading()
             refreshControl.endRefreshing()
         } catch {
             Logger.shared.error("Failed to refresh file tree: \(error)")
@@ -491,7 +491,7 @@ class FileExplorerViewController: BaseViewController {
             print("❌ File tree refresh failed: \(error.localizedDescription)")
             
             // Hide loading indicator on error
-            hideCyberpunkLoading()
+            hideLoading()
             refreshControl.endRefreshing()
             
             // Show error alert
@@ -516,10 +516,56 @@ class FileExplorerViewController: BaseViewController {
             textField.font = CyberpunkTheme.bodyFont
             textField.textColor = CyberpunkTheme.primaryText
             textField.tintColor = CyberpunkTheme.primaryCyan
+            textField.autocorrectionType = .no
+            textField.autocapitalizationType = .none
         }
         
         let createAction = UIAlertAction(title: "Create", style: .default) { [weak self] _ in
-            guard let name = alert.textFields?.first?.text, !name.isEmpty else { return }
+            let name = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            
+            // Validate name is not empty
+            if name.isEmpty {
+                self?.showValidationError(message: "\(isDirectory ? "Folder" : "File") name cannot be empty. Please enter a valid name.")
+                return
+            }
+            
+            // Validate filename/folder name for invalid characters
+            let invalidCharacters = CharacterSet(charactersIn: "/\\:*?\"<>|")
+            if name.rangeOfCharacter(from: invalidCharacters) != nil {
+                self?.showValidationError(message: "\(isDirectory ? "Folder" : "File") name contains invalid characters. Please use only letters, numbers, dots, dashes, and underscores.")
+                return
+            }
+            
+            // Validate that name doesn't start with a dot (unless it's a dotfile)
+            if name.hasPrefix(".") && name.count == 1 {
+                self?.showValidationError(message: "Invalid name. A \(isDirectory ? "folder" : "file") cannot be named just a dot.")
+                return
+            }
+            
+            // Validate file extension for files
+            if !isDirectory && !name.contains(".") {
+                // Warning for files without extension
+                let warningAlert = UIAlertController(
+                    title: "No File Extension",
+                    message: "The file '\(name)' has no extension. Do you want to continue?",
+                    preferredStyle: .alert
+                )
+                
+                let continueAction = UIAlertAction(title: "Continue", style: .default) { _ in
+                    self?.createFileOrFolder(name: name, isDirectory: false)
+                }
+                continueAction.setValue(CyberpunkTheme.primaryCyan, forKey: "titleTextColor")
+                
+                let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+                cancelAction.setValue(CyberpunkTheme.secondaryText, forKey: "titleTextColor")
+                
+                warningAlert.addAction(continueAction)
+                warningAlert.addAction(cancelAction)
+                
+                self?.present(warningAlert, animated: true)
+                return
+            }
+            
             self?.createFileOrFolder(name: name, isDirectory: isDirectory)
         }
         createAction.setValue(CyberpunkTheme.primaryCyan, forKey: "titleTextColor")
@@ -537,7 +583,7 @@ class FileExplorerViewController: BaseViewController {
         Task {
             // Show loading indicator while creating
             await MainActor.run {
-                showCyberpunkLoading(message: "Creating \(isDirectory ? "folder" : "file")...")
+                showLoading(message: "Creating \(isDirectory ? "folder" : "file")...")
             }
             
             do {
@@ -547,9 +593,9 @@ class FileExplorerViewController: BaseViewController {
                 
                 if isDirectory {
                     // For directories, create via the file API with special marker
-                    try await apiClient.writeFile(
+                    try await apiClient.saveFile(
                         projectName: project.name,
-                        path: "\(fullPath)/.gitkeep",  // Create a placeholder file in the directory
+                        filePath: "\(fullPath)/.gitkeep",  // Create a placeholder file in the directory
                         content: ""
                     )
                 } else {
@@ -557,9 +603,9 @@ class FileExplorerViewController: BaseViewController {
                     let initialContent = name.hasSuffix(".swift") ? 
                         "//\n//  \(name)\n//  \(project.name)\n//\n//  Created on \(Date())\n//\n\nimport Foundation\n\n" : ""
                     
-                    try await apiClient.writeFile(
+                    try await apiClient.saveFile(
                         projectName: project.name,
-                        path: fullPath,
+                        filePath: fullPath,
                         content: initialContent
                     )
                 }
@@ -568,7 +614,7 @@ class FileExplorerViewController: BaseViewController {
                     Logger.shared.info("Successfully created \(isDirectory ? "folder" : "file"): \(name)")
                     
                     // Hide loading indicator
-                    self.hideCyberpunkLoading()
+                    self.hideLoading()
                     
                     // Refresh the file tree
                     self.loadFileTree()
@@ -580,10 +626,63 @@ class FileExplorerViewController: BaseViewController {
             } catch {
                 await MainActor.run {
                     // Hide loading indicator on error
-                    self.hideCyberpunkLoading()
+                    self.hideLoading()
                     
                     Logger.shared.error("Failed to create \(isDirectory ? "folder" : "file"): \(error)")
-                    self.showError("Failed to create \(isDirectory ? "folder" : "file"): \(error.localizedDescription)")
+                    
+                    // Determine error type and show appropriate alert
+                    let errorMessage: String
+                    let showRetry: Bool
+                    
+                    if let apiError = error as? APIError {
+                        switch apiError {
+                        case .networkError:
+                            errorMessage = "Network error while creating \(isDirectory ? "folder" : "file"). Please check your connection."
+                            showRetry = true
+                        case .serverError(let code):
+                            if code == 409 {
+                                errorMessage = "A \(isDirectory ? "folder" : "file") with this name already exists in this location."
+                                showRetry = false
+                            } else if code == 403 {
+                                errorMessage = "Permission denied. You don't have write access to this location."
+                                showRetry = false
+                            } else if code == 507 {
+                                errorMessage = "Insufficient storage space to create the \(isDirectory ? "folder" : "file")."
+                                showRetry = false
+                            } else {
+                                errorMessage = "Server error (\(code)) while creating \(isDirectory ? "folder" : "file")."
+                                showRetry = true
+                            }
+                        case .invalidResponse:
+                            errorMessage = "Invalid response from server. Please try again."
+                            showRetry = true
+                        default:
+                            errorMessage = "Failed to create \(isDirectory ? "folder" : "file"): \(error.localizedDescription)"
+                            showRetry = true
+                        }
+                    } else {
+                        errorMessage = "Failed to create \(isDirectory ? "folder" : "file"): \(error.localizedDescription)"
+                        showRetry = true
+                    }
+                    
+                    if showRetry {
+                        self.showErrorAlert(
+                            severity: .error,
+                            title: "Creation Failed",
+                            message: errorMessage,
+                            showRetry: true,
+                            retryAction: { [weak self] in
+                                self?.createFileOrFolder(name: name, isDirectory: isDirectory)
+                            }
+                        )
+                    } else {
+                        self.showErrorAlert(
+                            severity: .warning,
+                            title: "Cannot Create",
+                            message: errorMessage,
+                            showRetry: false
+                        )
+                    }
                 }
             }
         }
@@ -602,10 +701,7 @@ class FileExplorerViewController: BaseViewController {
             Task {
                 do {
                     // Call the delete file API endpoint
-                    try await self.apiClient.deleteFile(
-                        projectName: self.project.name,
-                        path: node.path
-                    )
+                    try await self.apiClient.deleteFile(path: node.path)
                     
                     await MainActor.run {
                         Logger.shared.info("Successfully deleted: \(node.path)")
@@ -660,21 +756,18 @@ class FileExplorerViewController: BaseViewController {
                     // Read the file content first
                     let content = try await self.apiClient.readFile(
                         projectName: self.project.name,
-                        path: node.path
+                        filePath: node.path
                     )
                     
                     // Write to new location
-                    try await self.apiClient.writeFile(
+                    try await self.apiClient.saveFile(
                         projectName: self.project.name,
-                        path: newPath,
+                        filePath: newPath,
                         content: content
                     )
                     
                     // Delete old file
-                    try await self.apiClient.deleteFile(
-                        projectName: self.project.name,
-                        path: node.path
-                    )
+                    try await self.apiClient.deleteFile(path: node.path)
                     
                     await MainActor.run {
                         Logger.shared.info("Successfully renamed \(node.name) to \(newName)")
