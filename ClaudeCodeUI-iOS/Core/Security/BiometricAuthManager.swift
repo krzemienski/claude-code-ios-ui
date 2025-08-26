@@ -7,9 +7,20 @@
 
 import Foundation
 import LocalAuthentication
+import UIKit
 
 /// Manages biometric authentication (Face ID/Touch ID) for the app
 public class BiometricAuthManager {
+    
+    // MARK: - Singleton
+    
+    public static let shared = BiometricAuthManager()
+    
+    // MARK: - Properties
+    
+    private var authenticationTimer: Timer?
+    private var lastAuthenticationTime: Date?
+    private let authenticationTimeout: TimeInterval = 300 // 5 minutes
     
     enum BiometricError: LocalizedError {
         case notAvailable
