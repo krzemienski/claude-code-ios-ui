@@ -44,6 +44,8 @@ actor APIClient: APIClientProtocol {
     private let baseURL: String
     private let session: URLSession
     private var authToken: String?
+    private let offlineManager = OfflineManager.shared
+    private let offlineStore = OfflineDataStore.shared
     
     // MARK: - Initialization
     init(baseURL: String = AppConfig.backendURL, session: URLSession = .shared) {
@@ -78,23 +80,70 @@ actor APIClient: APIClientProtocol {
         print("🔍 [APIClient] Using baseURL: \(baseURL)")
         print("🔍 [APIClient] Full URL will be: \(baseURL)/api/projects")
         
-        let dtos: [ProjectDTO] = try await request(.getProjects())
-        print("✅ [APIClient] Successfully decoded \(dtos.count) ProjectDTOs")
+        // Check if offline
+        if await offlineManager.isOffline {
+            print("📵 [APIClient] Offline - loading projects from cache")
+            let offlineProjects = await offlineStore.fetchOfflineProjects()
+            return offlineProjects.compactMap { offline in
+                guard let id = offline.id,
+                      let name = offline.name,
+                      let path = offline.path else { return nil }
+                return Project(
+                    id: id,
+                    name: name,
+                    path: path,
+                    displayName: name,
+                    createdAt: offline.createdAt ?? Date(),
+                    updatedAt: offline.lastModified ?? Date(),
+                    actualSessionCount: 0
+                )
+            }
+        }
         
-        return dtos.map { dto in
-            // Calculate session count from sessions array or sessionMeta
-            let sessionCount = dto.sessions?.count ?? dto.sessionMeta?.total ?? 0
-            print("📊 [APIClient] Project '\(dto.name)' has \(sessionCount) sessions")
+        do {
+            let dtos: [ProjectDTO] = try await request(.getProjects())
+            print("✅ [APIClient] Successfully decoded \(dtos.count) ProjectDTOs")
             
-            return Project(
-                id: dto.name, // Use name as ID since backend doesn't provide ID
-                name: dto.name,
-                path: dto.path,
-                displayName: dto.displayName ?? dto.name,
-                createdAt: Date(), // Default to current date since backend doesn't provide
-                updatedAt: Date(),  // Default to current date since backend doesn't provide
-                actualSessionCount: sessionCount
-            )
+            let projects = dtos.map { dto in
+                // Calculate session count from sessions array or sessionMeta
+                let sessionCount = dto.sessions?.count ?? dto.sessionMeta?.total ?? 0
+                print("📊 [APIClient] Project '\(dto.name)' has \(sessionCount) sessions")
+                
+                return Project(
+                    id: dto.name, // Use name as ID since backend doesn't provide ID
+                    name: dto.name,
+                    path: dto.path,
+                    displayName: dto.displayName ?? dto.name,
+                    createdAt: Date(), // Default to current date since backend doesn't provide
+                    updatedAt: Date(),  // Default to current date since backend doesn't provide
+                    actualSessionCount: sessionCount
+                )
+            }
+            
+            // Cache projects for offline use
+            for project in projects {
+                await offlineStore.saveProject(project, isOffline: false)
+            }
+            
+            return projects
+        } catch {
+            // If network fails, try offline cache
+            print("⚠️ [APIClient] Network request failed, falling back to offline cache")
+            let offlineProjects = await offlineStore.fetchOfflineProjects()
+            return offlineProjects.compactMap { offline in
+                guard let id = offline.id,
+                      let name = offline.name,
+                      let path = offline.path else { return nil }
+                return Project(
+                    id: id,
+                    name: name,
+                    path: path,
+                    displayName: name,
+                    createdAt: offline.createdAt ?? Date(),
+                    updatedAt: offline.lastModified ?? Date(),
+                    actualSessionCount: 0
+                )
+            }
         }
     }
     

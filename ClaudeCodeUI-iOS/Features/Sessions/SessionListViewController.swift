@@ -761,35 +761,88 @@ extension SessionListViewController: UITableViewDelegate {
         return 80
     }
     
+    public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        // Entrance animation for cells
+        if !sessions.isEmpty {
+            // Only animate the first few visible cells
+            let visibleCells = tableView.visibleCells
+            if visibleCells.count <= 10 {
+                cell.alpha = 0
+                cell.transform = CGAffineTransform(translationX: -50, y: 0)
+                
+                UIView.animate(withDuration: 0.4,
+                              delay: 0.05 * Double(indexPath.row),
+                              usingSpringWithDamping: 0.8,
+                              initialSpringVelocity: 0.5,
+                              options: .curveEaseOut,
+                              animations: {
+                    cell.alpha = 1
+                    cell.transform = .identity
+                })
+            }
+        }
+    }
+    
     // MARK: - Swipe to Delete
     public func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         return true
     }
     
     public func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        // Delete action
-        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completion in
-            // Haptic feedback
-            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        // Delete action with enhanced visuals
+        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, view, completion in
+            // Enhanced haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
+            impactFeedback.prepare()
             impactFeedback.impactOccurred()
+            
+            // Animate the cell before deletion
+            if let cell = tableView.cellForRow(at: indexPath) {
+                AnimationManager.shared.shake(cell, intensity: 10)
+            }
             
             self?.deleteSession(at: indexPath, completion: completion)
         }
         deleteAction.backgroundColor = CyberpunkTheme.accentPink
         deleteAction.image = UIImage(systemName: "trash.fill")
         
-        // Archive action
-        let archiveAction = UIContextualAction(style: .normal, title: "Archive") { [weak self] _, _, completion in
+        // Archive action with animation
+        let archiveAction = UIContextualAction(style: .normal, title: "Archive") { [weak self] _, view, completion in
             // Haptic feedback
             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.prepare()
             impactFeedback.impactOccurred()
             
-            self?.archiveSession(at: indexPath, completion: completion)
+            // Animate the cell
+            if let cell = tableView.cellForRow(at: indexPath) {
+                AnimationManager.shared.fadeOut(cell, duration: 0.3) {
+                    self?.archiveSession(at: indexPath, completion: completion)
+                }
+            } else {
+                self?.archiveSession(at: indexPath, completion: completion)
+            }
         }
-        archiveAction.backgroundColor = UIColor.systemGray
+        archiveAction.backgroundColor = CyberpunkTheme.surfaceSecondary
         archiveAction.image = UIImage(systemName: "archivebox.fill")
         
-        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, archiveAction])
+        // Duplicate action
+        let duplicateAction = UIContextualAction(style: .normal, title: "Duplicate") { [weak self] _, _, completion in
+            // Haptic feedback
+            let selectionFeedback = UISelectionFeedbackGenerator()
+            selectionFeedback.prepare()
+            selectionFeedback.selectionChanged()
+            
+            // Animate the cell
+            if let cell = tableView.cellForRow(at: indexPath) {
+                AnimationManager.shared.pulse(cell, scale: 1.05, duration: 0.2)
+            }
+            
+            self?.duplicateSession(at: indexPath, completion: completion)
+        }
+        duplicateAction.backgroundColor = CyberpunkTheme.primaryCyan
+        duplicateAction.image = UIImage(systemName: "doc.on.doc.fill")
+        
+        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, archiveAction, duplicateAction])
         configuration.performsFirstActionWithFullSwipe = false
         return configuration
     }
@@ -909,6 +962,55 @@ extension SessionListViewController: UITableViewDelegate {
                 }
                 
                 completion(true)
+            }
+        }
+    }
+    
+    private func duplicateSession(at indexPath: IndexPath, completion: @escaping (Bool) -> Void) {
+        let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
+        
+        // Create a new session with duplicated name
+        let duplicatedName = "Copy of \(session.name ?? "Untitled")"
+        
+        Task {
+            do {
+                // Create new session with duplicated name
+                let newSession = try await APIClient.shared.createSession(
+                    projectName: project.name,
+                    sessionName: duplicatedName
+                )
+                
+                await MainActor.run {
+                    // Add to sessions array and sort
+                    self.sessions.insert(newSession, at: 0)
+                    self.sortSessions()
+                    
+                    // Animate the new row appearance
+                    if let newIndex = self.sessions.firstIndex(where: { $0.id == newSession.id }) {
+                        let newIndexPath = IndexPath(row: newIndex, section: 0)
+                        self.tableView.insertRows(at: [newIndexPath], with: .automatic)
+                        
+                        // Highlight the new cell
+                        if let newCell = self.tableView.cellForRow(at: newIndexPath) {
+                            AnimationManager.shared.neonPulse(newCell, color: CyberpunkTheme.primaryCyan)
+                        }
+                    }
+                    
+                    // Show success feedback
+                    let successFeedback = UINotificationFeedbackGenerator()
+                    successFeedback.notificationOccurred(.success)
+                    
+                    completion(true)
+                }
+            } catch {
+                await MainActor.run {
+                    self.showErrorAlert(
+                        title: "Duplication Failed",
+                        message: "Unable to duplicate session. Please try again.",
+                        details: error.localizedDescription
+                    )
+                    completion(false)
+                }
             }
         }
     }

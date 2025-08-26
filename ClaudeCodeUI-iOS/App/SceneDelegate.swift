@@ -18,6 +18,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: windowScene)
         window?.overrideUserInterfaceStyle = .dark // Force dark mode
         
+        // Initialize analytics
+        AnalyticsInitializer.initialize()
+        
         // Initialize app coordinator
         appCoordinator = AppCoordinator(window: window!)
         appCoordinator?.start()
@@ -33,6 +36,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
+        // Track app entered foreground
+        AnalyticsManager.shared.track(.appEnteredForeground)
+        
         // Restart any paused WebSocket connections
         let webSocketManager = DIContainer.shared.webSocketManager
         if !webSocketManager.isConnected {
@@ -63,6 +69,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
+        // Track app entered background
+        AnalyticsManager.shared.track(.appEnteredBackground)
+        AnalyticsManager.shared.flush()
+        
         // Save state and disconnect WebSocket
         Task { @MainActor in
             try? DIContainer.shared.dataContainer?.save()

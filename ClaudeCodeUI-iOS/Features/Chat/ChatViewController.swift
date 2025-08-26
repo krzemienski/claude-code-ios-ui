@@ -410,11 +410,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - UI Components
     
     // Typing indicator for showing when Claude is responding
-    // TODO[CM-Chat-01]: Implement typing indicator animation
-    // ACCEPTANCE: Show "Claude is typing..." with dots animation when receiving messages
-    // PRIORITY: P1
-    // DEPENDENCIES: WebSocketManager message types, TypingIndicatorView component
-    // private let typingIndicator = TypingIndicatorView()
+    private lazy var typingIndicator: UIView = {
+        return AnimationManager.shared.createTypingIndicator()
+    }()
     
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
@@ -921,17 +919,12 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         
         // Add pulsing animation to indicator
         if !isConnected {
-            // Pulsing animation for disconnected state
-            let pulseAnimation = CABasicAnimation(keyPath: "opacity")
-            pulseAnimation.fromValue = 1.0
-            pulseAnimation.toValue = 0.3
-            pulseAnimation.duration = 0.8
-            pulseAnimation.autoreverses = true
-            pulseAnimation.repeatCount = .infinity
-            connectionIndicatorView.layer.add(pulseAnimation, forKey: "pulse")
+            // Use AnimationManager for neon pulse effect
+            AnimationManager.shared.neonPulse(connectionIndicatorView, color: CyberpunkTheme.warning)
         } else {
-            // Remove pulsing animation when connected
-            connectionIndicatorView.layer.removeAnimation(forKey: "pulse")
+            // Remove pulsing animation when connected and add success pulse
+            connectionIndicatorView.layer.removeAllAnimations()
+            AnimationManager.shared.scaleSpring(connectionIndicatorView, scale: 1.2, duration: 0.4)
         }
         
         // Animate the status bar appearance
@@ -2642,6 +2635,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // Show typing indicator if it's the last row
         if isShowingTypingIndicator && indexPath.row == messages.count {
             let cell = tableView.dequeueReusableCell(withIdentifier: TypingIndicatorCell.identifier, for: indexPath)
+            // Add pulse animation to typing indicator
+            AnimationManager.shared.pulse(cell, scale: 1.02, duration: 0.8)
             return cell
         }
         
@@ -2811,6 +2806,25 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         if let typingCell = cell as? TypingIndicatorCell {
             typingCell.startAnimating()
             print("🔄 Started typing indicator animation")
+        } else {
+            // Add entrance animation for message cells
+            // Only animate new messages (last 3 rows)
+            let rowsFromBottom = messages.count - indexPath.row
+            if rowsFromBottom <= 3 {
+                // Slide in from right with fade
+                cell.alpha = 0
+                cell.transform = CGAffineTransform(translationX: tableView.bounds.width * 0.3, y: 0)
+                
+                UIView.animate(withDuration: 0.3, 
+                              delay: 0.05 * Double(3 - rowsFromBottom),
+                              usingSpringWithDamping: 0.8,
+                              initialSpringVelocity: 0.5,
+                              options: .curveEaseOut,
+                              animations: {
+                    cell.alpha = 1
+                    cell.transform = .identity
+                })
+            }
         }
     }
     

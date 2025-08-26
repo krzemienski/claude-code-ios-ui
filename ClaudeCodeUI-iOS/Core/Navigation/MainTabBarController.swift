@@ -20,6 +20,9 @@ public class MainTabBarController: UITabBarController {
     private lazy var gitVC = GitViewController(project: currentProject)
     private var currentProject: Project?
     
+    // Offline indicator
+    private let offlineIndicator = OfflineIndicatorView()
+    
     // MARK: - Lifecycle
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,6 +34,7 @@ public class MainTabBarController: UITabBarController {
         setupViewControllers()
         applyTheme()
         setupProjectSelectionHandler()
+        setupOfflineIndicator()
     }
     
     public override func viewDidAppear(_ animated: Bool) {
@@ -213,6 +217,18 @@ public class MainTabBarController: UITabBarController {
         }
     }
     
+    // MARK: - Offline Indicator
+    private func setupOfflineIndicator() {
+        // Add offline indicator above tab bar
+        view.addSubview(offlineIndicator)
+        offlineIndicator.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            offlineIndicator.bottomAnchor.constraint(equalTo: tabBar.topAnchor, constant: -10),
+            offlineIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
+    }
+    
     // MARK: - Public Methods
     func switchToProjects() {
         selectedIndex = 0
@@ -253,7 +269,7 @@ extension MainTabBarController: UITabBarControllerDelegate {
               selectedIndex < tabBar.items?.count ?? 0,
               let item = tabBar.items?[selectedIndex] else { return }
         
-        // Find the image view for the selected tab
+        // Find the image view for the selected tab and animate with AnimationManager
         if let barButtonView = tabBar.subviews.compactMap({ $0 as? UIControl }).first(where: { 
             $0.subviews.contains(where: { subview in
                 if let imageView = subview as? UIImageView {
@@ -262,14 +278,24 @@ extension MainTabBarController: UITabBarControllerDelegate {
                 return false
             })
         }) {
-            UIView.animate(withDuration: 0.15, animations: {
-                barButtonView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-            }) { _ in
-                UIView.animate(withDuration: 0.15) {
-                    barButtonView.transform = .identity
-                }
-            }
+            // Use AnimationManager for more advanced animation
+            AnimationManager.shared.scaleSpring(barButtonView, scale: 1.15, duration: 0.3)
+            
+            // Add neon glow effect
+            AnimationManager.shared.neonPulse(barButtonView, color: CyberpunkTheme.primaryCyan)
         }
+    }
+    
+    public func tabBarController(_ tabBarController: UITabBarController, animationControllerForTransitionFrom fromVC: UIViewController, to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        // Return custom transition for tab switches
+        guard let fromIndex = viewControllers?.firstIndex(of: fromVC),
+              let toIndex = viewControllers?.firstIndex(of: toVC) else {
+            return nil
+        }
+        
+        // Use slide transition based on direction
+        let direction: SlideTransition.Direction = fromIndex < toIndex ? .left : .right
+        return SlideTransition(direction: direction, presenting: true)
     }
 }
 

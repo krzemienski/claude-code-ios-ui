@@ -6,94 +6,6 @@
 //
 
 import UIKit
-import SwiftUI
-
-// MARK: - Full Screen Loading View
-struct FullScreenLoadingView: View {
-    let message: String?
-    @State private var isAnimating = false
-    
-    init(message: String? = nil) {
-        self.message = message
-    }
-    
-    var body: some View {
-        ZStack {
-            // Semi-transparent background
-            Color.black.opacity(0.7)
-                .ignoresSafeArea()
-            
-            VStack(spacing: 24) {
-                // Loading animation
-                ZStack {
-                    // Rotating rings
-                    ForEach(0..<3) { index in
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color(red: 0/255, green: 217/255, blue: 255/255).opacity(0.3 + Double(index) * 0.2),
-                                        Color(red: 255/255, green: 0/255, blue: 110/255).opacity(0.3 + Double(index) * 0.2)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 2
-                            )
-                            .frame(width: 60 + CGFloat(index * 20), 
-                                   height: 60 + CGFloat(index * 20))
-                            .rotationEffect(.degrees(isAnimating ? 360 : 0))
-                            .animation(
-                                Animation.linear(duration: 3 + Double(index))
-                                    .repeatForever(autoreverses: false),
-                                value: isAnimating
-                            )
-                    }
-                    
-                    // Center icon
-                    Image(systemName: "cpu")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.white)
-                        .scaleEffect(isAnimating ? 1.1 : 0.9)
-                        .animation(
-                            Animation.easeInOut(duration: 1)
-                                .repeatForever(autoreverses: true),
-                            value: isAnimating
-                        )
-                }
-                
-                if let message = message {
-                    Text(message)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white.opacity(0.8))
-                        .multilineTextAlignment(.center)
-                }
-            }
-            .padding(40)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.black.opacity(0.8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color(red: 0/255, green: 217/255, blue: 255/255).opacity(0.5),
-                                        Color(red: 255/255, green: 0/255, blue: 110/255).opacity(0.5)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    )
-            )
-        }
-        .onAppear {
-            isAnimating = true
-        }
-    }
-}
 
 // MARK: - Base View Controller
 public class BaseViewController: UIViewController {
@@ -101,9 +13,9 @@ public class BaseViewController: UIViewController {
     // MARK: - Properties
     lazy var gridBackgroundView = GridBackgroundView()
     
-    // SwiftUI Loading View integration
-    private var loadingHostingController: UIHostingController<AnyView>?
+    // Loading View
     private var currentLoadingMessage: String?
+    private var currentLoadingView: UIView?
     
     // Loading state management with minimum display time
     private var loadingStartTime: Date?
@@ -266,36 +178,39 @@ public class BaseViewController: UIViewController {
             return
         }
         
-        // Remove existing hosting controller if any
-        loadingHostingController?.view.removeFromSuperview()
-        loadingHostingController?.removeFromParent()
+        // Remove existing loading view if any
+        currentLoadingView?.removeFromSuperview()
+        currentLoadingView = nil
         
-        // Create new SwiftUI loading view
-        let loadingSwiftUIView = FullScreenLoadingView(message: message)
-        let hostingController = UIHostingController(rootView: AnyView(loadingSwiftUIView))
-        hostingController.view.backgroundColor = .clear
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        // Create cyberpunk loading animation using LoadingAnimationFactory
+        // Randomly choose a loading style for variety
+        let styles: [LoadingStyle] = [.matrix, .orbit, .wave, .morphing, .pulse, .typing]
+        let randomStyle = styles.randomElement() ?? .matrix
+        let cyberpunkLoader = LoadingAnimationFactory.createLoading(style: randomStyle, message: message)
+        cyberpunkLoader.translatesAutoresizingMaskIntoConstraints = false
         
-        // Add as child view controller
-        addChild(hostingController)
-        loadingView.addSubview(hostingController.view)
+        // Clear previous subviews from loading view
+        loadingView.subviews.forEach { $0.removeFromSuperview() }
+        
+        // Add to loading view
+        loadingView.addSubview(cyberpunkLoader)
         
         NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: loadingView.topAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: loadingView.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: loadingView.trailingAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: loadingView.bottomAnchor)
+            cyberpunkLoader.centerXAnchor.constraint(equalTo: loadingView.centerXAnchor),
+            cyberpunkLoader.centerYAnchor.constraint(equalTo: loadingView.centerYAnchor),
+            cyberpunkLoader.widthAnchor.constraint(equalToConstant: 200),
+            cyberpunkLoader.heightAnchor.constraint(equalToConstant: 200)
         ])
         
-        hostingController.didMove(toParent: self)
-        loadingHostingController = hostingController
+        // Store reference for later removal
+        currentLoadingView = cyberpunkLoader
         
         // CRITICAL: Bring loading view to front
         view.bringSubviewToFront(loadingView)
         
         print("🟡 DEBUG: About to show loading view")
         print("🟡 DEBUG: loadingView.frame = \(loadingView.frame)")
-        print("🟡 DEBUG: hostingController.view.frame = \(hostingController.view.frame)")
+        print("🟡 DEBUG: cyberpunkLoader.frame = \(cyberpunkLoader.frame)")
         
         // Animate appearance with haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
@@ -319,11 +234,13 @@ public class BaseViewController: UIViewController {
         }) { _ in
             self.loadingView.isHidden = true
             
-            // Clean up hosting controller
-            self.loadingHostingController?.view.removeFromSuperview()
-            self.loadingHostingController?.removeFromParent()
-            self.loadingHostingController = nil
+            // Clean up loading view
+            self.currentLoadingView?.removeFromSuperview()
+            self.currentLoadingView = nil
             self.currentLoadingMessage = nil
+            
+            // Clear all subviews from loading view
+            self.loadingView.subviews.forEach { $0.removeFromSuperview() }
         }
     }
     

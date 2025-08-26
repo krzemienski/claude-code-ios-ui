@@ -20,6 +20,8 @@ class SearchViewController: UIViewController {
     
     private var searchResults: [SearchResult] = []
     private var hasSearched = false
+    private var animatedCells = Set<IndexPath>()
+    private var isSearching = false
     
     // MARK: - Initialization
     init(project: Project? = nil) {
@@ -42,6 +44,25 @@ class SearchViewController: UIViewController {
         if let project = project {
             viewModel.setProject(project)
         }
+        
+        // Add entrance animation
+        AnimationManager.shared.slideIn(view, from: .bottom, duration: 0.4)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        // Animate search bar entrance
+        searchBar.alpha = 0
+        segmentedControl.alpha = 0
+        
+        UIView.animate(withDuration: 0.3, delay: 0.1, options: .curveEaseOut, animations: {
+            self.searchBar.alpha = 1
+        })
+        
+        UIView.animate(withDuration: 0.3, delay: 0.2, options: .curveEaseOut, animations: {
+            self.segmentedControl.alpha = 1
+        })
     }
     
     // MARK: - Setup
@@ -160,6 +181,13 @@ class SearchViewController: UIViewController {
     
     // MARK: - Actions
     @objc private func segmentChanged() {
+        // Add haptic feedback
+        let generator = UISelectionFeedbackGenerator()
+        generator.selectionChanged()
+        
+        // Animate segment change
+        AnimationManager.shared.pulse(segmentedControl, scale: 1.03, duration: 0.2)
+        
         let scope: SearchScope
         switch segmentedControl.selectedSegmentIndex {
         case 0:
@@ -178,10 +206,27 @@ class SearchViewController: UIViewController {
     
     private func performSearch(_ query: String) {
         hasSearched = true
+        isSearching = true
+        animatedCells.removeAll()
+        
+        // Show loading animation
+        let loadingView = AnimationManager.shared.createLoadingSpinner(color: CyberpunkTheme.primaryCyan)
+        loadingView.center = tableView.center
+        view.addSubview(loadingView)
+        
         viewModel.search(query: query) { [weak self] results in
             DispatchQueue.main.async {
+                loadingView.removeFromSuperview()
+                self?.isSearching = false
                 self?.searchResults = results
+                self?.animatedCells.removeAll()
+                
+                // Animate table reload
                 self?.tableView.reloadData()
+                if !results.isEmpty {
+                    AnimationManager.shared.animateTableView(self?.tableView ?? UITableView())
+                }
+                
                 self?.updateEmptyStateVisibility()
             }
         }
@@ -235,9 +280,50 @@ extension SearchViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
+        // Add haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        // Animate cell selection
+        if let cell = tableView.cellForRow(at: indexPath) {
+            AnimationManager.shared.pulse(cell, scale: 1.03, duration: 0.2)
+        }
+        
         let result = searchResults[indexPath.row]
         // TODO: Navigate to file at specific line
         print("Selected search result: \(result.fileName) at line \(result.lineNumber)")
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        // Add entrance animation for cells
+        guard !isSearching && !animatedCells.contains(indexPath) else { return }
+        animatedCells.insert(indexPath)
+        
+        cell.alpha = 0
+        cell.transform = CGAffineTransform(translationX: 50, y: 0)
+        
+        let delay = Double(indexPath.row) * 0.03
+        UIView.animate(
+            withDuration: 0.3,
+            delay: delay,
+            usingSpringWithDamping: 0.8,
+            initialSpringVelocity: 0.5,
+            options: .curveEaseOut,
+            animations: {
+                cell.alpha = 1
+                cell.transform = .identity
+            }
+        )
+        
+        // Add subtle glow to search results
+        cell.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
+        cell.layer.shadowOpacity = 0
+        cell.layer.shadowOffset = .zero
+        cell.layer.shadowRadius = 5
+        
+        UIView.animate(withDuration: 0.5, delay: delay + 0.2, options: .curveEaseOut, animations: {
+            cell.layer.shadowOpacity = 0.1
+        })
     }
 }
 

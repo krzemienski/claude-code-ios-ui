@@ -187,6 +187,9 @@ class AppCoordinator: NSObject, Coordinator {
         // Store tab bar controller for later use  
         self.mainTabBarController = mainTabBarController
         
+        // Start analytics session
+        AnalyticsManager.shared.startSession()
+        
         // Animate transition
         UIView.transition(with: window, duration: 0.5, options: .transitionCrossDissolve, animations: {
             self.window.rootViewController = mainTabBarController

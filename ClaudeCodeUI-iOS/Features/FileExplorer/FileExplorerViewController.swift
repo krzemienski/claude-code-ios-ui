@@ -16,6 +16,8 @@ class FileExplorerViewController: BaseViewController {
     private var expandedNodes: Set<String> = []
     private var selectedNode: FileTreeNode?
     private let apiClient: APIClient
+    private var animatedCells = Set<IndexPath>()
+    private var isSearching = false
     
     // MARK: - UI Components
     
@@ -104,6 +106,18 @@ class FileExplorerViewController: BaseViewController {
         setupUI()
         setupNavigationBar()
         loadFileTree()
+        
+        // Add initial entrance animation
+        AnimationManager.shared.slideIn(view, from: .bottom, duration: 0.3)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        // Animate table view cells on appear
+        if !tableView.visibleCells.isEmpty {
+            AnimationManager.shared.animateTableView(tableView)
+        }
     }
     
     // MARK: - UI Setup
@@ -326,21 +340,31 @@ class FileExplorerViewController: BaseViewController {
     }
     
     private func hideFileExplorerSkeleton() {
-        // Remove all skeleton views
+        // Remove all skeleton views with staggered animation
         view.subviews.forEach { subview in
             if subview.tag >= 89999 && subview.tag < 90007 {
-                UIView.animate(withDuration: 0.3, animations: {
+                let index = subview.tag - 89999
+                let delay = Double(index) * 0.05
+                
+                UIView.animate(withDuration: 0.3, delay: delay, options: .curveEaseOut, animations: {
                     subview.alpha = 0
+                    subview.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
                 }) { _ in
                     subview.removeFromSuperview()
                 }
             }
         }
         
-        // Show real content
-        UIView.animate(withDuration: 0.3) {
+        // Show real content with fade and scale animation
+        tableView.transform = CGAffineTransform(scaleX: 0.98, y: 0.98)
+        UIView.animate(withDuration: 0.4, delay: 0.1, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5, options: .curveEaseOut, animations: {
             self.tableView.alpha = 1
-        }
+            self.tableView.transform = .identity
+        })
+        
+        // Animate table cells entrance
+        animatedCells.removeAll()
+        AnimationManager.shared.animateTableView(tableView)
     }
     
     // MARK: - Data Loading
@@ -407,18 +431,51 @@ class FileExplorerViewController: BaseViewController {
     // MARK: - Actions
     
     @objc private func closeFileExplorer() {
-        dismiss(animated: true)
+        // Add slide out animation
+        AnimationManager.shared.slideOut(view, to: .bottom, duration: 0.3) { [weak self] in
+            self?.dismiss(animated: false)
+        }
     }
     
     @objc private func createNewFile() {
+        // Add haptic feedback and pulse animation on button
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        if let button = toolbar.items?.first {
+            if let view = button.value(forKey: "view") as? UIView {
+                AnimationManager.shared.pulse(view, scale: 1.2, duration: 0.2)
+            }
+        }
+        
         showCreateDialog(isDirectory: false)
     }
     
     @objc private func createNewFolder() {
+        // Add haptic feedback and pulse animation on button
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        if let button = toolbar.items?[1] {
+            if let view = button.value(forKey: "view") as? UIView {
+                AnimationManager.shared.pulse(view, scale: 1.2, duration: 0.2)
+            }
+        }
+        
         showCreateDialog(isDirectory: true)
     }
     
     @objc private func refreshFileTree() {
+        // Clear animation tracking for fresh animations
+        animatedCells.removeAll()
+        
+        // Animate refresh button
+        if let refreshButton = toolbar.items?.last {
+            if let view = refreshButton.value(forKey: "view") as? UIView {
+                AnimationManager.shared.rotate(view, angle: .pi * 2, duration: 0.5)
+            }
+        }
+        
         loadFileTree()
         
         // Haptic feedback
@@ -863,6 +920,27 @@ extension FileExplorerViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate
 
 extension FileExplorerViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        // Only animate if not already animated and not searching
+        guard !animatedCells.contains(indexPath) && !isSearching else { return }
+        animatedCells.insert(indexPath)
+        
+        // Staggered entrance animation
+        let delay = Double(indexPath.row) * 0.03
+        cell.alpha = 0
+        cell.transform = CGAffineTransform(translationX: -30, y: 0)
+        
+        UIView.animate(
+            withDuration: 0.4,
+            delay: delay,
+            options: .curveEaseOut,
+            animations: {
+                cell.alpha = 1
+                cell.transform = .identity
+            }
+        )
+    }
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
@@ -871,24 +949,58 @@ extension FileExplorerViewController: UITableViewDelegate {
         
         let node = nodes[indexPath.row]
         
-        if node.isDirectory {
-            // Toggle expansion
-            if expandedNodes.contains(node.path) {
-                expandedNodes.remove(node.path)
-            } else {
-                expandedNodes.insert(node.path)
-            }
-            tableView.reloadData()
-        } else {
-            // Open file
-            selectedNode = node
-            tableView.reloadData()
-            openFile(node)
+        // Animate the selected cell
+        if let cell = tableView.cellForRow(at: indexPath) {
+            AnimationManager.shared.pulse(cell, scale: 1.02, duration: 0.2)
         }
         
-        // Haptic feedback
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
+        if node.isDirectory {
+            // Toggle expansion with animation
+            let isExpanding = !expandedNodes.contains(node.path)
+            
+            if isExpanding {
+                expandedNodes.insert(node.path)
+                
+                // Animate expansion
+                tableView.performBatchUpdates({
+                    // Clear animation cache for new cells
+                    self.animatedCells.removeAll()
+                    tableView.reloadData()
+                }, completion: nil)
+                
+                // Add expand sound effect (haptic)
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+            } else {
+                expandedNodes.remove(node.path)
+                
+                // Animate collapse
+                tableView.performBatchUpdates({
+                    tableView.reloadData()
+                }, completion: nil)
+                
+                // Add collapse sound effect (haptic)
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+            }
+        } else {
+            // Open file with animation
+            selectedNode = node
+            
+            // Pulse the cell before opening
+            if let cell = tableView.cellForRow(at: indexPath) {
+                AnimationManager.shared.scaleSpring(cell, scale: 1.05, duration: 0.3)
+            }
+            
+            // Delay file opening slightly for animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                self?.openFile(node)
+            }
+            
+            // Success haptic feedback
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+        }
     }
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
@@ -897,17 +1009,58 @@ extension FileExplorerViewController: UITableViewDelegate {
         
         let node = nodes[indexPath.row]
         
-        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completion in
+        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, view, completion in
+            // Add haptic feedback
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.warning)
+            
+            // Animate the cell before deletion
+            if let cell = tableView.cellForRow(at: indexPath) {
+                AnimationManager.shared.shake(cell, intensity: 10)
+            }
+            
             self?.deleteNode(node)
             completion(true)
         }
         deleteAction.backgroundColor = CyberpunkTheme.accentPink
+        deleteAction.image = UIImage(systemName: "trash.fill")
         
-        let renameAction = UIContextualAction(style: .normal, title: "Rename") { [weak self] _, _, completion in
+        let renameAction = UIContextualAction(style: .normal, title: "Rename") { [weak self] _, view, completion in
+            // Add haptic feedback
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            
+            // Pulse the cell
+            if let cell = tableView.cellForRow(at: indexPath) {
+                AnimationManager.shared.pulse(cell, scale: 1.05, duration: 0.2)
+            }
+            
             self?.renameNode(node)
             completion(true)
         }
         renameAction.backgroundColor = CyberpunkTheme.primaryCyan
+        renameAction.image = UIImage(systemName: "pencil.circle.fill")
+        
+        // Add duplicate action for files
+        if !node.isDirectory {
+            let duplicateAction = UIContextualAction(style: .normal, title: "Duplicate") { [weak self] _, view, completion in
+                // Add haptic feedback
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                
+                // Animate the cell
+                if let cell = tableView.cellForRow(at: indexPath) {
+                    AnimationManager.shared.bounce(cell, height: 10)
+                }
+                
+                self?.duplicateFile(node)
+                completion(true)
+            }
+            duplicateAction.backgroundColor = CyberpunkTheme.neonGreen
+            duplicateAction.image = UIImage(systemName: "doc.on.doc.fill")
+            
+            return UISwipeActionsConfiguration(actions: [deleteAction, duplicateAction, renameAction])
+        }
         
         return UISwipeActionsConfiguration(actions: [deleteAction, renameAction])
     }

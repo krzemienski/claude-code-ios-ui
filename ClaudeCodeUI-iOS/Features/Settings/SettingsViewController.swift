@@ -11,6 +11,7 @@ public class SettingsViewController: BaseTableViewController {
     
     // MARK: - Properties
     private var sections: [SettingsSection] = []
+    private var animatedCells = Set<IndexPath>()
     
     // MARK: - Lifecycle
     public override func viewDidLoad() {
@@ -19,12 +20,22 @@ public class SettingsViewController: BaseTableViewController {
         navigationItem.largeTitleDisplayMode = .always
         setupSections()
         setupUI()
+        
+        // Add entrance animation
+        view.alpha = 0
+        AnimationManager.shared.fadeIn(view, duration: 0.3)
     }
     
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         updateBackendURLDisplay()
+        
+        // Clear animated cells for fresh animations
+        animatedCells.removeAll()
+        
+        // Animate table reload
         tableView.reloadData()
+        AnimationManager.shared.animateTableView(tableView)
     }
     
     // MARK: - Setup
@@ -383,7 +394,22 @@ public class SettingsViewController: BaseTableViewController {
            let hapticItem = displaySection.items.first(where: { $0.title == "Haptic Feedback" }) {
             hapticItem.value = AppConfig.enableHapticFeedback ? "On" : "Off"
         }
-        tableView.reloadData()
+        
+        // Animate the row update
+        if let sectionIndex = sections.firstIndex(where: { $0.title == "Display" }),
+           let rowIndex = sections[sectionIndex].items.firstIndex(where: { $0.title == "Haptic Feedback" }) {
+            let indexPath = IndexPath(row: rowIndex, section: sectionIndex)
+            
+            if let cell = tableView.cellForRow(at: indexPath) {
+                // Animate toggle effect
+                AnimationManager.shared.flip(cell, direction: .transitionFlipFromLeft, duration: 0.3)
+                
+                // Update cell after animation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    cell.detailTextLabel?.text = AppConfig.enableHapticFeedback ? "On" : "Off"
+                }
+            }
+        }
         
         // Give feedback for the change
         if AppConfig.enableHapticFeedback {
@@ -586,8 +612,17 @@ extension SettingsViewController {
     public override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
+        // Animate cell selection
+        if let cell = tableView.cellForRow(at: indexPath) {
+            AnimationManager.shared.pulse(cell, scale: 1.02, duration: 0.15)
+        }
+        
         let item = sections[indexPath.section].items[indexPath.row]
-        item.action?()
+        
+        // Add delay for animation to complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            item.action?()
+        }
         
         // Haptic feedback for taps
         if AppConfig.enableHapticFeedback {
@@ -596,11 +631,39 @@ extension SettingsViewController {
         }
     }
     
+    public override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        // Add entrance animation for cells
+        guard !animatedCells.contains(indexPath) else { return }
+        animatedCells.insert(indexPath)
+        
+        cell.alpha = 0
+        cell.transform = CGAffineTransform(translationX: 30, y: 0)
+        
+        let delay = Double(indexPath.row) * 0.05
+        UIView.animate(
+            withDuration: 0.4,
+            delay: delay,
+            usingSpringWithDamping: 0.8,
+            initialSpringVelocity: 0.5,
+            options: .curveEaseOut,
+            animations: {
+                cell.alpha = 1
+                cell.transform = .identity
+            }
+        )
+    }
+    
     public override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
             header.textLabel?.textColor = CyberpunkTheme.textSecondary
             header.textLabel?.font = .systemFont(ofSize: 13, weight: .bold)
             header.contentView.backgroundColor = CyberpunkTheme.background
+            
+            // Animate section headers
+            header.alpha = 0
+            UIView.animate(withDuration: 0.3, delay: Double(section) * 0.1, options: .curveEaseOut, animations: {
+                header.alpha = 1
+            })
         }
     }
     

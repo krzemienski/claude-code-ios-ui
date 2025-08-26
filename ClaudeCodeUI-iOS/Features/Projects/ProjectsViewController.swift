@@ -42,6 +42,9 @@ public class ProjectsViewController: BaseViewController {
     // Track if a load is currently in progress
     private var isLoadingProjects = false
     
+    // Track animated cells to prevent re-animation
+    private var animatedCells = Set<IndexPath>()
+    
     // Callback for project selection
     var onProjectSelected: ((Project) -> Void)?
     
@@ -485,6 +488,9 @@ public class ProjectsViewController: BaseViewController {
         print("🔴 DEBUG: projects.count = \(projects.count)")
         print("🔴 DEBUG: projects = \(projects)")
         
+        // Clear animated cells when reloading to allow fresh animations
+        animatedCells.removeAll()
+        
         if projects.isEmpty && !isShowingSkeletons {
             collectionView.isHidden = true
             emptyStateView.show(animated: true)
@@ -496,6 +502,11 @@ public class ProjectsViewController: BaseViewController {
         
         collectionView.reloadData()
         print("🔴 DEBUG: collectionView reloaded")
+        
+        // Add a subtle animation to the collection view itself
+        if !projects.isEmpty {
+            AnimationManager.shared.fadeIn(collectionView, duration: 0.3)
+        }
     }
     
     // MARK: - Skeleton Loading
@@ -750,6 +761,208 @@ public class ProjectsViewController: BaseViewController {
             print("⚠️ Warning: No navigation controller available and no project selection callback set")
         }
     }
+    
+    private func duplicateProject(_ project: Project) {
+        // Add animation to show duplication in progress
+        let alert = UIAlertController(title: "Duplicate Project", message: "Enter a name for the duplicate", preferredStyle: .alert)
+        
+        alert.addTextField { textField in
+            textField.placeholder = "Project Name"
+            textField.text = "Copy of \(project.name)"
+            textField.font = CyberpunkTheme.bodyFont
+            textField.textColor = CyberpunkTheme.primaryText
+            textField.tintColor = CyberpunkTheme.primaryCyan
+        }
+        
+        let duplicateAction = UIAlertAction(title: "Duplicate", style: .default) { [weak self] _ in
+            guard let name = alert.textFields?.first?.text, !name.isEmpty else { return }
+            
+            Task {
+                do {
+                    // Create duplicate via API
+                    let duplicatedProject = try await APIClient.shared.createProject(
+                        name: name,
+                        path: project.fullPath
+                    )
+                    
+                    await MainActor.run {
+                        self?.projects.append(duplicatedProject)
+                        self?.updateUI()
+                        
+                        // Find the new cell and animate it
+                        if let newIndex = self?.projects.firstIndex(where: { $0.id == duplicatedProject.id }),
+                           let cell = self?.collectionView.cellForItem(at: IndexPath(item: newIndex, section: 0)) {
+                            // Pulse animation to highlight new project
+                            AnimationManager.shared.popIn(cell)
+                            AnimationManager.shared.neonPulse(cell, color: CyberpunkTheme.neonGreen)
+                        }
+                        
+                        // Success feedback
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                } catch {
+                    await MainActor.run {
+                        self?.showError("Failed to duplicate project: \(error.localizedDescription)")
+                    }
+                }
+            }
+        }
+        
+        alert.addAction(duplicateAction)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func renameProject(_ project: Project) {
+        let alert = UIAlertController(title: "Rename Project", message: "Enter a new name", preferredStyle: .alert)
+        
+        alert.addTextField { textField in
+            textField.placeholder = "Project Name"
+            textField.text = project.name
+            textField.font = CyberpunkTheme.bodyFont
+            textField.textColor = CyberpunkTheme.primaryText
+            textField.tintColor = CyberpunkTheme.primaryCyan
+        }
+        
+        let renameAction = UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
+            guard let name = alert.textFields?.first?.text, !name.isEmpty else { return }
+            
+            Task {
+                do {
+                    // Rename via API
+                    let renamedProject = try await APIClient.shared.renameProject(id: project.id, name: name)
+                    
+                    await MainActor.run {
+                        // Update project in list
+                        if let index = self?.projects.firstIndex(where: { $0.id == project.id }) {
+                            self?.projects[index] = renamedProject
+                            self?.updateUI()
+                            
+                            // Animate the renamed cell
+                            if let cell = self?.collectionView.cellForItem(at: IndexPath(item: index, section: 0)) {
+                                AnimationManager.shared.shake(cell, intensity: 5)
+                                AnimationManager.shared.neonPulse(cell, color: CyberpunkTheme.primaryCyan)
+                            }
+                        }
+                        
+                        // Success feedback
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                } catch {
+                    await MainActor.run {
+                        self?.showError("Failed to rename project: \(error.localizedDescription)")
+                    }
+                }
+            }
+        }
+        
+        alert.addAction(renameAction)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func archiveProject(_ project: Project) {
+        // Confirm archive action
+        let alert = UIAlertController(
+            title: "Archive Project?",
+            message: "This will move '\(project.displayName)' to the archive.",
+            preferredStyle: .alert
+        )
+        
+        let archiveAction = UIAlertAction(title: "Archive", style: .default) { [weak self] _ in
+            guard let self = self else { return }
+            
+            // Find the project index
+            guard let index = self.projects.firstIndex(where: { $0.id == project.id }) else { return }
+            let indexPath = IndexPath(item: index, section: 0)
+            
+            // Animate the cell out
+            if let cell = self.collectionView.cellForItem(at: indexPath) {
+                AnimationManager.shared.slideOut(cell, to: .bottom) {
+                    // Remove from array after animation
+                    self.projects.remove(at: index)
+                    self.updateUI()
+                    
+                    // Show confirmation
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                    
+                    // Show temporary confirmation message
+                    self.showTemporaryMessage("Project archived successfully")
+                }
+            }
+        }
+        
+        alert.addAction(archiveAction)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        present(alert, animated: true)
+    }
+    
+    private func showValidationError(message: String) {
+        let alert = UIAlertController(title: "Validation Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        
+        // Error feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+        
+        present(alert, animated: true)
+    }
+    
+    private func showTemporaryMessage(_ message: String) {
+        let messageView = UIView()
+        messageView.backgroundColor = CyberpunkTheme.surface
+        messageView.layer.cornerRadius = 12
+        messageView.layer.borderWidth = 1
+        messageView.layer.borderColor = CyberpunkTheme.primaryCyan.cgColor
+        
+        let label = UILabel()
+        label.text = message
+        label.textColor = CyberpunkTheme.primaryCyan
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.textAlignment = .center
+        
+        messageView.addSubview(label)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: messageView.topAnchor, constant: 12),
+            label.leadingAnchor.constraint(equalTo: messageView.leadingAnchor, constant: 16),
+            label.trailingAnchor.constraint(equalTo: messageView.trailingAnchor, constant: -16),
+            label.bottomAnchor.constraint(equalTo: messageView.bottomAnchor, constant: -12)
+        ])
+        
+        view.addSubview(messageView)
+        messageView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            messageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            messageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20)
+        ])
+        
+        // Animate in
+        messageView.alpha = 0
+        messageView.transform = CGAffineTransform(translationX: 0, y: -20)
+        
+        UIView.animate(withDuration: 0.3, animations: {
+            messageView.alpha = 1
+            messageView.transform = .identity
+        }) { _ in
+            // Animate out after delay
+            UIView.animate(withDuration: 0.3, delay: 2.0, options: [], animations: {
+                messageView.alpha = 0
+                messageView.transform = CGAffineTransform(translationX: 0, y: -20)
+            }) { _ in
+                messageView.removeFromSuperview()
+            }
+        }
+        
+        // Add glow effect
+        AnimationManager.shared.neonPulse(messageView, color: CyberpunkTheme.primaryCyan)
+    }
 }
 
 // MARK: - UICollectionViewDataSource
@@ -803,14 +1016,103 @@ extension ProjectsViewController: UICollectionViewDelegate {
             return 
         }
         
+        // Haptic feedback on selection
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Animate the cell selection
+        if let cell = collectionView.cellForItem(at: indexPath) {
+            AnimationManager.shared.pulse(cell, scale: 0.95, duration: 0.2)
+        }
+        
         if indexPath.item == projects.count {
             print("➕ Creating new project")
+            // Add animation to the add button
+            if let cell = collectionView.cellForItem(at: indexPath) {
+                AnimationManager.shared.neonPulse(cell, color: CyberpunkTheme.primaryCyan)
+            }
             createNewProject()
         } else {
             let project = projects[indexPath.item]
             print("📂 Opening project: \(project.name) at index \(indexPath.item)")
             openProject(project)
         }
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        // Don't animate skeleton cells
+        guard !isShowingSkeletons else { return }
+        
+        // Only animate cells that haven't been animated yet
+        guard !animatedCells.contains(indexPath) else { return }
+        animatedCells.insert(indexPath)
+        
+        // Entrance animation based on position
+        let delay = Double(indexPath.row) * 0.05
+        
+        // Start with cell scaled down and invisible
+        cell.alpha = 0
+        cell.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+        
+        // Animate to full size with spring effect
+        UIView.animate(
+            withDuration: 0.6,
+            delay: delay,
+            usingSpringWithDamping: 0.7,
+            initialSpringVelocity: 0.5,
+            options: .curveEaseOut,
+            animations: {
+                cell.alpha = 1
+                cell.transform = .identity
+            }
+        )
+        
+        // Add a subtle neon glow for project cells
+        if indexPath.item < projects.count {
+            AnimationManager.shared.neonPulse(cell, color: CyberpunkTheme.primaryCyan.withAlphaComponent(0.3))
+        }
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        // Don't show context menu for skeleton cells or add button
+        guard !isShowingSkeletons, indexPath.item < projects.count else { return nil }
+        
+        let project = projects[indexPath.item]
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            // Open action
+            let openAction = UIAction(title: "Open", image: UIImage(systemName: "folder.open")) { [weak self] _ in
+                self?.openProject(project)
+            }
+            
+            // Duplicate action
+            let duplicateAction = UIAction(title: "Duplicate", image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in
+                self?.duplicateProject(project)
+            }
+            
+            // Rename action
+            let renameAction = UIAction(title: "Rename", image: UIImage(systemName: "pencil")) { [weak self] _ in
+                self?.renameProject(project)
+            }
+            
+            // Archive action
+            let archiveAction = UIAction(title: "Archive", image: UIImage(systemName: "archivebox")) { [weak self] _ in
+                self?.archiveProject(project)
+            }
+            
+            // Delete action
+            let deleteAction = UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                self?.deleteProject(project)
+            }
+            
+            return UIMenu(title: project.displayName, children: [openAction, duplicateAction, renameAction, archiveAction, deleteAction])
+        }
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+        // Add haptic feedback when context menu is about to appear
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
     }
 }
 

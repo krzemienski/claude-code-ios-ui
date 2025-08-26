@@ -140,6 +140,10 @@ public enum WebSocketMessageType: String, Codable {
     case shellInput = "input"
     case shellResize = "resize"
     case urlOpen = "url_open"
+    
+    // Offline support
+    case offlineQueued = "offline-queued"
+    case offlineSynced = "offline-synced"
 }
 
 // MARK: - AnyCodable Helper
@@ -388,6 +392,49 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
     // MARK: - Message Handling
     
     func sendMessage(_ text: String, projectId: String, projectPath: String? = nil, messageType: WebSocketMessageType = .claudeCommand) {
+        // Check if offline
+        if !isConnected && OfflineManager.shared.isOffline {
+            print("📵 [WebSocketManager] Offline - queueing message")
+            
+            // Create offline request
+            let message = Message(
+                id: UUID().uuidString,
+                content: text,
+                role: .user,
+                timestamp: Date(),
+                status: .pending
+            )
+            
+            // Save message locally
+            let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(projectId)") ?? UUID().uuidString
+            OfflineDataStore.shared.saveMessage(message, sessionId: sessionId, isOffline: true)
+            
+            // Queue for later sending
+            if let messageData = try? JSONEncoder().encode(message) {
+                let offlineRequest = OfflineRequest(
+                    id: UUID(),
+                    type: .sendMessage,
+                    timestamp: Date(),
+                    payload: messageData,
+                    isRetryable: true,
+                    maxRetries: 3
+                )
+                OfflineManager.shared.queueRequest(offlineRequest)
+            }
+            
+            // Show offline notification
+            NotificationManager.shared.showInfo("Message saved. Will send when online.")
+            
+            // Still try to send through delegate for UI update
+            delegate?.webSocket(self as WebSocketProtocol, didReceiveMessage: WebSocketMessage(
+                type: .offlineQueued,
+                payload: ["content": text, "status": "queued"],
+                timestamp: Date()
+            ))
+            
+            return
+        }
+        
         // Send command through WebSocket with specified type
         let sessionId = UserDefaults.standard.string(forKey: "currentSessionId_\(projectId)")
         
