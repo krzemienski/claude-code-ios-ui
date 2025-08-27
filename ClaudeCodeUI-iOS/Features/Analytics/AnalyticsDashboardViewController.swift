@@ -64,7 +64,7 @@ class AnalyticsDashboardViewController: UIViewController {
         
         // Add close button
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            systemItem: .close,
+            barButtonSystemItem: .close,
             target: self,
             action: #selector(closeTapped)
         )
@@ -108,7 +108,7 @@ class AnalyticsDashboardViewController: UIViewController {
         
         // Add animations
         AnimationManager.shared.fadeIn(titleLabel, duration: 0.3)
-        AnimationManager.shared.fadeIn(subtitleLabel, duration: 0.3, delay: 0.1)
+        AnimationManager.shared.fadeIn(subtitleLabel, duration: 0.3)
     }
     
     private func setupCards() {
@@ -127,7 +127,7 @@ class AnalyticsDashboardViewController: UIViewController {
             title: "Projects",
             value: "0",
             icon: UIImage(systemName: "folder.fill"),
-            color: CyberpunkTheme.neonPink
+            color: CyberpunkTheme.primaryCyan
         )
         projectsCard.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(projectsCard)
@@ -137,7 +137,7 @@ class AnalyticsDashboardViewController: UIViewController {
             title: "Messages",
             value: "0",
             icon: UIImage(systemName: "message.fill"),
-            color: CyberpunkTheme.neonGreen
+            color: CyberpunkTheme.success
         )
         messagesCard.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(messagesCard)
@@ -147,7 +147,7 @@ class AnalyticsDashboardViewController: UIViewController {
             title: "Files",
             value: "0",
             icon: UIImage(systemName: "doc.fill"),
-            color: CyberpunkTheme.neonYellow
+            color: CyberpunkTheme.warning
         )
         filesCard.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(filesCard)
@@ -337,13 +337,13 @@ class AnalyticsDashboardViewController: UIViewController {
         AnimationManager.shared.pulse(sessionCard, scale: 1.05)
         
         projectsCard.updateValue("\(data.totalProjects)")
-        AnimationManager.shared.pulse(projectsCard, scale: 1.05, delay: 0.1)
+        AnimationManager.shared.pulse(projectsCard, scale: 1.05)
         
         messagesCard.updateValue("\(data.totalMessages)")
-        AnimationManager.shared.pulse(messagesCard, scale: 1.05, delay: 0.2)
+        AnimationManager.shared.pulse(messagesCard, scale: 1.05)
         
         filesCard.updateValue("\(data.totalFiles)")
-        AnimationManager.shared.pulse(filesCard, scale: 1.05, delay: 0.3)
+        AnimationManager.shared.pulse(filesCard, scale: 1.05)
         
         // Update activity chart
         activityChartView.updateData(data.activityData)
@@ -689,7 +689,7 @@ private class FeatureCell: UITableViewCell {
         
         // Color top 3
         if rank <= 3 {
-            rankLabel.textColor = rank == 1 ? CyberpunkTheme.neonYellow : 
+            rankLabel.textColor = rank == 1 ? CyberpunkTheme.warning : 
                                 rank == 2 ? CyberpunkTheme.textSecondary : 
                                 CyberpunkTheme.primaryCyan
         }

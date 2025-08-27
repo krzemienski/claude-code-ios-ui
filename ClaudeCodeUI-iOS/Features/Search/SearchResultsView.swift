@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SearchResultRow: View {
+struct SearchResultRowInline: View {
     let result: SearchResult
     let searchText: String
     @State private var isExpanded = false

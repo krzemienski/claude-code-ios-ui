@@ -696,18 +696,18 @@ class FileExplorerViewController: BaseViewController {
                         case .networkError:
                             errorMessage = "Network error while creating \(isDirectory ? "folder" : "file"). Please check your connection."
                             showRetry = true
-                        case .serverError(let code):
-                            if code == 409 {
+                        case .serverError(let message):
+                            if message.contains("409") {
                                 errorMessage = "A \(isDirectory ? "folder" : "file") with this name already exists in this location."
                                 showRetry = false
-                            } else if code == 403 {
+                            } else if message.contains("403") {
                                 errorMessage = "Permission denied. You don't have write access to this location."
                                 showRetry = false
-                            } else if code == 507 {
+                            } else if message.contains("507") {
                                 errorMessage = "Insufficient storage space to create the \(isDirectory ? "folder" : "file")."
                                 showRetry = false
                             } else {
-                                errorMessage = "Server error (\(code)) while creating \(isDirectory ? "folder" : "file")."
+                                errorMessage = "Server error: \(message)"
                                 showRetry = true
                             }
                         case .invalidResponse:
@@ -850,6 +850,49 @@ class FileExplorerViewController: BaseViewController {
         present(alert, animated: true)
     }
     
+    private func duplicateFile(_ node: FileTreeNode) {
+        Task {
+            do {
+                // Read the file content first
+                let content = try await self.apiClient.readFile(
+                    projectName: self.project.name,
+                    filePath: node.path
+                )
+                
+                // Generate new name
+                let nameWithoutExt = (node.name as NSString).deletingPathExtension
+                let ext = (node.name as NSString).pathExtension
+                let newName = ext.isEmpty ? "\(nameWithoutExt)_copy" : "\(nameWithoutExt)_copy.\(ext)"
+                
+                // Get the directory path and construct new path
+                let components = node.path.components(separatedBy: "/")
+                let directory = components.dropLast().joined(separator: "/")
+                let newPath = directory.isEmpty ? newName : "\(directory)/\(newName)"
+                
+                // Write to new location
+                try await self.apiClient.saveFile(
+                    projectName: self.project.name,
+                    filePath: newPath,
+                    content: content
+                )
+                
+                await MainActor.run {
+                    Logger.shared.info("Successfully duplicated \(node.name)")
+                    self.loadFileTree()
+                    
+                    // Show success feedback
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                }
+            } catch {
+                await MainActor.run {
+                    Logger.shared.error("Failed to duplicate: \(error)")
+                    self.showError("Failed to duplicate '\(node.name)': \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
     private func openFile(_ node: FileTreeNode) {
         // TODO: Implement file preview
         Logger.shared.info("Opening file: \(node.path)")
@@ -906,9 +949,16 @@ extension FileExplorerViewController: UITableViewDataSource {
         
         if indexPath.row < nodes.count {
             let node = nodes[indexPath.row]
-            let isExpanded = expandedNodes.contains(node.path)
-            let isSelected = selectedNode?.path == node.path
-            cell.configure(with: node, isExpanded: isExpanded, isSelected: isSelected)
+            // FileTreeCell expects FileNodeUI, but we have FileTreeNode
+            // We'll just configure the cell manually
+            if node.isDirectory {
+                cell.textLabel?.text = "📁 \(node.name)"
+            } else {
+                cell.textLabel?.text = "📄 \(node.name)"
+            }
+            cell.textLabel?.font = CyberpunkTheme.bodyFont
+            cell.textLabel?.textColor = CyberpunkTheme.primaryText
+            cell.contentView.layoutMargins.left = CGFloat(20 * node.level)
         }
         
         cell.accessibilityIdentifier = "fileCell_\(indexPath.row)"
@@ -1056,7 +1106,7 @@ extension FileExplorerViewController: UITableViewDelegate {
                 self?.duplicateFile(node)
                 completion(true)
             }
-            duplicateAction.backgroundColor = CyberpunkTheme.neonGreen
+            duplicateAction.backgroundColor = UIColor.systemGreen
             duplicateAction.image = UIImage(systemName: "doc.on.doc.fill")
             
             return UISwipeActionsConfiguration(actions: [deleteAction, duplicateAction, renameAction])
@@ -1124,90 +1174,3 @@ struct FileTreeNodeDTO: Codable {
     let children: [FileTreeNodeDTO]?
 }
 
-// MARK: - File Tree Cell
-
-class FileTreeCell: UITableViewCell {
-    static let identifier = "FileTreeCell"
-    
-    private let iconImageView = UIImageView()
-    private let nameLabel = UILabel()
-    private let chevronImageView = UIImageView()
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        backgroundColor = .clear
-        
-        let selectedBackground = UIView()
-        selectedBackground.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.1)
-        selectedBackgroundView = selectedBackground
-        
-        iconImageView.translatesAutoresizingMaskIntoConstraints = false
-        iconImageView.contentMode = .scaleAspectFit
-        iconImageView.tintColor = CyberpunkTheme.primaryCyan
-        
-        nameLabel.translatesAutoresizingMaskIntoConstraints = false
-        nameLabel.font = CyberpunkTheme.codeFont
-        nameLabel.textColor = CyberpunkTheme.primaryText
-        
-        chevronImageView.translatesAutoresizingMaskIntoConstraints = false
-        chevronImageView.contentMode = .scaleAspectFit
-        chevronImageView.tintColor = CyberpunkTheme.secondaryText
-        chevronImageView.image = UIImage(systemName: "chevron.right")
-        
-        contentView.addSubview(iconImageView)
-        contentView.addSubview(nameLabel)
-        contentView.addSubview(chevronImageView)
-        
-        NSLayoutConstraint.activate([
-            iconImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            iconImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 20),
-            iconImageView.heightAnchor.constraint(equalToConstant: 20),
-            
-            nameLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 12),
-            nameLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            nameLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
-            
-            chevronImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            chevronImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            chevronImageView.widthAnchor.constraint(equalToConstant: 12),
-            chevronImageView.heightAnchor.constraint(equalToConstant: 12)
-        ])
-    }
-    
-    func configure(with node: FileTreeNode, isExpanded: Bool, isSelected: Bool) {
-        // Indentation based on level
-        let indentation = CGFloat(node.level * 20)
-        iconImageView.transform = CGAffineTransform(translationX: indentation, y: 0)
-        nameLabel.transform = CGAffineTransform(translationX: indentation, y: 0)
-        
-        iconImageView.image = node.icon
-        nameLabel.text = node.name
-        
-        if node.isDirectory {
-            chevronImageView.isHidden = false
-            chevronImageView.transform = isExpanded ? 
-                CGAffineTransform(rotationAngle: .pi / 2) : .identity
-            iconImageView.tintColor = CyberpunkTheme.primaryCyan
-        } else {
-            chevronImageView.isHidden = true
-            iconImageView.tintColor = CyberpunkTheme.secondaryText
-        }
-        
-        if isSelected {
-            nameLabel.textColor = CyberpunkTheme.primaryCyan
-            backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.05)
-        } else {
-            nameLabel.textColor = CyberpunkTheme.primaryText
-            backgroundColor = .clear
-        }
-    }
-}

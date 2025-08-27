@@ -7,45 +7,24 @@
 
 import UIKit
 
-// MARK: - File Node Model
-struct FileNode: Codable {
-    let name: String
-    let path: String
-    let isDirectory: Bool
-    var children: [FileNode]?
+// MARK: - File Node UI Wrapper
+// This wraps the FileNode model from Core/Data/Models/FileNode.swift
+// to add UI-specific properties without duplicating the model
+struct FileNodeUI {
+    let fileNode: FileNode  // Using FileNode from Core/Data/Models/FileNode.swift
     var isExpanded: Bool
     var level: Int
     
-    enum CodingKeys: String, CodingKey {
-        case name, path, isDirectory, children
-        // isExpanded and level are not encoded/decoded
-    }
+    // Proxy properties to access FileNode properties
+    var name: String { fileNode.name }
+    var path: String { fileNode.path }
+    var isDirectory: Bool { fileNode.isDirectory }
+    var children: [FileNode]? { fileNode.children.isEmpty ? nil : fileNode.children }
     
-    init(name: String, path: String, isDirectory: Bool, children: [FileNode]? = nil, isExpanded: Bool = false, level: Int = 0) {
-        self.name = name
-        self.path = path
-        self.isDirectory = isDirectory
-        self.children = children
+    init(fileNode: FileNode, isExpanded: Bool = false, level: Int = 0) {
+        self.fileNode = fileNode
         self.isExpanded = isExpanded
         self.level = level
-    }
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        name = try container.decode(String.self, forKey: .name)
-        path = try container.decode(String.self, forKey: .path)
-        isDirectory = try container.decode(Bool.self, forKey: .isDirectory)
-        children = try container.decodeIfPresent([FileNode].self, forKey: .children)
-        isExpanded = false // Default value
-        level = 0 // Default value
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(name, forKey: .name)
-        try container.encode(path, forKey: .path)
-        try container.encode(isDirectory, forKey: .isDirectory)
-        try container.encodeIfPresent(children, forKey: .children)
     }
     
     var icon: String {
@@ -141,7 +120,7 @@ class FileTreeCell: UITableViewCell {
         ])
     }
     
-    func configure(with node: FileNode, isExpanded: Bool, onExpand: (() -> Void)?) {
+    func configure(with node: FileNodeUI, isExpanded: Bool, onExpand: (() -> Void)?) {
         iconLabel.text = node.icon
         nameLabel.text = node.name
         
@@ -183,7 +162,7 @@ public class FileTreeViewController: BaseViewController {
     // MARK: - Properties
     private let project: Project
     private var rootNode: FileNode?
-    private var flattenedNodes: [FileNode] = []
+    private var flattenedNodes: [FileNodeUI] = []
     private let tableView = UITableView()
     private let searchBar = UISearchBar()
     private let toolbarView = UIView()
@@ -327,25 +306,36 @@ public class FileTreeViewController: BaseViewController {
         rootNode = FileNode(
             name: project.name,
             path: project.path,
-            isDirectory: true,
-            children: [
-                FileNode(name: "src", path: "\(project.path)/src", isDirectory: true, children: [
-                    FileNode(name: "main.swift", path: "\(project.path)/src/main.swift", isDirectory: false),
-                    FileNode(name: "utils.swift", path: "\(project.path)/src/utils.swift", isDirectory: false),
-                    FileNode(name: "models", path: "\(project.path)/src/models", isDirectory: true, children: [
-                        FileNode(name: "User.swift", path: "\(project.path)/src/models/User.swift", isDirectory: false),
-                        FileNode(name: "Project.swift", path: "\(project.path)/src/models/Project.swift", isDirectory: false)
-                    ])
-                ]),
-                FileNode(name: "tests", path: "\(project.path)/tests", isDirectory: true, children: [
-                    FileNode(name: "MainTests.swift", path: "\(project.path)/tests/MainTests.swift", isDirectory: false)
-                ]),
-                FileNode(name: "README.md", path: "\(project.path)/README.md", isDirectory: false),
-                FileNode(name: "Package.swift", path: "\(project.path)/Package.swift", isDirectory: false),
-                FileNode(name: ".gitignore", path: "\(project.path)/.gitignore", isDirectory: false)
-            ],
-            isExpanded: true
+            type: .directory
         )
+        
+        // Create child nodes
+        let srcNode = FileNode(name: "src", path: "\(project.path)/src", type: .directory)
+        let modelsNode = FileNode(name: "models", path: "\(project.path)/src/models", type: .directory)
+        modelsNode.children = [
+            FileNode(name: "User.swift", path: "\(project.path)/src/models/User.swift", type: .file),
+            FileNode(name: "Project.swift", path: "\(project.path)/src/models/Project.swift", type: .file)
+        ]
+        
+        srcNode.children = [
+            FileNode(name: "main.swift", path: "\(project.path)/src/main.swift", type: .file),
+            FileNode(name: "utils.swift", path: "\(project.path)/src/utils.swift", type: .file),
+            modelsNode
+        ]
+        
+        let testsNode = FileNode(name: "tests", path: "\(project.path)/tests", type: .directory)
+        testsNode.children = [
+            FileNode(name: "MainTests.swift", path: "\(project.path)/tests/MainTests.swift", type: .file)
+        ]
+        
+        rootNode?.children = [
+            srcNode,
+            testsNode,
+            FileNode(name: "README.md", path: "\(project.path)/README.md", type: .file),
+            FileNode(name: "Package.swift", path: "\(project.path)/Package.swift", type: .file),
+            FileNode(name: ".gitignore", path: "\(project.path)/.gitignore", type: .file)
+        ]
+        rootNode?.isExpanded = true
         
         updateFlattenedNodes()
         tableView.reloadData()
@@ -360,12 +350,12 @@ public class FileTreeViewController: BaseViewController {
     }
     
     private func addNodeToFlatList(_ node: FileNode, level: Int) {
-        var mutableNode = node
-        mutableNode.level = level
-        flattenedNodes.append(mutableNode)
+        // Create a UI wrapper for the node
+        let uiNode = FileNodeUI(fileNode: node, isExpanded: node.isExpanded, level: level)
+        flattenedNodes.append(uiNode)
         
-        if node.isExpanded, let children = node.children {
-            for child in children {
+        if node.isExpanded && !node.children.isEmpty {
+            for child in node.children {
                 addNodeToFlatList(child, level: level + 1)
             }
         }
@@ -395,9 +385,9 @@ public class FileTreeViewController: BaseViewController {
     
     private func collapseNode(_ node: inout FileNode) {
         node.isExpanded = false
-        if let children = node.children {
-            for i in 0..<children.count {
-                collapseNode(&node.children![i])
+        if !node.children.isEmpty {
+            for i in 0..<node.children.count {
+                collapseNode(&node.children[i])
             }
         }
     }
@@ -425,29 +415,30 @@ public class FileTreeViewController: BaseViewController {
     
     private func createFileOrFolder(name: String, isDirectory: Bool) {
         // TODO: Implement actual file/folder creation via API
-        showSuccess("Created \(isDirectory ? "folder" : "file"): \(name)")
+        // TODO: Show success message
+        print("Created \(isDirectory ? "folder" : "file"): \(name)")
         refreshFileTree()
     }
     
     private func toggleNode(at index: Int) {
         guard index < flattenedNodes.count else { return }
         
-        var node = flattenedNodes[index]
-        node.isExpanded.toggle()
+        let uiNode = flattenedNodes[index]
+        let newExpandedState = !uiNode.isExpanded
         
         // Update the node in the original tree
-        updateNodeInTree(&rootNode, targetPath: node.path, isExpanded: node.isExpanded)
+        updateNodeInTree(rootNode, targetPath: uiNode.path, isExpanded: newExpandedState)
         
         // Animate the expansion/collapse
         updateFlattenedNodes()
         
-        if node.isExpanded {
+        if newExpandedState {
             // Calculate rows to insert
             var indexPaths: [IndexPath] = []
             let startIndex = index + 1
             var currentIndex = startIndex
             
-            while currentIndex < flattenedNodes.count && flattenedNodes[currentIndex].level > node.level {
+            while currentIndex < flattenedNodes.count && flattenedNodes[currentIndex].level > uiNode.level {
                 indexPaths.append(IndexPath(row: currentIndex, section: 0))
                 currentIndex += 1
             }
@@ -461,7 +452,7 @@ public class FileTreeViewController: BaseViewController {
             let startIndex = index + 1
             var currentIndex = startIndex
             
-            while currentIndex < flattenedNodes.count && flattenedNodes[currentIndex].level > node.level {
+            while currentIndex < flattenedNodes.count && flattenedNodes[currentIndex].level > uiNode.level {
                 indexPaths.append(IndexPath(row: currentIndex, section: 0))
                 currentIndex += 1
             }
@@ -474,27 +465,22 @@ public class FileTreeViewController: BaseViewController {
         // Update the chevron rotation
         if let cell = tableView.cellForRow(at: IndexPath(row: index, section: 0)) as? FileTreeCell {
             UIView.animate(withDuration: 0.3) {
-                cell.configure(with: node, isExpanded: node.isExpanded, onExpand: nil)
+                cell.configure(with: uiNode, isExpanded: newExpandedState, onExpand: nil)
             }
         }
     }
     
-    private func updateNodeInTree(_ node: inout FileNode?, targetPath: String, isExpanded: Bool) {
-        guard var currentNode = node else { return }
+    private func updateNodeInTree(_ node: FileNode?, targetPath: String, isExpanded: Bool) {
+        guard let currentNode = node else { return }
         
         if currentNode.path == targetPath {
             currentNode.isExpanded = isExpanded
-            node = currentNode
             return
         }
         
-        if let children = currentNode.children {
-            for i in 0..<children.count {
-                updateNodeInTree(&currentNode.children![i], targetPath: targetPath, isExpanded: isExpanded)
-            }
+        for child in currentNode.children {
+            updateNodeInTree(child, targetPath: targetPath, isExpanded: isExpanded)
         }
-        
-        node = currentNode
     }
 }
 
@@ -535,14 +521,14 @@ extension FileTreeViewController: UITableViewDelegate {
         
         // Delete action
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completion in
-            self?.deleteNode(node, completion: completion)
+            self?.deleteNode(node.fileNode, completion: completion)
         }
         deleteAction.backgroundColor = CyberpunkTheme.accentPink
         deleteAction.image = UIImage(systemName: "trash")
         
         // Rename action
         let renameAction = UIContextualAction(style: .normal, title: "Rename") { [weak self] _, _, completion in
-            self?.renameNode(node)
+            self?.renameNode(node.fileNode)
             completion(true)
         }
         renameAction.backgroundColor = CyberpunkTheme.primaryCyan
@@ -566,7 +552,8 @@ extension FileTreeViewController: UITableViewDelegate {
         
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
             // TODO: Implement actual deletion via API
-            self?.showSuccess("Deleted: \(node.name)")
+            // TODO: Show success message
+            print("Deleted: \(node.name)")
             self?.refreshFileTree()
             completion(true)
         })
@@ -590,7 +577,8 @@ extension FileTreeViewController: UITableViewDelegate {
         alert.addAction(UIAlertAction(title: "Rename", style: .default) { [weak self] _ in
             if let newName = alert.textFields?.first?.text, !newName.isEmpty {
                 // TODO: Implement actual renaming via API
-                self?.showSuccess("Renamed to: \(newName)")
+                // TODO: Show success message
+                print("Renamed to: \(newName)")
                 self?.refreshFileTree()
             }
         })

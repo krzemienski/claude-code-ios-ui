@@ -12,7 +12,7 @@ import SwiftData
 // Session and SessionStatus are now imported from Models/Session.swift
 
 // MARK: - Request Models
-struct FeedbackData: Codable {
+struct APIFeedbackData: Codable {
     let type: FeedbackType
     let message: String
     let email: String?
@@ -163,7 +163,7 @@ actor APIClient: APIClientProtocol {
         try await requestVoid(.deleteProject(id: id))
     }
     
-    func submitFeedback(_ feedback: FeedbackData, completion: @escaping (Result<Void, Error>) -> Void) {
+    func submitFeedback(_ feedback: APIFeedbackData, completion: @escaping (Result<Void, Error>) -> Void) {
         Task {
             do {
                 try await requestVoid(.submitFeedback(feedback))
@@ -331,10 +331,15 @@ actor APIClient: APIClientProtocol {
                 // Store message type in metadata for UI differentiation
                 message.metadata = MessageMetadata(
                     model: nil,
-                    temperature: nil,
-                    maxTokens: nil,
-                    stopSequence: nil,
-                    toolUse: nil
+                    tokens: nil,
+                    processingTime: nil,
+                    error: nil,
+                    streamCompleted: false,
+                    projectPath: nil,
+                    sessionId: sessionId,
+                    commandType: nil,
+                    aborted: false,
+                    resumedFrom: nil
                 )
                 
                 // Parse timestamp from ISO string
@@ -1061,7 +1066,7 @@ extension APIEndpoint {
     }
     
     // Feedback endpoints
-    static func submitFeedback(_ feedback: FeedbackData) -> APIEndpoint {
+    static func submitFeedback(_ feedback: APIFeedbackData) -> APIEndpoint {
         let body = try? JSONEncoder().encode([
             "type": feedback.type.rawValue,
             "message": feedback.message,
@@ -1296,11 +1301,11 @@ struct GitCommitResponse: Codable {
 
 struct GitBranchesResponse: Codable {
     let success: Bool
-    let branches: [GitBranch]?
+    let branches: [APIGitBranch]?
     let error: String?
 }
 
-struct GitBranch: Codable {
+struct APIGitBranch: Codable {
     let name: String
     let current: Bool
 }
@@ -1319,11 +1324,11 @@ struct GitDiffResponse: Codable {
 
 struct GitLogResponse: Codable {
     let success: Bool
-    let commits: [GitCommit]?
+    let commits: [APIGitCommit]?
     let error: String?
 }
 
-struct GitCommit: Codable {
+struct APIGitCommit: Codable {
     let hash: String
     let author: String
     let date: String
@@ -1402,7 +1407,7 @@ struct DirectoryDTO: Codable {
 }
 
 // MARK: - Cursor Integration Models
-struct CursorConfig: Codable {
+struct CursorConfig: Codable, Equatable {
     let enabled: Bool
     let apiKey: String?
     let apiUrl: String?
@@ -1417,7 +1422,7 @@ struct CursorMCPServer: Codable {
     let command: String
     let args: [String]?
     let env: [String: String]?
-    let enabled: Bool
+    var enabled: Bool
 }
 
 struct CursorMCPServerConfig: Codable {

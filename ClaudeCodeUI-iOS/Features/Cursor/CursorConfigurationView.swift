@@ -7,10 +7,59 @@
 
 import SwiftUI
 
+// MARK: - Cursor Model Settings
+struct CursorModelSettings {
+    var model: String = "gpt-4"
+    var temperature: Double = 0.7
+    var maxTokens: Int = 2048
+    var topP: Double = 1.0
+    var frequencyPenalty: Double = 0.0
+    var presencePenalty: Double = 0.0
+}
+
+// MARK: - Cursor Features
+struct CursorFeatures {
+    var copilotEnabled: Bool = true
+    var chatEnabled: Bool = true
+    var commandPaletteEnabled: Bool = true
+    var inlineCompletionEnabled: Bool = true
+}
+
+// MARK: - Extended Cursor Config
+struct ExtendedCursorConfig {
+    var enabled: Bool = false
+    var apiKey: String = ""
+    var apiUrl: String = "https://api.openai.com"
+    var modelSettings: CursorModelSettings? = CursorModelSettings()
+    var features: CursorFeatures? = CursorFeatures()
+    
+    // Convert from CursorConfig
+    init(from config: CursorConfig? = nil) {
+        if let config = config {
+            self.enabled = config.enabled
+            self.apiKey = config.apiKey ?? ""
+            self.apiUrl = config.apiUrl ?? "https://api.openai.com"
+            self.modelSettings = CursorModelSettings(
+                model: config.model ?? "gpt-4",
+                temperature: config.temperature ?? 0.7,
+                maxTokens: config.maxTokens ?? 2048,
+                topP: 1.0,
+                frequencyPenalty: 0.0,
+                presencePenalty: 0.0
+            )
+            self.features = CursorFeatures()
+        }
+    }
+    
+    init() {
+        // Default initializer
+    }
+}
+
 // MARK: - Cursor Configuration View
 struct CursorConfigurationView: View {
     @ObservedObject var viewModel: CursorViewModel
-    @State private var editedConfig: CursorConfig = CursorConfig()
+    @State private var editedConfig: ExtendedCursorConfig = ExtendedCursorConfig()
     @State private var hasChanges = false
     
     var body: some View {
@@ -154,13 +203,11 @@ struct CursorConfigurationView: View {
             }
         }
         .onAppear {
-            if let config = viewModel.config {
-                editedConfig = config
-            }
+            editedConfig = ExtendedCursorConfig(from: viewModel.config)
         }
         .onChange(of: viewModel.config) { newConfig in
-            if let config = newConfig, !hasChanges {
-                editedConfig = config
+            if !hasChanges {
+                editedConfig = ExtendedCursorConfig(from: newConfig)
             }
         }
     }

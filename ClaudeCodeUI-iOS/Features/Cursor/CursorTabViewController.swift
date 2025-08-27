@@ -127,7 +127,7 @@ struct CursorMainView: View {
             
             // Loading Overlay
             if viewModel.isLoading {
-                LoadingOverlay()
+                CursorLoadingOverlay()
             }
             
             // Message Overlays
@@ -197,7 +197,7 @@ struct TabButton: View {
 }
 
 // MARK: - Loading Overlay
-struct LoadingOverlay: View {
+struct CursorLoadingOverlay: View {
     var body: some View {
         ZStack {
             Color.black.opacity(0.5)

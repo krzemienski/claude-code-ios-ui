@@ -381,7 +381,9 @@ public class SettingsViewController: BaseTableViewController {
     
     // MARK: - Test Runner
     private func showTestRunner() {
-        TestRunnerViewController.present(from: self)
+        // TODO: Implement TestRunnerViewController
+        // TestRunnerViewController.present(from: self)
+        print("Test Runner not yet implemented")
     }
     
     // MARK: - Display Settings
@@ -560,20 +562,20 @@ public class SettingsViewController: BaseTableViewController {
 }
 
 // MARK: - UITableViewDataSource
-extension SettingsViewController {
-    public override func numberOfSections(in tableView: UITableView) -> Int {
+extension SettingsViewController: UITableViewDataSource {
+    public func numberOfSections(in tableView: UITableView) -> Int {
         return sections.count
     }
     
-    public override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return sections[section].items.count
     }
     
-    public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let item = sections[indexPath.section].items[indexPath.row]
         
         let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
-        cell.backgroundColor = CyberpunkTheme.cardBackground
+        cell.backgroundColor = CyberpunkTheme.surfacePrimary
         cell.textLabel?.text = item.title
         cell.textLabel?.textColor = CyberpunkTheme.textPrimary
         cell.textLabel?.font = .systemFont(ofSize: 16, weight: .medium)
@@ -602,14 +604,14 @@ extension SettingsViewController {
         return cell
     }
     
-    public override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    public func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         return sections[section].title.uppercased()
     }
 }
 
 // MARK: - UITableViewDelegate
-extension SettingsViewController {
-    public override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+extension SettingsViewController: UITableViewDelegate {
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
         // Animate cell selection
@@ -631,7 +633,7 @@ extension SettingsViewController {
         }
     }
     
-    public override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+    public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         // Add entrance animation for cells
         guard !animatedCells.contains(indexPath) else { return }
         animatedCells.insert(indexPath)
@@ -653,7 +655,7 @@ extension SettingsViewController {
         )
     }
     
-    public override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
+    public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
             header.textLabel?.textColor = CyberpunkTheme.textSecondary
             header.textLabel?.font = .systemFont(ofSize: 13, weight: .bold)
@@ -667,7 +669,7 @@ extension SettingsViewController {
         }
     }
     
-    public override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+    public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 40
     }
 }

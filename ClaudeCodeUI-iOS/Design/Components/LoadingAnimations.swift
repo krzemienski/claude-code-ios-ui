@@ -14,7 +14,7 @@ class PulseLoadingView: UIView {
     private var pulseLayer: CAShapeLayer?
     private var animationGroup: CAAnimationGroup?
     
-    var pulseColor: UIColor = CyberpunkTheme.neonCyan {
+    var pulseColor: UIColor = CyberpunkTheme.primaryCyan {
         didSet {
             pulseLayer?.strokeColor = pulseColor.cgColor
         }
@@ -83,7 +83,7 @@ class WaveLoadingView: UIView {
     private var displayLink: CADisplayLink?
     private var phase: CGFloat = 0
     
-    var waveColor: UIColor = CyberpunkTheme.neonPink {
+    var waveColor: UIColor = CyberpunkTheme.accentPink {
         didSet {
             waveLayer?.strokeColor = waveColor.cgColor
         }
@@ -153,7 +153,7 @@ class OrbitLoadingView: UIView {
     private var orbitLayers: [CALayer] = []
     private let numberOfDots = 3
     
-    var dotColor: UIColor = CyberpunkTheme.neonCyan {
+    var dotColor: UIColor = CyberpunkTheme.primaryCyan {
         didSet {
             orbitLayers.forEach { $0.backgroundColor = dotColor.cgColor }
         }
@@ -245,7 +245,7 @@ class MorphingLoadingView: UIView {
     private var currentShapeIndex = 0
     private let shapes: [UIBezierPath] = []
     
-    var morphColor: UIColor = CyberpunkTheme.neonPink {
+    var morphColor: UIColor = CyberpunkTheme.accentPink {
         didSet {
             morphLayer?.fillColor = morphColor.cgColor
         }
@@ -335,7 +335,7 @@ class MatrixLoadingView: UIView {
     private var displayLink: CADisplayLink?
     private let characters = "01アイウエオカキクケコサシスセソタチツテト"
     
-    var matrixColor: UIColor = CyberpunkTheme.neonGreen {
+    var matrixColor: UIColor = CyberpunkTheme.success {
         didSet {
             updateColors()
         }
@@ -525,7 +525,7 @@ class LoadingOverlay: UIView {
         }
         
         // Add glow effect
-        container.layer.shadowColor = CyberpunkTheme.neonCyan.cgColor
+        container.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
         container.layer.shadowRadius = 20
         container.layer.shadowOpacity = 0.5
         container.layer.shadowOffset = .zero

@@ -58,7 +58,7 @@ class AuthenticationViewController: BaseViewController {
     }()
     
     private lazy var biometricButton: NeonButton = {
-        let button = NeonButton(style: .primary)
+        let button = NeonButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("Authenticate with Face ID", for: .normal)
         button.addTarget(self, action: #selector(authenticateWithBiometrics), for: .touchUpInside)
@@ -66,7 +66,7 @@ class AuthenticationViewController: BaseViewController {
     }()
     
     private lazy var manualAuthButton: NeonButton = {
-        let button = NeonButton(style: .secondary)
+        let button = NeonButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("Enter API Key", for: .normal)
         button.addTarget(self, action: #selector(showManualAuth), for: .touchUpInside)
@@ -137,7 +137,7 @@ class AuthenticationViewController: BaseViewController {
     }()
     
     private lazy var saveKeyButton: NeonButton = {
-        let button = NeonButton(style: .primary)
+        let button = NeonButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("Save & Continue", for: .normal)
         button.addTarget(self, action: #selector(saveAPIKey), for: .touchUpInside)
@@ -153,7 +153,7 @@ class AuthenticationViewController: BaseViewController {
     // MARK: - Initialization
     
     init(errorHandler: ErrorHandlingService = DIContainer.shared.errorHandler,
-         dataContainer: SwiftDataContainer? = try? SwiftDataContainer()) {
+         dataContainer: SwiftDataContainer? = SwiftDataContainer.shared) {
         self.errorHandler = errorHandler
         self.dataContainer = dataContainer
         super.init(nibName: nil, bundle: nil)
@@ -319,7 +319,7 @@ class AuthenticationViewController: BaseViewController {
     
     @objc private func saveAPIKey() {
         guard let serverURL = serverURLTextField.text, !serverURL.isEmpty else {
-            errorHandler.handle(ValidationError(message: "Please enter a valid server URL"))
+            errorHandler.handle(AppError.validation(.invalidFormat(fieldName: "Server URL")))
             return
         }
         
@@ -374,12 +374,4 @@ extension AuthenticationViewController: UITextFieldDelegate {
     }
 }
 
-// MARK: - Validation Error
-
-struct ValidationError: LocalizedError {
-    let message: String
-    
-    var errorDescription: String? {
-        return message
-    }
-}
+// ValidationError is defined in Core/Services/ErrorHandlingService.swift

@@ -444,7 +444,7 @@ class SearchViewModel: ObservableObject {
 
 // MARK: - UIKit Bridge
 
-class SearchViewController: UIViewController {
+class SearchViewControllerBridge: UIViewController {
     private var hostingController: UIHostingController<SearchView>?
     private let project: Project?
     private let searchViewModel = SearchViewModel()

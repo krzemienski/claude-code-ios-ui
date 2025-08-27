@@ -114,7 +114,7 @@ protocol AnalyticsProvider {
 
 /// Console analytics provider for development
 class ConsoleAnalyticsProvider: AnalyticsProvider {
-    private let logger = Logger(subsystem: "com.claudecode.ui", category: "Analytics")
+    private let logger = os.Logger(subsystem: "com.claudecode.ui", category: "Analytics")
     
     func track(event: String, properties: [String: Any]?) {
         if let properties = properties {
@@ -221,7 +221,13 @@ class LocalAnalyticsProvider: AnalyticsProvider {
             "appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] ?? "Unknown",
             "buildNumber": Bundle.main.infoDictionary?["CFBundleVersion"] ?? "Unknown",
             "screenSize": "\(UIScreen.main.bounds.width)x\(UIScreen.main.bounds.height)",
-            "language": Locale.current.languageCode ?? "en"
+            "language": {
+                if #available(iOS 16, *) {
+                    return Locale.current.language.languageCode?.identifier ?? "en"
+                } else {
+                    return Locale.current.languageCode ?? "en"
+                }
+            }()
         ]
     }
     

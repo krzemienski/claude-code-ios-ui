@@ -10,6 +10,9 @@ import SwiftData
 
 // The Session model needs to be available via project target
 class SessionTableViewCell: UITableViewCell {
+    
+    static let identifier = "SessionTableViewCell"
+    
     // MARK: - UI Elements
     private let summaryLabel = UILabel()
     private let messageCountBadge = UILabel()

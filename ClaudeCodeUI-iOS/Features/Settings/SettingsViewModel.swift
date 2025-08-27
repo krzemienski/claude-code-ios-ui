@@ -15,7 +15,7 @@ enum AppTheme: String, CaseIterable {
     case light = "Light"
 }
 
-struct ConnectionStatus {
+struct SettingsConnectionStatus {
     let success: Bool
     let message: String
 }
@@ -81,7 +81,7 @@ class SettingsViewModel: ObservableObject {
     }
     
     @Published var isTestingConnection = false
-    @Published var connectionStatus: ConnectionStatus?
+    @Published var connectionStatus: SettingsConnectionStatus?
     
     // MARK: - Data Management
     @Published var cacheSize = "0 MB"
@@ -109,7 +109,7 @@ class SettingsViewModel: ObservableObject {
                 // Create URL
                 guard let url = URL(string: "\(backendURL)/api/health") else {
                     await MainActor.run {
-                        self.connectionStatus = ConnectionStatus(
+                        self.connectionStatus = SettingsConnectionStatus(
                             success: false,
                             message: "Invalid URL"
                         )
@@ -125,7 +125,7 @@ class SettingsViewModel: ObservableObject {
                 if let httpResponse = response as? HTTPURLResponse {
                     let success = httpResponse.statusCode == 200
                     await MainActor.run {
-                        self.connectionStatus = ConnectionStatus(
+                        self.connectionStatus = SettingsConnectionStatus(
                             success: success,
                             message: success ? "Connection successful" : "Server returned: \(httpResponse.statusCode)"
                         )
@@ -134,7 +134,7 @@ class SettingsViewModel: ObservableObject {
                 }
             } catch {
                 await MainActor.run {
-                    self.connectionStatus = ConnectionStatus(
+                    self.connectionStatus = SettingsConnectionStatus(
                         success: false,
                         message: "Connection failed: \(error.localizedDescription)"
                     )
@@ -232,7 +232,7 @@ class SettingsViewModel: ObservableObject {
     
     private func loadSettings() {
         guard let data = userDefaults.data(forKey: settingsKey),
-              let settings = try? JSONDecoder().decode(Settings.self, from: data) else {
+              let settings = try? JSONDecoder().decode(AppSettings.self, from: data) else {
             return
         }
         
@@ -251,7 +251,7 @@ class SettingsViewModel: ObservableObject {
     }
     
     private func saveSettings() {
-        let settings = Settings(
+        let settings = AppSettings(
             theme: selectedTheme.rawValue,
             fontSize: fontSize,
             glowEffects: glowEffectsEnabled,
@@ -354,7 +354,7 @@ class SettingsViewModel: ObservableObject {
 
 // MARK: - Settings Model
 
-private struct Settings: Codable {
+private struct AppSettings: Codable {
     let theme: String
     let fontSize: Double
     let glowEffects: Bool
@@ -389,47 +389,4 @@ extension FileManager {
 }
 
 // MARK: - UIKit Bridge
-
-class SettingsViewController: UIViewController {
-    private var hostingController: UIHostingController<SettingsView>?
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        // Setup SwiftUI view
-        let settingsView = SettingsView()
-        hostingController = UIHostingController(rootView: settingsView)
-        
-        if let hostingController = hostingController {
-            addChild(hostingController)
-            view.addSubview(hostingController.view)
-            
-            hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
-                hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-            ])
-            
-            hostingController.didMove(toParent: self)
-        }
-        
-        // Customize navigation
-        title = "Settings"
-        navigationItem.largeTitleDisplayMode = .never
-        
-        // Add close button if presented modally
-        if presentingViewController != nil {
-            navigationItem.rightBarButtonItem = UIBarButtonItem(
-                barButtonSystemItem: .done,
-                target: self,
-                action: #selector(dismissSettings)
-            )
-        }
-    }
-    
-    @objc private func dismissSettings() {
-        dismiss(animated: true)
-    }
-}
+// SettingsViewController is defined in SettingsViewController.swift

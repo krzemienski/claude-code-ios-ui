@@ -15,7 +15,7 @@ class SkeletonCollectionViewCell: UICollectionViewCell {
     
     private let containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = CyberpunkTheme.cardBackground
+        view.backgroundColor = CyberpunkTheme.background
         view.layer.cornerRadius = 12
         view.layer.borderWidth = 1
         view.layer.borderColor = CyberpunkTheme.border.cgColor

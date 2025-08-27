@@ -20,7 +20,7 @@ class EnhancedMessageCell: UITableViewCell {
     private let statusImageView = UIImageView()
     
     // Content views
-    private let textLabel = UILabel()
+    private let messageTextLabel = UILabel()
     private let codeContainerView = UIView()
     private let codeLanguageLabel = UILabel()
     private let codeTextView = UITextView()
@@ -99,11 +99,11 @@ class EnhancedMessageCell: UITableViewCell {
         headerView.addSubview(statusImageView)
         
         // Text label
-        textLabel.translatesAutoresizingMaskIntoConstraints = false
-        textLabel.numberOfLines = 0
-        textLabel.font = CyberpunkTheme.bodyFont
-        textLabel.textColor = CyberpunkTheme.primaryText
-        bubbleView.addSubview(textLabel)
+        messageTextLabel.translatesAutoresizingMaskIntoConstraints = false
+        messageTextLabel.numberOfLines = 0
+        messageTextLabel.font = CyberpunkTheme.bodyFont
+        messageTextLabel.textColor = CyberpunkTheme.primaryText
+        bubbleView.addSubview(messageTextLabel)
         
         // Code container
         setupCodeViews()
@@ -334,7 +334,7 @@ class EnhancedMessageCell: UITableViewCell {
     }
     
     private func hideAllContentViews() {
-        textLabel.isHidden = true
+        messageTextLabel.isHidden = true
         codeContainerView.isHidden = true
         toolContainerView.isHidden = true
         todoContainerView.isHidden = true
@@ -343,14 +343,14 @@ class EnhancedMessageCell: UITableViewCell {
     }
     
     private func configureTextContent(_ message: EnhancedChatMessage) {
-        textLabel.isHidden = false
-        textLabel.text = message.content
+        messageTextLabel.isHidden = false
+        messageTextLabel.text = message.content
         
         NSLayoutConstraint.activate([
-            textLabel.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
-            textLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            textLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            textLabel.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: -12)
+            messageTextLabel.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
+            messageTextLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
+            messageTextLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
+            messageTextLabel.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: -12)
         ])
     }
     

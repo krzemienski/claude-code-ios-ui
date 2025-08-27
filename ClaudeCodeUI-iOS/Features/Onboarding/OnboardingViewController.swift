@@ -262,7 +262,7 @@ class OnboardingPageViewController: UIViewController {
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.font = .claudeCodeFont(style: .largeTitle, weight: .bold)
-        label.textColor = CyberpunkTheme.text
+        label.textColor = CyberpunkTheme.textPrimary
         label.textAlignment = .center
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false

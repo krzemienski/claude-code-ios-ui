@@ -242,7 +242,7 @@ final class HapticFeedback {
     }
     
     func warning() {
-        notification(.warning)
+        // UINotificationFeedbackGenerator doesn't have .warning, using custom pattern only
         playCustomPattern(.warning)
     }
     

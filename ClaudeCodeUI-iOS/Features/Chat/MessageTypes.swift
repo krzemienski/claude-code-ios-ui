@@ -253,7 +253,7 @@ class EnhancedChatMessage: ChatMessage {
     var isExpanded: Bool = false
     var metadata: [String: Any]?
     
-    override init(id: String, content: String, isUser: Bool, timestamp: Date, status: MessageStatus) {
+    override init(id: String, content: String, isUser: Bool, timestamp: Date, status: MessageStatus = .sent) {
         super.init(id: id, content: content, isUser: isUser, timestamp: timestamp, status: status)
         detectMessageType()
     }
@@ -261,40 +261,40 @@ class EnhancedChatMessage: ChatMessage {
     private func detectMessageType() {
         // Auto-detect message type from content
         // Strip leading emoji indicators first for better detection
-        let cleanContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanContent = self.content.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "^[❌✅🔧📋🔔💭🎯📊]\\s*", with: "", options: .regularExpression)
         
-        if content.contains("```") {
-            messageType = .code
+        if self.content.contains("```") {
+            self.messageType = .code
             extractCodeBlock()
-        } else if cleanContent.contains("Using tool:") || cleanContent.contains("Tool:") || content.contains("🔧") {
-            messageType = .toolUse
+        } else if cleanContent.contains("Using tool:") || cleanContent.contains("Tool:") || self.content.contains("🔧") {
+            self.messageType = .toolUse
         } else if cleanContent.contains("Result:") && (cleanContent.contains("executed") || cleanContent.contains("successfully")) {
-            messageType = .toolResult
-        } else if cleanContent.contains("Todo") || cleanContent.contains("Task") || content.contains("📋") {
-            messageType = .todoUpdate
+            self.messageType = .toolResult
+        } else if cleanContent.contains("Todo") || cleanContent.contains("Task") || self.content.contains("📋") {
+            self.messageType = .todoUpdate
         } else if cleanContent.hasPrefix("Error:") || cleanContent.hasPrefix("Failed:") || cleanContent.hasPrefix("❌") {
-            messageType = .error
-        } else if cleanContent.hasPrefix("System:") || content.contains("🔔") {
-            messageType = .system
-        } else if content.contains("git ") || content.contains("commit") {
-            messageType = .gitOperation
-        } else if content.contains("$") || content.contains("npm") || content.contains("bash") {
-            messageType = .terminalCommand
+            self.messageType = .error
+        } else if cleanContent.hasPrefix("System:") || self.content.contains("🔔") {
+            self.messageType = .system
+        } else if self.content.contains("git ") || self.content.contains("commit") {
+            self.messageType = .gitOperation
+        } else if self.content.contains("$") || self.content.contains("npm") || self.content.contains("bash") {
+            self.messageType = .terminalCommand
         } else if cleanContent.contains("[assistant message]") {
-            messageType = .claudeResponse
+            self.messageType = .claudeResponse
         } else {
-            messageType = .text
+            self.messageType = .text
         }
     }
     
     private func extractCodeBlock() {
-        guard let startIndex = content.range(of: "```")?.upperBound,
-              let endIndex = content.range(of: "```", range: startIndex..<content.endIndex)?.lowerBound else {
+        guard let startIndex = self.content.range(of: "```")?.upperBound,
+              let endIndex = self.content.range(of: "```", range: startIndex..<self.content.endIndex)?.lowerBound else {
             return
         }
         
-        let codeBlock = String(content[startIndex..<endIndex])
+        let codeBlock = String(self.content[startIndex..<endIndex])
         let lines = codeBlock.components(separatedBy: .newlines)
         
         if let firstLine = lines.first, !firstLine.isEmpty {

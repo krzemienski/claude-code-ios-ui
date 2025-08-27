@@ -10,7 +10,7 @@ import SwiftUI
 
 // MARK: - Skeleton View
 
-struct SkeletonView: View {
+struct SwiftUISkeletonView: View {
     @State private var isAnimating = false
     let cornerRadius: CGFloat
     
@@ -21,9 +21,9 @@ struct SkeletonView: View {
     var body: some View {
         LinearGradient(
             gradient: Gradient(colors: [
-                Color(UIColor.CyberpunkTheme.surface),
-                Color(UIColor.CyberpunkTheme.surface).opacity(0.4),
-                Color(UIColor.CyberpunkTheme.surface)
+                Color(CyberpunkTheme.surface),
+                Color(CyberpunkTheme.surface).opacity(0.4),
+                Color(CyberpunkTheme.surface)
             ]),
             startPoint: .leading,
             endPoint: .trailing
@@ -34,7 +34,7 @@ struct SkeletonView: View {
                 LinearGradient(
                     gradient: Gradient(colors: [
                         Color.clear,
-                        Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.1),
+                        Color(CyberpunkTheme.primaryCyan).opacity(0.1),
                         Color.clear
                     ]),
                     startPoint: .leading,
@@ -72,29 +72,29 @@ struct ProjectRowSkeleton: View {
     var body: some View {
         HStack(spacing: 16) {
             // Icon placeholder
-            SkeletonView(cornerRadius: 12)
+            SwiftUISkeletonView(cornerRadius: 12)
                 .frame(width: 48, height: 48)
             
             VStack(alignment: .leading, spacing: 8) {
                 // Title placeholder
-                SkeletonView(cornerRadius: 4)
+                SwiftUISkeletonView(cornerRadius: 4)
                     .frame(width: 180, height: 20)
                 
                 // Subtitle placeholder
-                SkeletonView(cornerRadius: 4)
+                SwiftUISkeletonView(cornerRadius: 4)
                     .frame(width: 120, height: 16)
             }
             
             Spacer()
             
             // Chevron placeholder
-            SkeletonView(cornerRadius: 4)
+            SwiftUISkeletonView(cornerRadius: 4)
                 .frame(width: 20, height: 20)
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
     }
 }
@@ -111,11 +111,11 @@ struct ChatMessageSkeleton: View {
             VStack(alignment: isUser ? .trailing : .leading, spacing: 8) {
                 // Message content placeholder
                 VStack(alignment: .leading, spacing: 6) {
-                    SkeletonView(cornerRadius: 4)
+                    SwiftUISkeletonView(cornerRadius: 4)
                         .frame(width: 200, height: 16)
-                    SkeletonView(cornerRadius: 4)
+                    SwiftUISkeletonView(cornerRadius: 4)
                         .frame(width: 160, height: 16)
-                    SkeletonView(cornerRadius: 4)
+                    SwiftUISkeletonView(cornerRadius: 4)
                         .frame(width: 140, height: 16)
                 }
                 .padding(12)
@@ -123,13 +123,13 @@ struct ChatMessageSkeleton: View {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(
                             isUser ?
-                            Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.2) :
-                            Color(UIColor.CyberpunkTheme.surface)
+                            Color(CyberpunkTheme.primaryCyan).opacity(0.2) :
+                            Color(CyberpunkTheme.surface)
                         )
                 )
                 
                 // Timestamp placeholder
-                SkeletonView(cornerRadius: 2)
+                SwiftUISkeletonView(cornerRadius: 2)
                     .frame(width: 60, height: 12)
             }
             
@@ -153,11 +153,11 @@ struct FileListSkeleton: View {
                     }
                     
                     // File icon placeholder
-                    SkeletonView(cornerRadius: 4)
+                    SwiftUISkeletonView(cornerRadius: 4)
                         .frame(width: 20, height: 20)
                     
                     // File name placeholder
-                    SkeletonView(cornerRadius: 4)
+                    SwiftUISkeletonView(cornerRadius: 4)
                         .frame(width: CGFloat.random(in: 80...150), height: 16)
                     
                     Spacer()
@@ -175,10 +175,10 @@ struct SearchResultSkeleton: View {
         VStack(spacing: 16) {
             // Search summary skeleton
             HStack {
-                SkeletonView(cornerRadius: 4)
+                SwiftUISkeletonView(cornerRadius: 4)
                     .frame(width: 120, height: 16)
                 Spacer()
-                SkeletonView(cornerRadius: 4)
+                SwiftUISkeletonView(cornerRadius: 4)
                     .frame(width: 60, height: 16)
             }
             .padding(.horizontal)
@@ -196,31 +196,31 @@ struct SearchResultRowSkeleton: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 // File icon
-                SkeletonView(cornerRadius: 4)
+                SwiftUISkeletonView(cornerRadius: 4)
                     .frame(width: 24, height: 24)
                 
                 VStack(alignment: .leading, spacing: 6) {
                     // File name
-                    SkeletonView(cornerRadius: 4)
+                    SwiftUISkeletonView(cornerRadius: 4)
                         .frame(width: 150, height: 16)
                     
                     // File path
-                    SkeletonView(cornerRadius: 4)
+                    SwiftUISkeletonView(cornerRadius: 4)
                         .frame(width: 200, height: 12)
                 }
                 
                 Spacer()
                 
                 // Match count
-                SkeletonView(cornerRadius: 8)
+                SwiftUISkeletonView(cornerRadius: 8)
                     .frame(width: 30, height: 20)
             }
             
             // Code preview
             VStack(alignment: .leading, spacing: 4) {
-                SkeletonView(cornerRadius: 2)
+                SwiftUISkeletonView(cornerRadius: 2)
                     .frame(width: 280, height: 14)
-                SkeletonView(cornerRadius: 2)
+                SwiftUISkeletonView(cornerRadius: 2)
                     .frame(width: 250, height: 14)
             }
             .padding(.leading, 36)
@@ -228,7 +228,7 @@ struct SearchResultRowSkeleton: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
         .padding(.horizontal)
     }
@@ -243,12 +243,12 @@ struct TerminalOutputSkeleton: View {
                 HStack(spacing: 8) {
                     // Command prompt
                     if index % 3 == 0 {
-                        SkeletonView(cornerRadius: 2)
+                        SwiftUISkeletonView(cornerRadius: 2)
                             .frame(width: 40, height: 14)
                     }
                     
                     // Output line
-                    SkeletonView(cornerRadius: 2)
+                    SwiftUISkeletonView(cornerRadius: 2)
                         .frame(width: CGFloat.random(in: 100...300), height: 14)
                     
                     Spacer()
@@ -256,7 +256,7 @@ struct TerminalOutputSkeleton: View {
             }
         }
         .padding()
-        .background(Color(UIColor.CyberpunkTheme.background))
+        .background(Color(CyberpunkTheme.background))
     }
 }
 
@@ -267,9 +267,9 @@ struct SettingsSectionSkeleton: View {
         VStack(alignment: .leading, spacing: 16) {
             // Section header
             HStack {
-                SkeletonView(cornerRadius: 4)
+                SwiftUISkeletonView(cornerRadius: 4)
                     .frame(width: 24, height: 24)
-                SkeletonView(cornerRadius: 4)
+                SwiftUISkeletonView(cornerRadius: 4)
                     .frame(width: 100, height: 20)
                 Spacer()
             }
@@ -277,10 +277,10 @@ struct SettingsSectionSkeleton: View {
             // Settings items
             ForEach(0..<3, id: \.self) { _ in
                 HStack {
-                    SkeletonView(cornerRadius: 4)
+                    SwiftUISkeletonView(cornerRadius: 4)
                         .frame(width: 120, height: 16)
                     Spacer()
-                    SkeletonView(cornerRadius: 8)
+                    SwiftUISkeletonView(cornerRadius: 8)
                         .frame(width: 50, height: 24)
                 }
                 .padding(.vertical, 8)
@@ -289,7 +289,7 @@ struct SettingsSectionSkeleton: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
     }
 }
@@ -315,7 +315,7 @@ struct ContentSkeleton: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(0..<lineCount, id: \.self) { index in
-                SkeletonView(cornerRadius: 4)
+                SwiftUISkeletonView(cornerRadius: 4)
                     .frame(width: lineWidths[index], height: 16)
             }
         }
@@ -330,7 +330,7 @@ struct SkeletonModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         if isLoading {
-            SkeletonView(cornerRadius: cornerRadius)
+            SwiftUISkeletonView(cornerRadius: cornerRadius)
         } else {
             content
         }

@@ -100,7 +100,7 @@ struct RefreshIndicator: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.3),
+                                Color(CyberpunkTheme.primaryCyan).opacity(0.3),
                                 Color.clear
                             ],
                             center: .center,
@@ -114,12 +114,12 @@ struct RefreshIndicator: View {
             
             // Loading indicator
             if isRefreshing {
-                CyberpunkLoadingIndicator()
+                SwiftUICyberpunkLoadingIndicator()
             } else {
                 // Pull indicator
                 Image(systemName: "arrow.down")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     .rotationEffect(.degrees(progress * 180))
                     .scaleEffect(0.6 + progress * 0.4)
                     .opacity(progress)
@@ -131,7 +131,7 @@ struct RefreshIndicator: View {
 
 // MARK: - Cyberpunk Loading Indicator
 
-struct CyberpunkLoadingIndicator: View {
+struct SwiftUICyberpunkLoadingIndicator: View {
     @State private var rotation = 0.0
     @State private var trimEnd = 0.1
     
@@ -140,7 +140,7 @@ struct CyberpunkLoadingIndicator: View {
             // Outer ring
             Circle()
                 .stroke(
-                    Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.2),
+                    Color(CyberpunkTheme.primaryCyan).opacity(0.2),
                     lineWidth: 3
                 )
                 .frame(width: 40, height: 40)
@@ -151,8 +151,8 @@ struct CyberpunkLoadingIndicator: View {
                 .stroke(
                     LinearGradient(
                         colors: [
-                            Color(UIColor.CyberpunkTheme.primaryCyan),
-                            Color(UIColor.CyberpunkTheme.accentPink)
+                            Color(CyberpunkTheme.primaryCyan),
+                            Color(CyberpunkTheme.accentPink)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -178,7 +178,7 @@ struct CyberpunkLoadingIndicator: View {
             
             // Center dot
             Circle()
-                .fill(Color(UIColor.CyberpunkTheme.primaryCyan))
+                .fill(Color(CyberpunkTheme.primaryCyan))
                 .frame(width: 8, height: 8)
                 .opacity(trimEnd)
         }
@@ -196,7 +196,7 @@ struct ScrollOffsetPreferenceKey: PreferenceKey {
 
 // MARK: - Empty State View
 
-struct EmptyStateView: View {
+struct RefreshableEmptyStateView: View {
     let icon: String
     let title: String
     let message: String
@@ -228,7 +228,7 @@ struct EmptyStateView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.2),
+                                Color(CyberpunkTheme.primaryCyan).opacity(0.2),
                                 Color.clear
                             ],
                             center: .center,
@@ -246,7 +246,7 @@ struct EmptyStateView: View {
                 
                 Image(systemName: icon)
                     .font(.system(size: 64))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                    .foregroundColor(Color(CyberpunkTheme.textTertiary))
                     .scaleEffect(isAnimating ? 1 : 0.95)
                     .animation(
                         Animation.easeInOut(duration: 2)
@@ -258,11 +258,11 @@ struct EmptyStateView: View {
             VStack(spacing: 12) {
                 Text(title)
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 
                 Text(message)
                     .font(.system(size: 16))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -281,7 +281,7 @@ struct EmptyStateView: View {
 
 // MARK: - Error State View
 
-struct ErrorStateView: View {
+struct RefreshableErrorStateView: View {
     let error: Error
     let retry: () -> Void
     
@@ -292,12 +292,12 @@ struct ErrorStateView: View {
             // Error icon
             ZStack {
                 Circle()
-                    .fill(Color(UIColor.CyberpunkTheme.error).opacity(0.1))
+                    .fill(Color(CyberpunkTheme.error).opacity(0.1))
                     .frame(width: 100, height: 100)
                 
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 50))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.error))
+                    .foregroundColor(Color(CyberpunkTheme.error))
                     .rotationEffect(.degrees(isShaking ? -5 : 5))
                     .animation(
                         Animation.easeInOut(duration: 0.1)
@@ -309,11 +309,11 @@ struct ErrorStateView: View {
             VStack(spacing: 12) {
                 Text("Something went wrong")
                     .font(.system(size: 22, weight: .semibold))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 
                 Text(error.localizedDescription)
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -333,8 +333,8 @@ struct ErrorStateView: View {
                 .background(
                     LinearGradient(
                         colors: [
-                            Color(UIColor.CyberpunkTheme.error),
-                            Color(UIColor.CyberpunkTheme.error).opacity(0.8)
+                            Color(CyberpunkTheme.error),
+                            Color(CyberpunkTheme.error).opacity(0.8)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -354,17 +354,17 @@ struct ErrorStateView: View {
 
 // MARK: - Loading State View
 
-struct LoadingStateView: View {
+struct RefreshableLoadingStateView: View {
     let message: String
     
     var body: some View {
         VStack(spacing: 24) {
-            CyberpunkLoadingIndicator()
+            SwiftUICyberpunkLoadingIndicator()
                 .scaleEffect(1.5)
             
             Text(message)
                 .font(.system(size: 16))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                .foregroundColor(Color(CyberpunkTheme.textSecondary))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -380,12 +380,12 @@ class RefreshableTableViewController: UITableViewController {
         
         // Setup refresh control with cyberpunk styling
         refreshControl = UIRefreshControl()
-        refreshControl?.tintColor = UIColor.CyberpunkTheme.primaryCyan
+        refreshControl?.tintColor = CyberpunkTheme.primaryCyan
         refreshControl?.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
         
         // Add attributed title
         let attributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.CyberpunkTheme.textSecondary,
+            .foregroundColor: CyberpunkTheme.textSecondary,
             .font: UIFont.systemFont(ofSize: 14)
         ]
         refreshControl?.attributedTitle = NSAttributedString(

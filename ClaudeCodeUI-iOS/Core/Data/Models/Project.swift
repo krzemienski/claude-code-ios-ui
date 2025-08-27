@@ -177,39 +177,7 @@ final class Session: Codable {
 */
 
 // MARK: - Message Model
-@available(iOS 17.0, *)
-@Model
-final class Message {
-    @Attribute(.unique) var id: String = UUID().uuidString
-    var role: MessageRole
-    var content: String = ""
-    var timestamp: Date = Date()
-    
-    // Temporarily disabled due to Session import issue
-    // @Relationship(deleteRule: .nullify)
-    // var session: Session?
-    
-    // Store metadata as Data (JSON encoded)
-    var metadataData: Data? = nil
-    
-    @Transient
-    var metadata: MessageMetadata? {
-        get {
-            guard let data = metadataData else { return nil }
-            return try? JSONDecoder().decode(MessageMetadata.self, from: data)
-        }
-        set {
-            metadataData = try? JSONEncoder().encode(newValue)
-        }
-    }
-    
-    init(id: String = UUID().uuidString, role: MessageRole, content: String) {
-        self.id = id
-        self.role = role
-        self.content = content
-        self.timestamp = Date()
-    }
-}
+// Message model has been moved to Models/Message.swift to avoid duplication
 
 // MARK: - Supporting Types
 // Commented out - using SessionStatus from Session.swift instead
@@ -219,19 +187,7 @@ final class Message {
 //     case aborted
 // }
 
-enum MessageRole: String, Codable {
-    case user
-    case assistant
-    case system
-}
-
-struct MessageMetadata: Codable {
-    let model: String?
-    let temperature: Double?
-    let maxTokens: Int?
-    let stopSequence: [String]?
-    let toolUse: [ToolUse]?
-}
+// MessageRole and MessageMetadata have been moved to Models/Message.swift to avoid duplication
 
 struct ToolUse: Codable {
     let name: String

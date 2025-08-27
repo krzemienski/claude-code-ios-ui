@@ -62,7 +62,7 @@ class FeedbackViewController: UIViewController {
         let label = UILabel()
         label.text = "Send Feedback"
         label.font = .claudeCodeFont(style: .largeTitle, weight: .bold)
-        label.textColor = CyberpunkTheme.text
+        label.textColor = CyberpunkTheme.textPrimary
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -82,7 +82,7 @@ class FeedbackViewController: UIViewController {
         control.selectedSegmentTintColor = CyberpunkTheme.primaryCyan
         control.backgroundColor = CyberpunkTheme.surface
         control.setTitleTextAttributes([
-            .foregroundColor: CyberpunkTheme.text,
+            .foregroundColor: CyberpunkTheme.textPrimary,
             .font: UIFont.claudeCodeFont(style: .footnote, weight: .medium)
         ], for: .normal)
         control.setTitleTextAttributes([
@@ -97,7 +97,7 @@ class FeedbackViewController: UIViewController {
     private lazy var feedbackTextView: UITextView = {
         let textView = UITextView()
         textView.font = .claudeCodeFont(style: .body)
-        textView.textColor = CyberpunkTheme.text
+        textView.textColor = CyberpunkTheme.textPrimary
         textView.backgroundColor = CyberpunkTheme.surface
         textView.layer.cornerRadius = 12
         textView.layer.borderWidth = 1
@@ -131,7 +131,7 @@ class FeedbackViewController: UIViewController {
         let textField = UITextField()
         textField.placeholder = "Email (optional)"
         textField.font = .claudeCodeFont(style: .body)
-        textField.textColor = CyberpunkTheme.text
+        textField.textColor = CyberpunkTheme.textPrimary
         textField.backgroundColor = CyberpunkTheme.surface
         textField.layer.cornerRadius = 12
         textField.layer.borderWidth = 1
@@ -372,8 +372,26 @@ class FeedbackViewController: UIViewController {
         let loadingAlert = UIAlertController(title: "Submitting", message: "Sending your feedback...", preferredStyle: .alert)
         present(loadingAlert, animated: true)
         
+        // Convert to API format
+        let feedbackType: FeedbackType
+        switch feedback.type {
+        case .bug: feedbackType = .bug
+        case .feature: feedbackType = .feature
+        case .improvement: feedbackType = .improvement
+        case .other: feedbackType = .other
+        }
+        
+        let apiFeedback = APIFeedbackData(
+            type: feedbackType,
+            message: feedback.message,
+            email: feedback.email,
+            deviceInfo: feedback.deviceInfo,
+            appVersion: feedback.appVersion,
+            screenshot: feedback.screenshot?.pngData()
+        )
+        
         // Submit to backend
-        APIClient.shared.submitFeedback(feedback) { [weak self] result in
+        APIClient.shared.submitFeedback(apiFeedback) { [weak self] result in
             DispatchQueue.main.async {
                 loadingAlert.dismiss(animated: true) {
                     switch result {

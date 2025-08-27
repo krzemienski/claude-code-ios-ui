@@ -326,7 +326,7 @@ class TooltipView: UIView {
         titleLabel.numberOfLines = 0
         
         descriptionLabel.font = .claudeCodeFont(style: .body)
-        descriptionLabel.textColor = CyberpunkTheme.text
+        descriptionLabel.textColor = CyberpunkTheme.primaryText
         descriptionLabel.numberOfLines = 0
         
         nextButton.setTitle("Next →", for: .normal)

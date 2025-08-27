@@ -9,42 +9,6 @@
 
 import Foundation
 
-// MARK: - WebSocket Manager Adapter
-
-extension WebSocketManager: WebSocketProtocol {
-    
-    func connect(to endpoint: String, with token: String?) {
-        // Build full URL
-        let baseURL = "ws://localhost:3004"
-        let fullURL = "\(baseURL)\(endpoint)"
-        
-        // Add token to URL if provided
-        var finalURL = fullURL
-        if let token = token {
-            let separator = fullURL.contains("?") ? "&" : "?"
-            finalURL = "\(fullURL)\(separator)token=\(token)"
-        }
-        
-        // Call existing connect method
-        self.connect(to: finalURL)
-    }
-    
-    func send(_ message: String) {
-        // Convert string to raw message format expected by backend
-        if let data = message.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-            self.sendRawMessage(json)
-        }
-    }
-    
-    func sendData(_ data: Data) {
-        // WebSocketManager doesn't have direct data sending, convert to string
-        if let string = String(data: data, encoding: .utf8) {
-            self.sendRawText(string)
-        }
-    }
-}
-
 // MARK: - WebSocket Manager Wrapper
 
 /// Wrapper class to properly adapt WebSocketManager to WebSocketProtocol
@@ -102,13 +66,17 @@ extension WebSocketFactory {
     
     /// Create WebSocket manager with proper type
     static func create() -> WebSocketProtocol {
+        // StarscreamWebSocketManager requires Starscream library to be imported
+        // For now, always use legacy adapter
+        /*
         if FeatureFlag.useStarscreamWebSocket.isEnabled {
             logInfo("Creating Starscream WebSocket", category: "WebSocketFactory")
             return StarscreamWebSocketManager()
         } else {
-            logInfo("Creating legacy WebSocket adapter", category: "WebSocketFactory")
-            return LegacyWebSocketAdapter()
-        }
+        */
+        logInfo("Creating legacy WebSocket adapter", category: "WebSocketFactory")
+        return LegacyWebSocketAdapter()
+        // }
     }
     
     /// Migrate existing WebSocketManager to protocol-based implementation

@@ -7,6 +7,14 @@
 
 import SwiftUI
 
+// MARK: - Cursor Message Model
+struct CursorMessage: Identifiable {
+    let id = UUID()
+    let content: String
+    let role: String // "user" or "assistant"
+    let timestamp: Date
+}
+
 // MARK: - Cursor Sessions View
 struct CursorSessionsView: View {
     @ObservedObject var viewModel: CursorViewModel
@@ -123,7 +131,7 @@ struct CursorSessionsView: View {
             
             // Sessions List
             if sortedSessions.isEmpty {
-                EmptyStateView(
+                CursorEmptyStateView(
                     icon: "bubble.left.and.bubble.right",
                     title: viewModel.searchText.isEmpty ? "No Sessions" : "No Results",
                     message: viewModel.searchText.isEmpty ?
@@ -330,7 +338,7 @@ struct SessionDetailView: View {
                                 .foregroundColor(.white)
                             
                             ForEach(session.messages) { message in
-                                MessageBubble(message: message)
+                                CursorMessageBubble(message: message)
                             }
                         }
                         
@@ -489,7 +497,7 @@ struct InfoRow: View {
     }
 }
 
-struct MessageBubble: View {
+struct CursorMessageBubble: View {
     let message: CursorMessage
     
     var body: some View {
@@ -531,7 +539,7 @@ struct MessageBubble: View {
 }
 
 // MARK: - Empty State View
-struct EmptyStateView: View {
+struct CursorEmptyStateView: View {
     let icon: String
     let title: String
     let message: String

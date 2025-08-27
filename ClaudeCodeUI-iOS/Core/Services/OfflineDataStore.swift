@@ -69,7 +69,7 @@ final class OfflineDataStore {
         offlineProject.id = project.id
         offlineProject.name = project.name
         offlineProject.path = project.path
-        offlineProject.lastModified = project.lastModified
+        offlineProject.lastModified = project.updatedAt
         offlineProject.isOffline = isOffline
         offlineProject.syncStatus = "pending"
         offlineProject.createdAt = Date()
@@ -108,15 +108,15 @@ final class OfflineDataStore {
     func saveSession(_ session: Session, projectId: String, isOffline: Bool = true) {
         let offlineSession = OfflineSession(context: context)
         offlineSession.id = session.id
-        offlineSession.title = session.title
+        offlineSession.title = session.summary ?? "Session \(session.id)"
         offlineSession.projectId = projectId
-        offlineSession.createdAt = session.createdAt
+        offlineSession.createdAt = session.startedAt
         offlineSession.lastModified = Date()
         offlineSession.isOffline = isOffline
         offlineSession.syncStatus = "pending"
         
         save()
-        print("💾 Session saved offline: \(session.title)")
+        print("💾 Session saved offline: \(session.summary ?? session.id)")
     }
     
     func fetchOfflineSessions(for projectId: String) -> [OfflineSession] {
@@ -190,10 +190,12 @@ final class OfflineDataStore {
     
     // MARK: - Sync Operations
     
-    func markAsSynced<T: NSManagedObject & SyncableEntity>(_ entity: T) {
-        entity.syncStatus = "synced"
-        entity.isOffline = false
-        entity.syncedAt = Date()
+    func markAsSynced<T: NSManagedObject>(_ entity: T) where T: SyncableEntity {
+        // NSManagedObject properties are mutable even if the parameter is let
+        // This is Core Data's behavior - managed objects are reference types
+        entity.setValue("synced", forKey: "syncStatus")
+        entity.setValue(false, forKey: "isOffline") 
+        entity.setValue(Date(), forKey: "syncedAt")
         save()
     }
     

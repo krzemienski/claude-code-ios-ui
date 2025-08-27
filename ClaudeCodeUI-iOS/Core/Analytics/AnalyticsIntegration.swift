@@ -184,32 +184,32 @@ extension Project {
     
     /// Track project opened
     func trackOpened() {
-        AnalyticsManager.shared.track(.projectOpened(name: self.displayName))
+        AnalyticsManager.shared.track(.projectOpened(name: self.displayName ?? self.name))
     }
     
     /// Track project created
     func trackCreated() {
-        AnalyticsManager.shared.track(.projectCreated(name: self.displayName))
+        AnalyticsManager.shared.track(.projectCreated(name: self.displayName ?? self.name))
     }
     
     /// Track project deleted
     func trackDeleted() {
-        AnalyticsManager.shared.track(.projectDeleted(name: self.displayName))
+        AnalyticsManager.shared.track(.projectDeleted(name: self.displayName ?? self.name))
     }
     
     /// Track project renamed
     func trackRenamed(from oldName: String) {
-        AnalyticsManager.shared.track(.projectRenamed(oldName: oldName, newName: self.displayName))
+        AnalyticsManager.shared.track(.projectRenamed(oldName: oldName, newName: self.displayName ?? self.name))
     }
     
     /// Track project duplicated
     func trackDuplicated() {
-        AnalyticsManager.shared.track(.projectDuplicated(name: self.displayName))
+        AnalyticsManager.shared.track(.projectDuplicated(name: self.displayName ?? self.name))
     }
     
     /// Track project archived
     func trackArchived() {
-        AnalyticsManager.shared.track(.projectArchived(name: self.displayName))
+        AnalyticsManager.shared.track(.projectArchived(name: self.displayName ?? self.name))
     }
 }
 

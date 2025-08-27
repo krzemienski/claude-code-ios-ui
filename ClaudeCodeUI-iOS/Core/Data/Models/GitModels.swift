@@ -67,16 +67,7 @@ struct GitCommitDiffResponse: Codable {
     let error: String?
 }
 
-// MARK: - Git Remote Status
-struct GitRemoteStatusResponse: Codable {
-    let success: Bool
-    let hasRemote: Bool
-    let remoteUrl: String?
-    let ahead: Int
-    let behind: Int
-    let diverged: Bool
-    let error: String?
-}
+// GitRemoteStatusResponse is defined in Core/Network/APIClient.swift
 
 // MARK: - Git Operation Response (Extended)
 struct GitOperationResult: Codable {
@@ -86,9 +77,4 @@ struct GitOperationResult: Codable {
     let affectedFiles: [String]?
 }
 
-// MARK: - Terminal Output
-struct TerminalOutput: Codable {
-    let output: String
-    let exitCode: Int
-    let error: String?
-}
+// Terminal output is defined in Core/Data/Models/TerminalOutput.swift

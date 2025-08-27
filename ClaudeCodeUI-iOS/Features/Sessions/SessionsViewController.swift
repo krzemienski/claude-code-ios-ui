@@ -15,7 +15,7 @@ public class SessionsViewController: BaseViewController {
     private let project: Project
     private var sessions: [Session] = []
     private let apiClient: APIClient
-    private var isLoading = false
+    private var isLoadingData = false
     private let refreshControl = UIRefreshControl()
     
     // MARK: - UI Components
@@ -37,7 +37,7 @@ public class SessionsViewController: BaseViewController {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("Start New Session", for: .normal)
-        button.titleLabel?.font = CyberpunkTheme.headingFont
+        button.titleLabel?.font = CyberpunkTheme.titleFont
         button.setTitleColor(CyberpunkTheme.background, for: .normal)
         button.backgroundColor = CyberpunkTheme.primaryCyan
         button.layer.cornerRadius = 12
@@ -68,7 +68,7 @@ public class SessionsViewController: BaseViewController {
         let titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = "No Sessions Yet"
-        titleLabel.font = CyberpunkTheme.headingFont
+        titleLabel.font = CyberpunkTheme.titleFont
         titleLabel.textColor = CyberpunkTheme.primaryText
         titleLabel.textAlignment = .center
         
@@ -105,26 +105,26 @@ public class SessionsViewController: BaseViewController {
     
     // MARK: - Initialization
     
-    public init(project: Project) {
+    init(project: Project) {
         self.project = project
         self.apiClient = DIContainer.shared.apiClient
         super.init(nibName: nil, bundle: nil)
     }
     
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
     // MARK: - Lifecycle
     
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupNavigationBar()
         loadSessions()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
+    public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refreshSessions()
     }
@@ -169,8 +169,8 @@ public class SessionsViewController: BaseViewController {
     // MARK: - Data Loading
     
     private func loadSessions() {
-        guard !isLoading else { return }
-        isLoading = true
+        guard !isLoadingData else { return }
+        isLoadingData = true
         
         print("📱 Loading sessions for project: \(project.name)")
         
@@ -183,12 +183,12 @@ public class SessionsViewController: BaseViewController {
                 await MainActor.run {
                     self.sessions = sessions
                     self.updateUI()
-                    self.isLoading = false
+                    self.isLoadingData = false
                 }
             } catch {
                 print("❌ Failed to fetch sessions: \(error)")
                 await MainActor.run {
-                    self.isLoading = false
+                    self.isLoadingData = false
                     self.showError("Failed to load sessions: \(error.localizedDescription)")
                 }
             }
@@ -196,7 +196,7 @@ public class SessionsViewController: BaseViewController {
     }
     
     private func refreshSessions() {
-        guard !isLoading else { return }
+        guard !isLoadingData else { return }
         
         Task {
             do {
@@ -231,19 +231,15 @@ public class SessionsViewController: BaseViewController {
         Task {
             do {
                 // Create new session via API
-                let endpoint = APIEndpoint.createSession(projectName: project.name)
-                let response: [String: Any] = try await apiClient.request(endpoint)
+                let newSession = try await apiClient.createSession(projectName: project.name)
+                print("✅ Created new session: \(newSession.id)")
                 
-                if let sessionId = response["id"] as? String {
-                    print("✅ Created new session: \(sessionId)")
-                    
-                    await MainActor.run {
-                        // Navigate to chat with new session
-                        let chatVC = ChatViewController(project: project)
-                        // Store the new session ID
-                        UserDefaults.standard.set(sessionId, forKey: "currentSessionId_\(project.id)")
-                        navigationController?.pushViewController(chatVC, animated: true)
-                    }
+                await MainActor.run {
+                    // Navigate to chat with new session
+                    let chatVC = ChatViewController(project: project, session: newSession)
+                    // Store the new session ID
+                    UserDefaults.standard.set(newSession.id, forKey: "currentSessionId_\(project.id)")
+                    navigationController?.pushViewController(chatVC, animated: true)
                 }
             } catch {
                 await MainActor.run {
@@ -317,15 +313,15 @@ public class SessionsViewController: BaseViewController {
 // MARK: - UITableViewDataSource
 
 extension SessionsViewController: UITableViewDataSource {
-    func numberOfSections(in tableView: UITableView) -> Int {
+    public func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return sessions.count
     }
     
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: SessionTableViewCell.identifier, for: indexPath) as! SessionTableViewCell
         let session = sessions[indexPath.row]
         cell.configure(with: session)
@@ -336,13 +332,13 @@ extension SessionsViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate
 
 extension SessionsViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let session = sessions[indexPath.row]
         openSession(session)
     }
     
-    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+    public func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let session = sessions[indexPath.row]
         
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completion in
@@ -357,143 +353,3 @@ extension SessionsViewController: UITableViewDelegate {
 
 // MARK: - Session Table View Cell
 
-public class SessionTableViewCell: UITableViewCell {
-    public static let identifier = "SessionTableViewCell"
-    
-    private let containerView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = CyberpunkTheme.surface
-        view.layer.cornerRadius = 12
-        view.layer.borderWidth = 1
-        view.layer.borderColor = CyberpunkTheme.border.cgColor
-        return view
-    }()
-    
-    private let dateLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = CyberpunkTheme.captionFont
-        label.textColor = CyberpunkTheme.secondaryText
-        return label
-    }()
-    
-    private let summaryLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = CyberpunkTheme.bodyFont
-        label.textColor = CyberpunkTheme.primaryText
-        label.numberOfLines = 2
-        label.lineBreakMode = .byTruncatingTail
-        return label
-    }()
-    
-    private let messageCountLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = CyberpunkTheme.captionFont
-        label.textColor = CyberpunkTheme.secondaryText
-        return label
-    }()
-    
-    private let statusLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = CyberpunkTheme.captionFont
-        label.textColor = CyberpunkTheme.primaryCyan
-        return label
-    }()
-    
-    private let chevronImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = UIImage(systemName: "chevron.right")
-        imageView.tintColor = CyberpunkTheme.secondaryText
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        backgroundColor = .clear
-        selectionStyle = .none
-        
-        contentView.addSubview(containerView)
-        containerView.addSubview(dateLabel)
-        containerView.addSubview(summaryLabel)
-        containerView.addSubview(messageCountLabel)
-        containerView.addSubview(statusLabel)
-        containerView.addSubview(chevronImageView)
-        
-        NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
-            
-            dateLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
-            dateLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            dateLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
-            
-            summaryLabel.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 4),
-            summaryLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            summaryLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
-            
-            messageCountLabel.topAnchor.constraint(equalTo: summaryLabel.bottomAnchor, constant: 4),
-            messageCountLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            messageCountLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
-            
-            statusLabel.topAnchor.constraint(equalTo: messageCountLabel.bottomAnchor, constant: 4),
-            statusLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            statusLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
-            statusLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
-            
-            chevronImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            chevronImageView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            chevronImageView.widthAnchor.constraint(equalToConstant: 12),
-            chevronImageView.heightAnchor.constraint(equalToConstant: 12)
-        ])
-    }
-    
-    func configure(with session: Session) {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        dateLabel.text = formatter.string(from: session.lastActiveAt)
-        
-        // Display summary or default text
-        if let summary = session.summary, !summary.isEmpty {
-            summaryLabel.text = summary
-        } else {
-            summaryLabel.text = "No summary available"
-            summaryLabel.textColor = CyberpunkTheme.secondaryText
-        }
-        
-        messageCountLabel.text = "\(session.messageCount) messages"
-        
-        // Add cwd info if available
-        if let cwd = session.cwd {
-            messageCountLabel.text = "\(session.messageCount) messages • \(cwd)"
-        }
-        
-        switch session.status {
-        case .active:
-            statusLabel.text = "Active"
-            statusLabel.textColor = CyberpunkTheme.primaryCyan
-        case .completed:
-            statusLabel.text = "Completed"
-            statusLabel.textColor = CyberpunkTheme.secondaryText
-        case .aborted:
-            statusLabel.text = "Aborted"
-            statusLabel.textColor = CyberpunkTheme.accentPink
-        }
-    }
-}

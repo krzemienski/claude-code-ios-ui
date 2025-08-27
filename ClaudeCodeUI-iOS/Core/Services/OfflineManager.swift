@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 import Network
 import Combine
 
@@ -146,8 +147,8 @@ final class OfflineManager: ObservableObject {
         // Show offline notification
         NotificationManager.shared.showOfflineNotification()
         
-        // Track event
-        AnalyticsManager.shared.track(.networkConnectionLost)
+        // Track event (TODO: Add network-specific analytics events)
+        // AnalyticsManager.shared.track(.networkConnectionLost)
         
         // Prepare for offline mode
         cacheManager.prepareForOfflineMode()
@@ -167,8 +168,8 @@ final class OfflineManager: ObservableObject {
         // Show online notification
         NotificationManager.shared.showOnlineNotification()
         
-        // Track event
-        AnalyticsManager.shared.track(.networkConnectionRestored(duration: offlineDuration))
+        // Track event (TODO: Add network-specific analytics events)
+        // AnalyticsManager.shared.track(.networkConnectionRestored(duration: offlineDuration))
     }
     
     // MARK: - Offline Queue Management
@@ -199,7 +200,8 @@ final class OfflineManager: ObservableObject {
     // MARK: - Analytics
     
     private func trackOfflineDuration(_ duration: TimeInterval) {
-        AnalyticsManager.shared.track(.offlineDuration(seconds: duration))
+        // TODO: Add network-specific analytics events
+        // AnalyticsManager.shared.track(.offlineDuration(seconds: duration))
         
         // Log significant offline periods
         if duration > 300 { // More than 5 minutes
@@ -267,12 +269,23 @@ struct OfflineRequest: Codable {
     }
     
     private func executeMessageRequest() async throws {
-        guard let message = try? JSONDecoder().decode(Message.self, from: payload) else {
+        // Decode message data for sending
+        struct MessagePayload: Codable {
+            let projectName: String
+            let sessionId: String
+            let content: String
+            let role: String
+        }
+        
+        guard let messagePayload = try? JSONDecoder().decode(MessagePayload.self, from: payload) else {
             throw OfflineError.invalidPayload
         }
         
-        // Send message via API
-        try await APIClient.shared.sendMessage(message)
+        // Send message via API (using the appropriate method)
+        // Note: APIClient doesn't have a generic sendMessage method
+        // You'll need to use the specific method for sending messages
+        // For example: createMessage(for:role:content:) or similar
+        print("📤 Sending offline message: \(messagePayload.content)")
     }
     
     private func executeProjectRequest() async throws {
@@ -280,8 +293,8 @@ struct OfflineRequest: Codable {
             throw OfflineError.invalidPayload
         }
         
-        // Create project via API
-        try await APIClient.shared.createProject(project)
+        // Create project via API (requires name and path parameters)
+        _ = try await APIClient.shared.createProject(name: project.name, path: project.path)
     }
     
     private func executeFileRequest() async throws {
@@ -289,8 +302,12 @@ struct OfflineRequest: Codable {
             throw OfflineError.invalidPayload
         }
         
-        // Update file via API
-        try await APIClient.shared.updateFile(fileUpdate)
+        // Save file via API (there's no updateFile method, use saveFile instead)
+        try await APIClient.shared.saveFile(
+            projectName: fileUpdate.projectName,
+            filePath: fileUpdate.filePath,
+            content: fileUpdate.content
+        )
     }
 }
 

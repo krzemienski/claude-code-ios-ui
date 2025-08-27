@@ -10,9 +10,9 @@ enum ConnectionStatus {
     
     var color: UIColor {
         switch self {
-        case .connected: return CyberpunkTheme.neonGreen
-        case .connecting, .reconnecting: return CyberpunkTheme.neonYellow
-        case .disconnected, .error: return CyberpunkTheme.neonPink
+        case .connected: return CyberpunkTheme.success
+        case .connecting, .reconnecting: return CyberpunkTheme.warning
+        case .disconnected, .error: return CyberpunkTheme.accentPink
         }
     }
     

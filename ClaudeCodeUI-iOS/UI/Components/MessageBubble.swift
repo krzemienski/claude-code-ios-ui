@@ -173,7 +173,7 @@ class MessageBubble: UIView {
         
         // Configure based on role
         switch message.role {
-        case .user:
+        case .user, .human:
             configureForUser()
         case .assistant:
             configureForAssistant()
@@ -257,7 +257,7 @@ class MessageBubble: UIView {
         avatarView.translatesAutoresizingMaskIntoConstraints = false
         containerView.translatesAutoresizingMaskIntoConstraints = false
         
-        if role == .user {
+        if role == .user || role == .human {
             // Right-aligned for user
             NSLayoutConstraint.activate([
                 avatarView.trailingAnchor.constraint(equalTo: trailingAnchor),

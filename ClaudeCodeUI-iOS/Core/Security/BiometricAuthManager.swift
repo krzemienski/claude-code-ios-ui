@@ -73,14 +73,15 @@ public class BiometricAuthManager {
     /// The type of biometric authentication available
     var biometricType: String {
         switch context.biometryType {
-        case .faceID:
-            return "Face ID"
-        case .touchID:
-            return "Touch ID"
         case .none:
             return "None"
+        case .touchID:
+            return "Touch ID"
+        case .faceID:
+            return "Face ID"
         @unknown default:
-            return "Unknown"
+            // Handles future biometric types like .opticID in visionOS
+            return "Biometric"
         }
     }
     

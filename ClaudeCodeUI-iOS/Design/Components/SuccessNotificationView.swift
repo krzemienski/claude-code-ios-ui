@@ -34,21 +34,21 @@ class SuccessNotificationView: UIView {
         backgroundColor = UIColor.black.withAlphaComponent(0.95)
         layer.cornerRadius = 12
         layer.borderWidth = 1
-        layer.borderColor = CyberpunkTheme.neonGreen.cgColor
+        layer.borderColor = CyberpunkTheme.success.cgColor
         
         // Add glow effect
         setupGlowEffect()
         
         // Setup icon
         iconView.image = UIImage(systemName: "checkmark.circle.fill")
-        iconView.tintColor = CyberpunkTheme.neonGreen
+        iconView.tintColor = CyberpunkTheme.success
         iconView.contentMode = .scaleAspectFit
         iconView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(iconView)
         
         // Setup title label
         titleLabel.font = .systemFont(ofSize: 16, weight: .bold)
-        titleLabel.textColor = CyberpunkTheme.neonGreen
+        titleLabel.textColor = CyberpunkTheme.success
         titleLabel.text = "Success"
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(titleLabel)
@@ -79,7 +79,7 @@ class SuccessNotificationView: UIView {
     }
     
     private func setupGlowEffect() {
-        glowLayer.shadowColor = CyberpunkTheme.neonGreen.cgColor
+        glowLayer.shadowColor = CyberpunkTheme.success.cgColor
         glowLayer.shadowRadius = 10
         glowLayer.shadowOpacity = 0.8
         glowLayer.shadowOffset = .zero

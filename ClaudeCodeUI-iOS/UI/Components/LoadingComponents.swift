@@ -12,7 +12,7 @@ struct ShimmerSkeletonView: View {
             }
         }
         .padding()
-        .modifier(ShimmerModifier(offset: shimmerOffset))
+        .modifier(SimpleShimmerModifier(offset: shimmerOffset))
         .onAppear {
             withAnimation(
                 Animation.linear(duration: 1.5)
@@ -58,7 +58,7 @@ struct SkeletonRow: View {
 }
 
 // MARK: - Shimmer Modifier
-struct ShimmerModifier: ViewModifier {
+struct SimpleShimmerModifier: ViewModifier {
     let offset: CGFloat
     
     func body(content: Content) -> some View {
@@ -247,7 +247,7 @@ struct CyberpunkProgressBar: View {
 }
 
 // MARK: - Full Screen Loading Overlay
-struct FullScreenLoadingView: View {
+struct SimpleFullScreenLoadingView: View {
     let message: String?
     @State private var isAnimating = false
     

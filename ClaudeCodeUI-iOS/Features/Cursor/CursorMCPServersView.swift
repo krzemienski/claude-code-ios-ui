@@ -109,10 +109,10 @@ struct CursorMCPServersView: View {
             }
         }
         .sheet(isPresented: $showAddServer) {
-            AddMCPServerView(viewModel: viewModel, isPresented: $showAddServer)
+            CursorAddMCPServerView(viewModel: viewModel, isPresented: $showAddServer)
         }
         .sheet(item: $selectedServer) { server in
-            MCPServerDetailView(server: server, viewModel: viewModel)
+            CursorMCPServerDetailView(server: server, viewModel: viewModel)
         }
     }
 }
@@ -226,7 +226,7 @@ struct MCPServerCard: View {
 }
 
 // MARK: - Add MCP Server View
-struct AddMCPServerView: View {
+struct CursorAddMCPServerView: View {
     @ObservedObject var viewModel: CursorViewModel
     @Binding var isPresented: Bool
     
@@ -395,7 +395,7 @@ struct TemplateButton: View {
 }
 
 // MARK: - MCP Server Detail View
-struct MCPServerDetailView: View {
+struct CursorMCPServerDetailView: View {
     let server: CursorMCPServer
     @ObservedObject var viewModel: CursorViewModel
     @Environment(\.dismiss) var dismiss

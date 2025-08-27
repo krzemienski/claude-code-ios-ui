@@ -79,11 +79,11 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Settings")
                 .font(.system(size: 34, weight: .bold))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                .foregroundColor(Color(CyberpunkTheme.textPrimary))
             
             Text("Customize your Claude Code experience")
                 .font(.system(size: 14))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                .foregroundColor(Color(CyberpunkTheme.textSecondary))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -99,12 +99,12 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Theme")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 
                 HStack(spacing: 12) {
                     ThemeOption(
                         name: "Cyberpunk",
-                        colors: [Color(UIColor.CyberpunkTheme.primaryCyan), Color(UIColor.CyberpunkTheme.accentPink)],
+                        colors: [Color(CyberpunkTheme.primaryCyan), Color(CyberpunkTheme.accentPink)],
                         isSelected: viewModel.selectedTheme == .cyberpunk
                     ) {
                         viewModel.selectedTheme = .cyberpunk
@@ -133,26 +133,26 @@ struct SettingsView: View {
                 HStack {
                     Text("Font Size")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                        .foregroundColor(Color(CyberpunkTheme.textSecondary))
                     
                     Spacer()
                     
                     Text("\(Int(viewModel.fontSize))pt")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                 }
                 
                 Slider(value: $viewModel.fontSize, in: 10...20, step: 1)
-                    .accentColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .accentColor(Color(CyberpunkTheme.primaryCyan))
                 
                 // Preview text
                 Text("Preview: The quick brown fox jumps over the lazy dog")
                     .font(.system(size: CGFloat(viewModel.fontSize)))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
                     .padding(8)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(UIColor.CyberpunkTheme.surface).opacity(0.5))
+                            .fill(Color(CyberpunkTheme.surface).opacity(0.5))
                     )
             }
             
@@ -160,30 +160,30 @@ struct SettingsView: View {
             Toggle(isOn: $viewModel.glowEffectsEnabled) {
                 HStack {
                     Image(systemName: "sparkles")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     Text("Glow Effects")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 }
             }
-            .tint(Color(UIColor.CyberpunkTheme.primaryCyan))
+            .tint(Color(CyberpunkTheme.primaryCyan))
             
             // Animations Toggle
             Toggle(isOn: $viewModel.animationsEnabled) {
                 HStack {
                     Image(systemName: "wand.and.rays")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     Text("Animations")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 }
             }
-            .tint(Color(UIColor.CyberpunkTheme.primaryCyan))
+            .tint(Color(CyberpunkTheme.primaryCyan))
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
         .padding(.horizontal)
     }
@@ -198,59 +198,59 @@ struct SettingsView: View {
             Toggle(isOn: $viewModel.showLineNumbers) {
                 HStack {
                     Image(systemName: "number")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     Text("Show Line Numbers")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 }
             }
-            .tint(Color(UIColor.CyberpunkTheme.primaryCyan))
+            .tint(Color(CyberpunkTheme.primaryCyan))
             
             // Syntax Highlighting Toggle
             Toggle(isOn: $viewModel.syntaxHighlighting) {
                 HStack {
                     Image(systemName: "paintbrush.pointed")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     Text("Syntax Highlighting")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 }
             }
-            .tint(Color(UIColor.CyberpunkTheme.primaryCyan))
+            .tint(Color(CyberpunkTheme.primaryCyan))
             
             // Tab Size Stepper
             HStack {
                 HStack {
                     Image(systemName: "arrow.right.to.line")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     Text("Tab Size")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 }
                 
                 Spacer()
                 
                 Stepper("\(viewModel.tabSize) spaces", value: $viewModel.tabSize, in: 2...8, step: 2)
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .foregroundColor(Color(CyberpunkTheme.primaryCyan))
             }
             
             // Word Wrap Toggle
             Toggle(isOn: $viewModel.wordWrapEnabled) {
                 HStack {
                     Image(systemName: "text.alignleft")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     Text("Word Wrap")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 }
             }
-            .tint(Color(UIColor.CyberpunkTheme.primaryCyan))
+            .tint(Color(CyberpunkTheme.primaryCyan))
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
         .padding(.horizontal)
     }
@@ -265,21 +265,21 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Backend URL")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 
                 TextField("http://localhost:3004", text: $viewModel.backendURL)
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
                     .padding(10)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(UIColor.CyberpunkTheme.background))
+                            .fill(Color(CyberpunkTheme.background))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(UIColor.CyberpunkTheme.border), lineWidth: 1)
+                                    .stroke(Color(CyberpunkTheme.border), lineWidth: 1)
                             )
                     )
-                    .accentColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .accentColor(Color(CyberpunkTheme.primaryCyan))
             }
             
             // Test Connection Button
@@ -301,8 +301,8 @@ struct SettingsView: View {
                 .background(
                     LinearGradient(
                         colors: [
-                            Color(UIColor.CyberpunkTheme.primaryCyan),
-                            Color(UIColor.CyberpunkTheme.gradientBlue)
+                            Color(CyberpunkTheme.primaryCyan),
+                            Color(CyberpunkTheme.gradientBlue)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -317,25 +317,25 @@ struct SettingsView: View {
             if let connectionStatus = viewModel.connectionStatus {
                 HStack {
                     Image(systemName: connectionStatus.success ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .foregroundColor(connectionStatus.success ? Color(UIColor.CyberpunkTheme.success) : Color(UIColor.CyberpunkTheme.error))
+                        .foregroundColor(connectionStatus.success ? Color(CyberpunkTheme.success) : Color(CyberpunkTheme.error))
                     
                     Text(connectionStatus.message)
                         .font(.system(size: 12))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                        .foregroundColor(Color(CyberpunkTheme.textSecondary))
                     
                     Spacer()
                 }
                 .padding(8)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(UIColor.CyberpunkTheme.surface).opacity(0.5))
+                        .fill(Color(CyberpunkTheme.surface).opacity(0.5))
                 )
             }
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
         .padding(.horizontal)
     }
@@ -350,67 +350,67 @@ struct SettingsView: View {
             Button(action: exportSettings) {
                 HStack {
                     Image(systemName: "square.and.arrow.up")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     Text("Export Settings")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                        .foregroundColor(Color(CyberpunkTheme.textTertiary))
                 }
                 .padding(.vertical, 12)
             }
             
             Divider()
-                .background(Color(UIColor.CyberpunkTheme.border))
+                .background(Color(CyberpunkTheme.border))
             
             // Import Settings
             Button(action: { showingImportPicker = true }) {
                 HStack {
                     Image(systemName: "square.and.arrow.down")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     Text("Import Settings")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                        .foregroundColor(Color(CyberpunkTheme.textTertiary))
                 }
                 .padding(.vertical, 12)
             }
             
             Divider()
-                .background(Color(UIColor.CyberpunkTheme.border))
+                .background(Color(CyberpunkTheme.border))
             
             // Clear Cache
             Button(action: { viewModel.clearCache() }) {
                 HStack {
                     Image(systemName: "trash")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.warning))
+                        .foregroundColor(Color(CyberpunkTheme.warning))
                     Text("Clear Cache")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                     Spacer()
                     Text(viewModel.cacheSize)
                         .font(.system(size: 12))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                        .foregroundColor(Color(CyberpunkTheme.textTertiary))
                 }
                 .padding(.vertical, 12)
             }
             
             Divider()
-                .background(Color(UIColor.CyberpunkTheme.border))
+                .background(Color(CyberpunkTheme.border))
             
             // Reset Settings
             Button(action: { showingResetAlert = true }) {
                 HStack {
                     Image(systemName: "arrow.counterclockwise")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.error))
+                        .foregroundColor(Color(CyberpunkTheme.error))
                     Text("Reset to Defaults")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.error))
+                        .foregroundColor(Color(CyberpunkTheme.error))
                     Spacer()
                 }
                 .padding(.vertical, 12)
@@ -419,7 +419,7 @@ struct SettingsView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
         .padding(.horizontal)
     }
@@ -434,33 +434,33 @@ struct SettingsView: View {
             HStack {
                 Text("Version")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 Spacer()
                 Text(viewModel.appVersion)
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
             }
             
             // Build Number
             HStack {
                 Text("Build")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 Spacer()
                 Text(viewModel.buildNumber)
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
             }
             
             // Developer
             HStack {
                 Text("Developer")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 Spacer()
                 Text("Claude Code Team")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
             }
             
             // Links
@@ -468,28 +468,28 @@ struct SettingsView: View {
                 Link(destination: URL(string: "https://github.com/claudecode")!) {
                     HStack {
                         Image(systemName: "link")
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                         Text("GitHub")
                             .font(.system(size: 14))
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.system(size: 12))
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     }
                 }
                 
                 Link(destination: URL(string: "https://claudecode.io/privacy")!) {
                     HStack {
                         Image(systemName: "hand.raised")
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                         Text("Privacy Policy")
                             .font(.system(size: 14))
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                         Spacer()
                         Image(systemName: "arrow.up.right")
                             .font(.system(size: 12))
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     }
                 }
             }
@@ -497,7 +497,7 @@ struct SettingsView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
         .padding(.horizontal)
     }
@@ -521,10 +521,10 @@ struct SectionHeader: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                .foregroundColor(Color(CyberpunkTheme.primaryCyan))
             Text(title)
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                .foregroundColor(Color(CyberpunkTheme.textPrimary))
             Spacer()
         }
     }
@@ -549,19 +549,19 @@ struct ThemeOption: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(
-                            isSelected ? Color(UIColor.CyberpunkTheme.primaryCyan) : Color.clear,
+                            isSelected ? Color(CyberpunkTheme.primaryCyan) : Color.clear,
                             lineWidth: 2
                         )
                 )
                 
                 Text(name)
                     .font(.system(size: 12))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 16))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                 }
             }
         }

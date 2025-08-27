@@ -78,9 +78,11 @@ class GitViewModel: ObservableObject {
         
         Task {
             do {
-                let status = try await APIClient.shared.getGitStatus(projectPath: project.fullPath)
+                let status = try await APIClient.shared.getGitStatus(projectPath: project.fullPath ?? project.path)
                 await MainActor.run {
-                    self.parseGitStatus(status)
+                    if let gitStatus = status.status {
+                        self.parseGitStatus(gitStatus)
+                    }
                     self.setLoading(false)
                     self.onStatusUpdate?()
                 }
@@ -103,9 +105,11 @@ class GitViewModel: ObservableObject {
         
         Task {
             do {
-                let branchData = try await APIClient.shared.getGitBranches(projectPath: project.fullPath)
+                let branchData = try await APIClient.shared.getBranches(projectPath: project.fullPath ?? project.path)
                 await MainActor.run {
-                    self.parseGitBranches(branchData)
+                    if let branches = branchData.branches {
+                        self.parseGitBranches(branches)
+                    }
                     self.setLoading(false)
                     self.onBranchesUpdate?()
                 }
@@ -128,9 +132,11 @@ class GitViewModel: ObservableObject {
         
         Task {
             do {
-                let commitData = try await APIClient.shared.getGitLog(projectPath: project.fullPath)
+                let commitData = try await APIClient.shared.getLog(projectPath: project.fullPath ?? project.path)
                 await MainActor.run {
-                    self.parseGitCommits(commitData)
+                    if let commits = commitData.commits {
+                        self.parseGitCommits(commits)
+                    }
                     self.setLoading(false)
                     self.onCommitsUpdate?()
                 }
@@ -154,8 +160,8 @@ class GitViewModel: ObservableObject {
         
         Task {
             do {
-                try await APIClient.shared.gitAdd(
-                    projectPath: project.fullPath,
+                try await APIClient.shared.addFiles(
+                    projectPath: project.fullPath ?? project.path,
                     files: [filePath]
                 )
                 await MainActor.run {
@@ -174,8 +180,8 @@ class GitViewModel: ObservableObject {
         
         Task {
             do {
-                try await APIClient.shared.gitReset(
-                    projectPath: project.fullPath,
+                try await APIClient.shared.resetFiles(
+                    projectPath: project.fullPath ?? project.path,
                     files: [filePath]
                 )
                 await MainActor.run {
@@ -199,8 +205,8 @@ class GitViewModel: ObservableObject {
         
         Task {
             do {
-                try await APIClient.shared.gitCommit(
-                    projectPath: project.fullPath,
+                try await APIClient.shared.commitChanges(
+                    projectPath: project.fullPath ?? project.path,
                     message: message
                 )
                 await MainActor.run {
@@ -228,7 +234,7 @@ class GitViewModel: ObservableObject {
         
         Task {
             do {
-                try await APIClient.shared.gitPull(projectPath: project.fullPath)
+                try await APIClient.shared.pullChanges(projectPath: project.fullPath ?? project.path)
                 await MainActor.run {
                     self.setLoading(false)
                     completion(true)
@@ -253,7 +259,7 @@ class GitViewModel: ObservableObject {
         
         Task {
             do {
-                try await APIClient.shared.gitPush(projectPath: project.fullPath)
+                try await APIClient.shared.pushChanges(projectPath: project.fullPath ?? project.path)
                 await MainActor.run {
                     self.setLoading(false)
                     completion(true)
@@ -278,8 +284,8 @@ class GitViewModel: ObservableObject {
         
         Task {
             do {
-                try await APIClient.shared.gitCheckout(
-                    projectPath: project.fullPath,
+                try await APIClient.shared.checkoutBranch(
+                    projectPath: project.fullPath ?? project.path,
                     branch: branchName
                 )
                 await MainActor.run {
@@ -309,88 +315,67 @@ class GitViewModel: ObservableObject {
         onError?(message)
     }
     
-    private func parseGitStatus(_ statusData: [String: Any]) {
+    private func parseGitStatus(_ statusData: GitStatus) {
         var sections: [GitStatusSection] = []
         
         // Parse staged changes
-        if let staged = statusData["staged"] as? [[String: Any]], !staged.isEmpty {
-            let stagedFiles = staged.compactMap { fileData -> GitFile? in
-                guard let path = fileData["path"] as? String,
-                      let status = fileData["status"] as? String else { return nil }
-                return GitFile(path: path, status: status, isStaged: true)
+        if !statusData.staged.isEmpty {
+            let stagedFiles = statusData.staged.map { path in
+                GitFile(path: path, status: "staged", isStaged: true)
             }
             sections.append(GitStatusSection(title: "Staged Changes", files: stagedFiles))
         }
         
-        // Parse unstaged changes
-        if let unstaged = statusData["unstaged"] as? [[String: Any]], !unstaged.isEmpty {
-            let unstagedFiles = unstaged.compactMap { fileData -> GitFile? in
-                guard let path = fileData["path"] as? String,
-                      let status = fileData["status"] as? String else { return nil }
-                return GitFile(path: path, status: status, isStaged: false)
+        // Parse modified files (unstaged changes)
+        if !statusData.modified.isEmpty {
+            let modifiedFiles = statusData.modified.map { path in
+                GitFile(path: path, status: "modified", isStaged: false)
             }
-            sections.append(GitStatusSection(title: "Changes", files: unstagedFiles))
+            sections.append(GitStatusSection(title: "Changes", files: modifiedFiles))
         }
         
         // Parse untracked files
-        if let untracked = statusData["untracked"] as? [String], !untracked.isEmpty {
-            let untrackedFiles = untracked.map { path in
+        if !statusData.untracked.isEmpty {
+            let untrackedFiles = statusData.untracked.map { path in
                 GitFile(path: path, status: "untracked", isStaged: false)
             }
             sections.append(GitStatusSection(title: "Untracked Files", files: untrackedFiles))
         }
         
         // Update current branch
-        if let branch = statusData["branch"] as? String {
-            currentBranch = branch
-        }
+        currentBranch = statusData.branch
         
         statusSections = sections
     }
     
-    private func parseGitBranches(_ branchData: [String: Any]) {
+    private func parseGitBranches(_ branchData: [APIGitBranch]) {
         var parsedBranches: [GitBranch] = []
         
-        // Parse local branches
-        if let local = branchData["local"] as? [[String: Any]] {
-            let localBranches = local.compactMap { branch -> GitBranch? in
-                guard let name = branch["name"] as? String else { return nil }
-                let lastCommit = branch["lastCommit"] as? String
-                return GitBranch(name: name, isRemote: false, lastCommit: lastCommit)
+        // Convert API branches to GitBranch
+        for branch in branchData {
+            let gitBranch = GitBranch(
+                name: branch.name, 
+                isRemote: false,  // API doesn't distinguish, all are local
+                lastCommit: nil   // API doesn't provide last commit info
+            )
+            parsedBranches.append(gitBranch)
+            
+            // Update current branch if it's marked as current
+            if branch.current {
+                currentBranch = branch.name
             }
-            parsedBranches.append(contentsOf: localBranches)
-        }
-        
-        // Parse remote branches
-        if let remote = branchData["remote"] as? [[String: Any]] {
-            let remoteBranches = remote.compactMap { branch -> GitBranch? in
-                guard let name = branch["name"] as? String else { return nil }
-                let lastCommit = branch["lastCommit"] as? String
-                return GitBranch(name: name, isRemote: true, lastCommit: lastCommit)
-            }
-            parsedBranches.append(contentsOf: remoteBranches)
-        }
-        
-        // Update current branch if provided
-        if let current = branchData["current"] as? String {
-            currentBranch = current
         }
         
         branches = parsedBranches
     }
     
-    private func parseGitCommits(_ commitData: [[String: Any]]) {
-        commits = commitData.compactMap { commit -> GitCommit? in
-            guard let sha = commit["sha"] as? String,
-                  let message = commit["message"] as? String,
-                  let author = commit["author"] as? String,
-                  let date = commit["date"] as? String else { return nil }
-            
-            return GitCommit(
-                sha: sha,
-                message: message,
-                author: author,
-                date: formatDate(date)
+    private func parseGitCommits(_ commitData: [APIGitCommit]) {
+        commits = commitData.map { commit in
+            GitCommit(
+                sha: commit.hash,
+                message: commit.message,
+                author: commit.author,
+                date: formatDate(commit.date)
             )
         }
     }

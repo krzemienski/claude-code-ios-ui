@@ -335,10 +335,4 @@ enum SearchScope {
 }
 
 // MARK: - Search Result Model
-struct SearchResult {
-    let fileName: String
-    let filePath: String
-    let lineNumber: Int
-    let matchedLine: String
-    let matchRange: NSRange
-}
+// Note: SearchResult is defined in SearchViewModel.swift

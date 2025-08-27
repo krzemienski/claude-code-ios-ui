@@ -183,14 +183,14 @@ protocol ChatServiceProtocol {
 }
 
 protocol FileServiceProtocol {
-    func fetchFileTree(for projectId: String) async throws -> FileNode
+    func fetchFileTree(for projectId: String) async throws -> ClaudeCodeUI.FileNode
     func createFile(at path: String, content: String?) async throws
     func deleteFile(at path: String) async throws
     func renameFile(from: String, to: String) async throws
 }
 
 protocol TerminalServiceProtocol {
-    func executeCommand(_ command: String, in projectId: String) async throws -> TerminalOutput
+    func executeCommand(_ command: String, in projectId: String) async throws -> ClaudeCodeUI.TerminalOutput
 }
 
 // MARK: - Service Implementations
@@ -333,10 +333,10 @@ final class FileService: FileServiceProtocol {
         self.cacheManager = cacheManager
     }
     
-    func fetchFileTree(for projectId: String) async throws -> FileNode {
+    func fetchFileTree(for projectId: String) async throws -> ClaudeCodeUI.FileNode {
         // Check cache
         let cacheKey = "file_tree_\(projectId)"
-        if let cached: FileNode = cacheManager.retrieve(forKey: cacheKey) {
+        if let cached: ClaudeCodeUI.FileNode = cacheManager.retrieve(forKey: cacheKey) {
             return cached
         }
         
@@ -390,7 +390,7 @@ final class TerminalService: TerminalServiceProtocol {
         self.apiClient = apiClient
     }
     
-    func executeCommand(_ command: String, in projectId: String) async throws -> TerminalOutput {
+    func executeCommand(_ command: String, in projectId: String) async throws -> ClaudeCodeUI.TerminalOutput {
         return try await apiClient.executeTerminalCommand(command, projectId: projectId)
     }
 }

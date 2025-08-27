@@ -970,15 +970,15 @@ extension SessionListViewController: UITableViewDelegate {
         let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
         
         // Create a new session with duplicated name
-        let duplicatedName = "Copy of \(session.name ?? "Untitled")"
+        let duplicatedName = "Copy of \(session.summary ?? "Untitled")"
         
         Task {
             do {
-                // Create new session with duplicated name
+                // Create new session (API doesn't support custom names on creation)
                 let newSession = try await APIClient.shared.createSession(
-                    projectName: project.name,
-                    sessionName: duplicatedName
+                    projectName: project.name
                 )
+                // TODO: Update session with custom name if API supports it
                 
                 await MainActor.run {
                     // Add to sessions array and sort

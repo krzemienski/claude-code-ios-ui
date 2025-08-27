@@ -627,31 +627,31 @@ public class ProjectsViewController: BaseViewController {
             
             // Validate inputs
             if name.isEmpty {
-                self?.showValidationError(message: "Project name cannot be empty. Please enter a valid name.")
+                self?.displayValidationError(message: "Project name cannot be empty. Please enter a valid name.")
                 return
             }
             
             if path.isEmpty {
-                self?.showValidationError(message: "Project path cannot be empty. Please enter a valid path.")
+                self?.displayValidationError(message: "Project path cannot be empty. Please enter a valid path.")
                 return
             }
             
             // Validate project name (no special characters that could cause issues)
             let invalidCharacters = CharacterSet(charactersIn: "/\\:*?\"<>|")
             if name.rangeOfCharacter(from: invalidCharacters) != nil {
-                self?.showValidationError(message: "Project name contains invalid characters. Please use only letters, numbers, spaces, and basic punctuation.")
+                self?.displayValidationError(message: "Project name contains invalid characters. Please use only letters, numbers, spaces, and basic punctuation.")
                 return
             }
             
             // Validate path format
             if !self?.isValidPath(path) ?? false {
-                self?.showValidationError(message: "Invalid project path format. Use absolute paths (e.g., /Users/name/Projects) or tilde paths (e.g., ~/Projects).")
+                self?.displayValidationError(message: "Invalid project path format. Use absolute paths (e.g., /Users/name/Projects) or tilde paths (e.g., ~/Projects).")
                 return
             }
             
             // Check for duplicate project names
             if self?.projects.contains(where: { $0.name.lowercased() == name.lowercased() }) ?? false {
-                self?.showValidationError(message: "A project with this name already exists. Please choose a different name.")
+                self?.displayValidationError(message: "A project with this name already exists. Please choose a different name.")
                 return
             }
             
@@ -903,7 +903,7 @@ public class ProjectsViewController: BaseViewController {
         present(alert, animated: true)
     }
     
-    private func showValidationError(message: String) {
+    private func displayValidationError(message: String) {
         let alert = UIAlertController(title: "Validation Error", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         
@@ -1239,54 +1239,4 @@ class AddProjectCollectionViewCell: UICollectionViewCell {
 }
 
 // MARK: - Skeleton Cell
-
-class SkeletonCollectionViewCell: UICollectionViewCell {
-    static let identifier = "SkeletonCollectionViewCell"
-    
-    private let skeletonContainer = UIView() // SkeletonContainerView not yet implemented
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        contentView.backgroundColor = CyberpunkTheme.surface
-        contentView.layer.cornerRadius = 12
-        contentView.layer.borderWidth = 1
-        contentView.layer.borderColor = CyberpunkTheme.border.cgColor
-        
-        skeletonContainer.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(skeletonContainer)
-        
-        NSLayoutConstraint.activate([
-            skeletonContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
-            skeletonContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            skeletonContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            skeletonContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            skeletonContainer.heightAnchor.constraint(equalToConstant: 180)
-        ])
-        
-        // Setup card skeleton layout
-        // TODO: Implement skeleton view animation
-        skeletonContainer.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.1)
-        skeletonContainer.layer.cornerRadius = 16
-    }
-    
-    func startAnimating() {
-        // TODO: Implement skeleton animation
-        UIView.animate(withDuration: 1.0, delay: 0, options: [.repeat, .autoreverse], animations: {
-            self.skeletonContainer.alpha = 0.3
-        })
-    }
-    
-    func stopAnimating() {
-        // TODO: Stop skeleton animation
-        skeletonContainer.layer.removeAllAnimations()
-        skeletonContainer.alpha = 1.0
-    }
-}
+// SkeletonCollectionViewCell is defined in Views/SkeletonCollectionViewCell.swift

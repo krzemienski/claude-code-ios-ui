@@ -7,36 +7,7 @@
 
 import SwiftUI
 
-// Search result models
-struct SearchResult: Identifiable {
-    let id = UUID()
-    let fileName: String
-    let filePath: String
-    let fileType: String
-    let matchCount: Int
-    let matches: [SearchMatch]
-    let matchPreview: String?
-    
-    var fileIcon: String {
-        switch fileType {
-        case "swift": return "swift"
-        case "js", "javascript": return "curlybraces"
-        case "json": return "doc.text"
-        case "md": return "doc.richtext"
-        case "yaml", "yml": return "doc.badge.gearshape"
-        default: return "doc"
-        }
-    }
-}
-
-struct SearchMatch: Identifiable {
-    let id = UUID()
-    let lineNumber: Int
-    let columnNumber: Int
-    let lineContent: String
-    let contextBefore: String?
-    let contextAfter: String?
-}
+// Note: SearchResult and SearchMatch are defined in SearchViewModel.swift
 
 struct SearchResultRow: View {
     let result: SearchResult

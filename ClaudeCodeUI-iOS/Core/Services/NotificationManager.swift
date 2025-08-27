@@ -36,7 +36,7 @@ final class NotificationManager {
             type: .warning,
             icon: "wifi.slash",
             duration: 4.0,
-            hapticFeedback: .warning
+            hapticFeedback: .medium
         )
         show(notification)
     }
@@ -48,7 +48,7 @@ final class NotificationManager {
             type: .success,
             icon: "wifi",
             duration: 3.0,
-            hapticFeedback: .success
+            hapticFeedback: .light
         )
         show(notification)
     }
@@ -61,7 +61,7 @@ final class NotificationManager {
             type: .success,
             icon: "checkmark.circle.fill",
             duration: 2.5,
-            hapticFeedback: .success
+            hapticFeedback: .light
         )
         show(notification)
     }
@@ -73,7 +73,7 @@ final class NotificationManager {
             type: .error,
             icon: "exclamationmark.triangle.fill",
             duration: 4.0,
-            hapticFeedback: .error
+            hapticFeedback: .heavy
         )
         show(notification)
     }
@@ -85,7 +85,7 @@ final class NotificationManager {
             type: .success,
             icon: "checkmark.circle.fill",
             duration: 2.5,
-            hapticFeedback: .success
+            hapticFeedback: .light
         )
         show(notification)
     }
@@ -151,7 +151,23 @@ final class NotificationManager {
         
         // Trigger haptic feedback
         if let haptic = data.hapticFeedback {
-            HapticFeedback.trigger(haptic)
+            // Convert UIImpactFeedbackGenerator.FeedbackStyle to HapticFeedback.ImpactStyle
+            let impactStyle: HapticFeedback.ImpactStyle
+            switch haptic {
+            case .light:
+                impactStyle = .light
+            case .medium:
+                impactStyle = .medium
+            case .heavy:
+                impactStyle = .heavy
+            case .soft:
+                impactStyle = .soft
+            case .rigid:
+                impactStyle = .rigid
+            default:
+                impactStyle = .medium
+            }
+            HapticFeedback.shared.impact(impactStyle)
         }
         
         // Auto-dismiss after duration
@@ -330,30 +346,4 @@ class NotificationView: UIView {
     }
 }
 
-// MARK: - Haptic Feedback
-
-struct HapticFeedback {
-    static func trigger(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.prepare()
-        generator.impactOccurred()
-    }
-    
-    static func success() {
-        let generator = UINotificationFeedbackGenerator()
-        generator.prepare()
-        generator.notificationOccurred(.success)
-    }
-    
-    static func warning() {
-        let generator = UINotificationFeedbackGenerator()
-        generator.prepare()
-        generator.notificationOccurred(.warning)
-    }
-    
-    static func error() {
-        let generator = UINotificationFeedbackGenerator()
-        generator.prepare()
-        generator.notificationOccurred(.error)
-    }
-}
+// HapticFeedback is defined in Core/Utils/HapticFeedback.swift

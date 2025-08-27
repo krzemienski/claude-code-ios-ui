@@ -240,7 +240,7 @@ class MCPServerViewModel: ObservableObject {
 
 // MARK: - UIKit Bridge
 // Bridge for UIKit integration if needed
-class MCPServerListViewController: UIViewController {
+class MCPServerListViewControllerBridge: UIViewController {
     private var hostingController: UIHostingController<MCPServerListView>?
     
     override func viewDidLoad() {

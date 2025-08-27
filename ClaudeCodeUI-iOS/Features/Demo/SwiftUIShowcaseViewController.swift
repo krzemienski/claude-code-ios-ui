@@ -2,6 +2,16 @@ import UIKit
 import SwiftUI
 import Combine
 
+// MARK: - Toast Support
+struct Toast {
+    let message: String
+    let type: ToastType
+    
+    enum ToastType {
+        case success, error, info
+    }
+}
+
 // MARK: - SwiftUI Showcase View Controller
 class SwiftUIShowcaseViewController: UIViewController {
     
@@ -28,9 +38,19 @@ class SwiftUIShowcaseViewController: UIViewController {
     
     private func setupSwiftUIView() {
         let showcaseView = SwiftUIShowcaseView()
-        hostingController = addSwiftUIView(showcaseView) { hosting in
-            hosting.configureCyberpunkTheme()
-        }
+        let hosting = UIHostingController(rootView: showcaseView)
+        hostingController = hosting
+        
+        addChild(hosting)
+        view.addSubview(hosting.view)
+        hosting.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            hosting.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            hosting.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hosting.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        hosting.didMove(toParent: self)
     }
     
     @objc private func testComponents() {
@@ -40,87 +60,78 @@ class SwiftUIShowcaseViewController: UIViewController {
 }
 
 // MARK: - SwiftUI Showcase View
+// Simplified demo view - components not yet implemented
 struct SwiftUIShowcaseView: View {
     @StateObject private var viewModel = ShowcaseViewModel()
-    @State private var selectedTab = 0
-    @State private var showToast: ToastModifier.Toast?
-    @State private var showModal = false
-    @State private var showError = false
+    @State private var showDemo = true
+    
+    struct ToastInfo {
+        let message: String
+        let type: ToastType
+        let duration: Double
+        
+        enum ToastType {
+            case success, error, info, warning
+        }
+    }
     
     var body: some View {
         ZStack {
             // Background
             LinearGradient(
-                colors: [Color.black, Color(hex: "1a0033").opacity(0.8)],
+                colors: [Color.black, Color(red: 0.1, green: 0, blue: 0.2).opacity(0.8)],
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 32) {
-                    // Title
-                    Text("SwiftUI Components")
-                        .font(.largeTitle.bold())
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "00D9FF"), Color(hex: "FF006E")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+            VStack(spacing: 32) {
+                // Title
+                Text("SwiftUI Components Demo")
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.cyan, Color.pink],
+                            startPoint: .leading,
+                            endPoint: .trailing
                         )
-                        .padding(.top)
-                    
-                    // Components sections
-                    messageSection
-                    sessionSection
-                    loadingSection
-                    emptyStateSection
-                    interactiveSection
-                    
-                    Spacer(minLength: 100)
-                }
-                .padding()
-            }
-            
-            // Tab bar demo
-            VStack {
-                Spacer()
-                CyberpunkTabBar(
-                    selectedTab: $selectedTab,
-                    items: [
-                        .init(title: "Chat", icon: "message", badge: 3),
-                        .init(title: "Files", icon: "folder", badge: nil),
-                        .init(title: "Terminal", icon: "terminal", badge: 1),
-                        .init(title: "Settings", icon: "gear", badge: nil)
-                    ]
-                )
-            }
-        }
-        .modifier(ToastModifier(toast: $showToast))
-        .sheet(isPresented: $showModal) {
-            CyberpunkModalSheet(
-                isPresented: $showModal,
-                title: "Modal Demo"
-            ) {
-                VStack(spacing: 20) {
-                    Text("This is a draggable modal sheet")
-                        .foregroundColor(.white)
-                    
-                    Text("Drag down to dismiss or tap the X button")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    
-                    Button("Close") {
-                        showModal = false
+                    )
+                    .padding(.top)
+                
+                Text("Components are being implemented")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                // Simple demo content
+                if showDemo {
+                    VStack(spacing: 20) {
+                        ForEach(viewModel.mockSessions) { session in
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(session.summary ?? "No summary")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                    Text("\(session.messageCount) messages")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                                Spacer()
+                            }
+                            .padding()
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(8)
+                        }
                     }
-                    .buttonStyle(CyberpunkButtonStyle())
+                    .padding()
                 }
-                .padding()
+                
+                Spacer()
             }
+            .padding()
         }
         .onReceive(NotificationCenter.default.publisher(for: .testComponentsNotification)) { _ in
-            testAllComponents()
+            // Demo test action
+            showDemo.toggle()
         }
     }
     
@@ -411,48 +422,30 @@ class ShowcaseViewModel: ObservableObject {
     @Published var mockSessions: [Session] = [
         Session(
             id: "1",
+            projectId: "demo-project",
             summary: "Building REST API with Node.js",
             messageCount: 42,
-            lastActivity: Date(),
-            isActive: true,
-            isArchived: false,
-            isPinned: true,
-            hasUnread: false
+            lastActivity: Date()
         ),
         Session(
             id: "2",
+            projectId: "demo-project",
             summary: "SwiftUI Component Development",
             messageCount: 18,
-            lastActivity: Date().addingTimeInterval(-3600),
-            isActive: false,
-            isArchived: false,
-            isPinned: false,
-            hasUnread: true
+            lastActivity: Date().addingTimeInterval(-3600)
         ),
         Session(
             id: "3",
+            projectId: "demo-project",
             summary: "Database Schema Design",
             messageCount: 7,
-            lastActivity: Date().addingTimeInterval(-86400),
-            isActive: false,
-            isArchived: true,
-            isPinned: false,
-            hasUnread: false
+            lastActivity: Date().addingTimeInterval(-86400)
         )
     ]
     
     func togglePin(for sessionId: String) {
         if let index = mockSessions.firstIndex(where: { $0.id == sessionId }) {
-            mockSessions[index] = Session(
-                id: mockSessions[index].id,
-                summary: mockSessions[index].summary,
-                messageCount: mockSessions[index].messageCount,
-                lastActivity: mockSessions[index].lastActivity,
-                isActive: mockSessions[index].isActive,
-                isArchived: mockSessions[index].isArchived,
-                isPinned: !mockSessions[index].isPinned,
-                hasUnread: mockSessions[index].hasUnread
-            )
+            mockSessions[index].isPinned = !(mockSessions[index].isPinned ?? false)
         }
     }
 }

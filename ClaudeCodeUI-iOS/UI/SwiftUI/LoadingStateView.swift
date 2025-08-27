@@ -181,7 +181,7 @@ struct SkeletonLoadingView: View {
 }
 
 // MARK: - Progress Indicator View
-struct ProgressIndicatorView: View {
+struct SwiftUIProgressIndicatorView: View {
     let progress: Double
     let label: String
     

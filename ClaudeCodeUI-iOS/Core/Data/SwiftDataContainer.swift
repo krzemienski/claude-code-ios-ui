@@ -10,10 +10,10 @@ import Foundation
 
 @MainActor
 class SwiftDataContainer {
-    static let shared = SwiftDataContainer()
+    static let shared = try! SwiftDataContainer()
     let container: ModelContainer
     
-    private init() {
+    public init() throws {
         let schema = Schema([
             Project.self,
             Session.self,
@@ -28,42 +28,15 @@ class SwiftDataContainer {
             // groupContainer: .identifier("group.com.claudecodeui.ios") // Disabled for testing
         )
         
-        do {
-            // Try to create the container with migration handling
-            container = try ModelContainer(
-                for: schema,
-                configurations: [modelConfiguration]
-            )
-            
-            // Ensure default settings exist
-            Task { @MainActor in
-                try? ensureDefaultSettings()
-            }
-        } catch {
-            // If migration fails, try to delete the existing store and create fresh
-            print("SwiftData migration error: \(error)")
-            print("Attempting to recreate database...")
-            
-            do {
-                // Get the store URL
-                let storeURL = URL.applicationSupportDirectory
-                    .appending(path: "default.store")
-                
-                // Delete existing database files
-                try? FileManager.default.removeItem(at: storeURL)
-                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
-                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
-                
-                // Try to create container again with fresh database
-                container = try ModelContainer(
-                    for: schema,
-                    configurations: [modelConfiguration]
-                )
-                
-                print("Successfully recreated SwiftData container")
-            } catch {
-                fatalError("Could not create ModelContainer even after cleanup: \(error)")
-            }
+        // Try to create the container with migration handling
+        container = try ModelContainer(
+            for: schema,
+            configurations: [modelConfiguration]
+        )
+        
+        // Ensure default settings exist
+        Task { @MainActor in
+            try? ensureDefaultSettings()
         }
     }
     
@@ -138,7 +111,7 @@ class SwiftDataContainer {
             id: UUID().uuidString,
             projectId: project.id
         )
-        session.project = project
+        // Session doesn't have a direct project relationship, it uses projectId
         container.mainContext.insert(session)
         try save()
         return session

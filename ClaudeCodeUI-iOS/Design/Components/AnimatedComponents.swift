@@ -16,7 +16,7 @@ struct PulseView: View {
     let color: Color
     let maxScale: CGFloat
     
-    init(color: Color = Color(UIColor.CyberpunkTheme.primaryCyan), maxScale: CGFloat = 1.5) {
+    init(color: Color = Color(CyberpunkTheme.primaryCyan), maxScale: CGFloat = 1.5) {
         self.color = color
         self.maxScale = maxScale
     }
@@ -46,7 +46,7 @@ struct TypingIndicator: View {
         HStack(spacing: 4) {
             ForEach(0..<3, id: \.self) { index in
                 Circle()
-                    .fill(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .fill(Color(CyberpunkTheme.primaryCyan))
                     .frame(width: 8, height: 8)
                     .scaleEffect(animatingDot == index ? 1.3 : 1.0)
                     .animation(
@@ -104,8 +104,8 @@ struct GlowButton: View {
                     // Gradient background
                     LinearGradient(
                         colors: [
-                            Color(UIColor.CyberpunkTheme.primaryCyan),
-                            Color(UIColor.CyberpunkTheme.gradientBlue)
+                            Color(CyberpunkTheme.primaryCyan),
+                            Color(CyberpunkTheme.gradientBlue)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -115,8 +115,8 @@ struct GlowButton: View {
                     if isGlowing {
                         LinearGradient(
                             colors: [
-                                Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.6),
-                                Color(UIColor.CyberpunkTheme.gradientBlue).opacity(0.6)
+                                Color(CyberpunkTheme.primaryCyan).opacity(0.6),
+                                Color(CyberpunkTheme.gradientBlue).opacity(0.6)
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -128,7 +128,7 @@ struct GlowButton: View {
             .cornerRadius(12)
             .scaleEffect(isPressed ? 0.95 : 1.0)
             .shadow(
-                color: isGlowing ? Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.6) : Color.clear,
+                color: isGlowing ? Color(CyberpunkTheme.primaryCyan).opacity(0.6) : Color.clear,
                 radius: 20
             )
         }
@@ -206,15 +206,15 @@ struct AnimatedProgressBar: View {
             ZStack(alignment: .leading) {
                 // Background
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color(UIColor.CyberpunkTheme.surface))
+                    .fill(Color(CyberpunkTheme.surface))
                 
                 // Progress
                 RoundedRectangle(cornerRadius: 4)
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color(UIColor.CyberpunkTheme.primaryCyan),
-                                Color(UIColor.CyberpunkTheme.accentPink)
+                                Color(CyberpunkTheme.primaryCyan),
+                                Color(CyberpunkTheme.accentPink)
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -229,8 +229,8 @@ struct AnimatedProgressBar: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.3),
-                                    Color(UIColor.CyberpunkTheme.accentPink).opacity(0.3)
+                                    Color(CyberpunkTheme.primaryCyan).opacity(0.3),
+                                    Color(CyberpunkTheme.accentPink).opacity(0.3)
                                 ],
                                 startPoint: .leading,
                                 endPoint: .trailing
@@ -257,7 +257,7 @@ struct AnimatedProgressBar: View {
 
 // MARK: - Floating Action Button
 
-struct FloatingActionButton: View {
+struct AnimatedFloatingActionButton: View {
     let icon: String
     let action: () -> Void
     @State private var isExpanded = false
@@ -271,7 +271,7 @@ struct FloatingActionButton: View {
             ZStack {
                 // Shadow circle
                 Circle()
-                    .fill(Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.3))
+                    .fill(Color(CyberpunkTheme.primaryCyan).opacity(0.3))
                     .frame(width: 64, height: 64)
                     .blur(radius: 10)
                     .scaleEffect(isExpanded ? 1.2 : 1.0)
@@ -281,8 +281,8 @@ struct FloatingActionButton: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color(UIColor.CyberpunkTheme.primaryCyan),
-                                Color(UIColor.CyberpunkTheme.gradientBlue)
+                                Color(CyberpunkTheme.primaryCyan),
+                                Color(CyberpunkTheme.gradientBlue)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -325,12 +325,12 @@ struct AnimatedTabIndicator: View {
     var body: some View {
         GeometryReader { geometry in
             RoundedRectangle(cornerRadius: 2)
-                .fill(Color(UIColor.CyberpunkTheme.primaryCyan))
+                .fill(Color(CyberpunkTheme.primaryCyan))
                 .frame(width: tabWidth, height: 3)
                 .offset(x: CGFloat(selectedIndex) * tabWidth)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedIndex)
                 .shadow(
-                    color: Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.6),
+                    color: Color(CyberpunkTheme.primaryCyan).opacity(0.6),
                     radius: 4,
                     y: 2
                 )
@@ -357,9 +357,9 @@ struct StatusAnimation: View {
         
         var color: Color {
             switch self {
-            case .success: return Color(UIColor.CyberpunkTheme.success)
-            case .error: return Color(UIColor.CyberpunkTheme.error)
-            case .warning: return Color(UIColor.CyberpunkTheme.warning)
+            case .success: return Color(CyberpunkTheme.success)
+            case .error: return Color(CyberpunkTheme.error)
+            case .warning: return Color(CyberpunkTheme.warning)
             }
         }
     }
@@ -379,13 +379,13 @@ struct StatusAnimation: View {
             
             Text(message)
                 .font(.system(size: 18, weight: .medium))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 .multilineTextAlignment(.center)
         }
         .padding(32)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .stroke(status.color.opacity(0.3), lineWidth: 2)
@@ -430,7 +430,7 @@ struct ShimmerModifier: ViewModifier {
                 LinearGradient(
                     gradient: Gradient(colors: [
                         Color.clear,
-                        Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.3),
+                        Color(CyberpunkTheme.primaryCyan).opacity(0.3),
                         Color.clear
                     ]),
                     startPoint: .leading,

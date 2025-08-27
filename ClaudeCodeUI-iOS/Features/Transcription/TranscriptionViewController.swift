@@ -130,7 +130,7 @@ public class TranscriptionViewController: UIViewController {
     
     // MARK: - Lifecycle
     
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupActions()

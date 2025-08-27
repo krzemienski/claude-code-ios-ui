@@ -98,14 +98,9 @@ enum FontSize: String, Codable {
     }
 }
 
-// MARK: - Session Status
-enum SessionStatus: String, Codable {
-    case active = "active"
-    case inactive = "inactive"
-    case archived = "archived"
-}
-
 // MARK: - Session Model
+// Session model and SessionStatus have been moved to Models/Session.swift to avoid duplication
+/*
 @available(iOS 17.0, *)
 @Model
 final class Session {
@@ -188,14 +183,6 @@ final class Session {
         updateActivity()
     }
 }
+*/
 
-// MARK: - SessionDTO (for API integration)
-struct SessionDTO: Codable {
-    let id: String
-    let projectId: String?
-    let summary: String?
-    let messageCount: Int?
-    let lastActivity: Date?
-    let cwd: String?
-    let status: String?
-}
+// SessionDTO has been moved to Models/Session.swift

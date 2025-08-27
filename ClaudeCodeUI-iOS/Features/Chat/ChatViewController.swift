@@ -9,351 +9,17 @@ import UIKit
 import Foundation
 import PhotosUI
 
-// MARK: - Message Types (Temporary - should import from MessageTypes.swift)
+// Import types from MessageTypes.swift to avoid redeclaration
+// EnhancedMessageCell is defined in EnhancedMessageCell.swift
 
-enum MessageStatus: String, Codable {
-    case sending, sent, delivered, failed, read
-}
+// MARK: - Simple Chat Message Cell (for backward compatibility)
 
-enum MessageType: String, Codable {
-    case text, toolUse, toolResult, todoUpdate, code, error, system
-    case claudeResponse, claudeOutput, thinking, fileOperation, gitOperation, terminalCommand
-    
-    var displayName: String {
-        switch self {
-        case .text: return "Message"
-        case .toolUse: return "Tool Use"
-        case .toolResult: return "Tool Result"
-        case .todoUpdate: return "Todo Update"
-        case .code: return "Code"
-        case .error: return "Error"
-        case .system: return "System"
-        case .claudeResponse: return "Claude Response"
-        case .claudeOutput: return "Claude Output"
-        case .thinking: return "Thinking"
-        case .fileOperation: return "File Operation"
-        case .gitOperation: return "Git Operation"
-        case .terminalCommand: return "Terminal Command"
-        }
-    }
-}
-
-struct ToolUseData: Codable {
-    let name: String
-    let parameters: [String: String]?
-    var result: String?
-    var status: String?
-}
-
-struct TodoItem: Codable {
-    let id: String
-    let title: String
-    let description: String?
-    let status: TodoStatus
-    let priority: TodoPriority
-    
-    enum TodoStatus: String, Codable {
-        case pending, inProgress, completed, blocked, cancelled
-    }
-    
-    enum TodoPriority: String, Codable {
-        case low, medium, high, critical
-    }
-}
-
-class ChatMessage {
-    let id: String
-    var content: String
-    let isUser: Bool
-    let timestamp: Date
-    var status: MessageStatus
-    
-    init(id: String, content: String, isUser: Bool, timestamp: Date, status: MessageStatus = .sent) {
-        self.id = id
-        self.content = content
-        self.isUser = isUser
-        self.timestamp = timestamp
-        self.status = status
-    }
-}
-
-class EnhancedChatMessage: ChatMessage {
-    var messageType: MessageType = .text
-    var toolUseData: ToolUseData?
-    var todos: [TodoItem]?
-    var codeLanguage: String?
-    var codeContent: String?
-    var isExpanded: Bool = false
-    
-    func detectMessageType() {
-        // Auto-detect message type from content
-        // Strip leading emoji indicators first for better detection
-        let cleanContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "^[❌✅🔧📋🔔💭🎯📊]\\s*", with: "", options: .regularExpression)
-        
-        if content.contains("```") {
-            messageType = .code
-        } else if cleanContent.contains("Using tool:") || cleanContent.contains("Tool:") || content.contains("🔧") {
-            messageType = .toolUse
-        } else if cleanContent.contains("Result:") && (cleanContent.contains("executed") || cleanContent.contains("successfully")) {
-            messageType = .toolResult
-        } else if cleanContent.contains("Todo") || cleanContent.contains("Task") || content.contains("📋") {
-            messageType = .todoUpdate
-        } else if cleanContent.hasPrefix("Error:") || cleanContent.hasPrefix("Failed:") || cleanContent.hasPrefix("❌") {
-            messageType = .error
-        } else if cleanContent.hasPrefix("System:") || content.contains("🔔") {
-            messageType = .system
-        } else if content.contains("git ") || content.contains("commit") {
-            messageType = .gitOperation
-        } else if content.contains("$") || content.contains("npm") || content.contains("bash") {
-            messageType = .terminalCommand
-        } else if cleanContent.contains("[assistant message]") {
-            messageType = .claudeResponse
-        } else {
-            messageType = .text
-        }
-    }
-}
-
-// EnhancedChatMessage class moved to MessageTypes.swift
-
-// MARK: - Typing Indicator Cell
-
-class TypingIndicatorCell: UITableViewCell {
-    static let identifier = "TypingIndicatorCell"
-    
-    // TODO: Add when TypingIndicatorView is added to project
-    // private let typingIndicator = TypingIndicatorView()
-    // private let typingIndicator = UIView() // Placeholder
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        setupCell()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupCell() {
-        backgroundColor = .clear
-        selectionStyle = .none
-        
-        // TODO: Re-enable when TypingIndicatorView is added to project
-        // contentView.addSubview(typingIndicator)
-        // typingIndicator.translatesAutoresizingMaskIntoConstraints = false
-        
-        // NSLayoutConstraint.activate([
-        //     typingIndicator.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-        //     typingIndicator.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-        //     typingIndicator.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
-        // ])
-    }
-    
-    func startAnimating() {
-        // typingIndicator.show()
-        // typingIndicator.isHidden = false
-    }
-    
-    func stopAnimating() {
-        // typingIndicator.hide()
-        // typingIndicator.isHidden = true
-    }
-}
-
-// MARK: - Enhanced Message Cell
-
-class EnhancedMessageCell: UITableViewCell {
-    static let identifier = "EnhancedMessageCell"
-    
-    private let containerView = UIView()
-    private let bubbleView = UIView()
-    private let typeLabel = UILabel()
-    private let contentLabel = UILabel()
-    private let codeView = UITextView()
-    private let timeLabel = UILabel()
-    private let statusImageView = UIImageView()
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        backgroundColor = .clear
-        selectionStyle = .none
-        
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(containerView)
-        
-        bubbleView.translatesAutoresizingMaskIntoConstraints = false
-        bubbleView.layer.cornerRadius = 16
-        containerView.addSubview(bubbleView)
-        
-        typeLabel.translatesAutoresizingMaskIntoConstraints = false
-        typeLabel.font = .systemFont(ofSize: 11, weight: .semibold)
-        typeLabel.textColor = CyberpunkTheme.secondaryText
-        bubbleView.addSubview(typeLabel)
-        
-        contentLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentLabel.numberOfLines = 0
-        contentLabel.font = CyberpunkTheme.bodyFont
-        contentLabel.textColor = CyberpunkTheme.primaryText
-        bubbleView.addSubview(contentLabel)
-        
-        codeView.translatesAutoresizingMaskIntoConstraints = false
-        codeView.backgroundColor = UIColor.black.withAlphaComponent(0.3)
-        codeView.textColor = CyberpunkTheme.primaryCyan
-        codeView.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
-        codeView.isEditable = false
-        codeView.isScrollEnabled = false
-        codeView.layer.cornerRadius = 8
-        codeView.textContainerInset = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
-        codeView.isHidden = true
-        bubbleView.addSubview(codeView)
-        
-        timeLabel.translatesAutoresizingMaskIntoConstraints = false
-        timeLabel.font = .systemFont(ofSize: 11, weight: .regular)
-        timeLabel.textColor = CyberpunkTheme.secondaryText
-        bubbleView.addSubview(timeLabel)
-        
-        statusImageView.translatesAutoresizingMaskIntoConstraints = false
-        statusImageView.contentMode = .scaleAspectFit
-        bubbleView.addSubview(statusImageView)
-        
-        setupConstraints()
-    }
-    
-    private func setupConstraints() {
-        NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
-            
-            typeLabel.topAnchor.constraint(equalTo: bubbleView.topAnchor, constant: 8),
-            typeLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            
-            contentLabel.topAnchor.constraint(equalTo: typeLabel.bottomAnchor, constant: 4),
-            contentLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            contentLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            
-            codeView.topAnchor.constraint(equalTo: typeLabel.bottomAnchor, constant: 4),
-            codeView.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            codeView.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            
-            timeLabel.topAnchor.constraint(equalTo: contentLabel.bottomAnchor, constant: 4),
-            timeLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            timeLabel.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: -8),
-            
-            statusImageView.centerYAnchor.constraint(equalTo: timeLabel.centerYAnchor),
-            statusImageView.leadingAnchor.constraint(equalTo: timeLabel.trailingAnchor, constant: 4),
-            statusImageView.widthAnchor.constraint(equalToConstant: 14),
-            statusImageView.heightAnchor.constraint(equalToConstant: 14)
-        ])
-    }
-    
-    func configure(with message: EnhancedChatMessage) {
-        typeLabel.text = message.messageType.displayName
-        
-        if message.messageType == .code, let codeContent = message.codeContent {
-            contentLabel.isHidden = true
-            codeView.isHidden = false
-            codeView.text = codeContent
-            
-            NSLayoutConstraint.activate([
-                timeLabel.topAnchor.constraint(equalTo: codeView.bottomAnchor, constant: 4)
-            ])
-        } else {
-            contentLabel.isHidden = false
-            codeView.isHidden = true
-            contentLabel.text = message.content
-            
-            NSLayoutConstraint.activate([
-                timeLabel.topAnchor.constraint(equalTo: contentLabel.bottomAnchor, constant: 4)
-            ])
-        }
-        
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        timeLabel.text = formatter.string(from: message.timestamp)
-        
-        if message.isUser {
-            bubbleView.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.2)
-            bubbleView.layer.borderWidth = 1
-            bubbleView.layer.borderColor = CyberpunkTheme.primaryCyan.cgColor
-            
-            NSLayoutConstraint.activate([
-                bubbleView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-                bubbleView.leadingAnchor.constraint(greaterThanOrEqualTo: containerView.leadingAnchor, constant: 60),
-                bubbleView.topAnchor.constraint(equalTo: containerView.topAnchor),
-                bubbleView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
-            ])
-            
-            statusImageView.isHidden = false
-            switch message.status {
-            case .sending:
-                statusImageView.image = UIImage(systemName: "clock")
-                statusImageView.tintColor = CyberpunkTheme.secondaryText
-            case .sent:
-                statusImageView.image = UIImage(systemName: "checkmark")
-                statusImageView.tintColor = CyberpunkTheme.primaryCyan
-            case .delivered:
-                statusImageView.image = UIImage(systemName: "checkmark.circle")
-                statusImageView.tintColor = CyberpunkTheme.primaryCyan
-            case .read:
-                statusImageView.image = UIImage(systemName: "checkmark.circle.fill")
-                statusImageView.tintColor = CyberpunkTheme.primaryCyan
-            case .failed:
-                statusImageView.image = UIImage(systemName: "exclamationmark.circle")
-                statusImageView.tintColor = CyberpunkTheme.accentPink
-            }
-            self.accessibilityIdentifier = nil
-        } else {
-            bubbleView.backgroundColor = CyberpunkTheme.surface
-            bubbleView.layer.borderWidth = 1
-            
-            switch message.messageType {
-            case .error:
-                bubbleView.layer.borderColor = CyberpunkTheme.accentPink.cgColor
-            case .toolUse, .toolResult:
-                bubbleView.layer.borderColor = CyberpunkTheme.primaryCyan.cgColor
-            case .todoUpdate:
-                bubbleView.layer.borderColor = UIColor.systemGreen.cgColor
-            case .code:
-                bubbleView.layer.borderColor = UIColor.systemOrange.cgColor
-            case .gitOperation:
-                bubbleView.layer.borderColor = UIColor.systemPurple.cgColor
-            case .terminalCommand:
-                bubbleView.layer.borderColor = UIColor.systemYellow.cgColor
-            default:
-                bubbleView.layer.borderColor = CyberpunkTheme.border.cgColor
-            }
-            
-            NSLayoutConstraint.activate([
-                bubbleView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-                bubbleView.trailingAnchor.constraint(lessThanOrEqualTo: containerView.trailingAnchor, constant: -60),
-                bubbleView.topAnchor.constraint(equalTo: containerView.topAnchor),
-                bubbleView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
-            ])
-            
-            statusImageView.isHidden = true
-            self.accessibilityIdentifier = "assistantMessageCell"
-        }
-    }
-}
-
-// Assuming ChatMessageCell is defined elsewhere, add accessibilityIdentifier set here as well:
 class ChatMessageCell: UITableViewCell {
     static let identifier = "ChatMessageCell"
-    // ... existing properties and methods ...
     
-    func configure(with message: ChatMessage) {
-        // ... existing configuration code ...
+    func configure(with message: EnhancedChatMessage) {
+        textLabel?.text = message.content
+        textLabel?.numberOfLines = 0
         if !message.isUser {
             self.accessibilityIdentifier = "assistantMessageCell"
         } else {
@@ -361,6 +27,8 @@ class ChatMessageCell: UITableViewCell {
         }
     }
 }
+
+// MARK: - Chat View Controller
 
 class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching, UITextViewDelegate, WebSocketManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate {
     
@@ -393,7 +61,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private let emptyStateView = NoDataView()
     
     // Add isLoading property needed by BaseViewController
-    override var isLoading: Bool {
+    public override var isLoading: Bool {
         didSet {
             // Could show/hide loading indicator here if needed
         }
@@ -517,7 +185,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     // MARK: - Initialization
     
-    init(project: Project, session: Session? = nil) {
+    public init(project: Project, session: Session? = nil) {
         self.project = project
         self.currentSession = session
         self.webSocketManager = DIContainer.shared.webSocketManager

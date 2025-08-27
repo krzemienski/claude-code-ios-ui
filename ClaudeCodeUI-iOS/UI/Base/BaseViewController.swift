@@ -184,9 +184,9 @@ public class BaseViewController: UIViewController {
         
         // Create cyberpunk loading animation using LoadingAnimationFactory
         // Randomly choose a loading style for variety
-        let styles: [LoadingStyle] = [.matrix, .orbit, .wave, .morphing, .pulse, .typing]
+        let styles: [LoadingViewFactory.LoadingStyle] = [.matrix, .orbit, .wave, .morphing, .pulse, .typing]
         let randomStyle = styles.randomElement() ?? .matrix
-        let cyberpunkLoader = LoadingAnimationFactory.createLoading(style: randomStyle, message: message)
+        let cyberpunkLoader = LoadingViewFactory.createLoadingView(style: randomStyle, frame: loadingView.bounds)
         cyberpunkLoader.translatesAutoresizingMaskIntoConstraints = false
         
         // Clear previous subviews from loading view

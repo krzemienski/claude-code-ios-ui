@@ -9,7 +9,7 @@
 import UIKit
 
 /// Animated typing indicator showing "Claude is typing..." with dots animation
-class TypingIndicatorView: UIView {
+class UIKitTypingIndicatorView: UIView {
     
     // MARK: - Properties
     
@@ -45,7 +45,7 @@ class TypingIndicatorView: UIView {
         
         // Container with cyberpunk styling
         containerView.translatesAutoresizingMaskIntoConstraints = false
-        containerView.backgroundColor = CyberpunkTheme.cardBackground
+        containerView.backgroundColor = CyberpunkTheme.surfacePrimary
         containerView.layer.cornerRadius = 16
         containerView.layer.borderWidth = 1
         containerView.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor

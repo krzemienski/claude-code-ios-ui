@@ -331,7 +331,7 @@ enum TranscriptionError: LocalizedError {
 extension APIClient {
     
     func transcribeAudio(_ data: Data, format: String = "m4a") async throws -> TranscriptionResponse {
-        var request = URLRequest(url: URL(string: "\(baseURL)/api/transcribe")!)
+        var request = URLRequest(url: URL(string: "\(AppConfig.backendURL)/api/transcribe")!)
         request.httpMethod = "POST"
         
         let boundary = UUID().uuidString

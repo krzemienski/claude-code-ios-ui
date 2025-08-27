@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreGraphics
 
 /// App configuration settings
 struct AppConfig {
@@ -15,7 +16,10 @@ struct AppConfig {
     /// Local backend URL for development
     /// This URL connects to the local Node.js backend server
     /// Using host machine's IP address for iOS simulator to reach the backend
-    static let backendURL: String = "http://192.168.0.43:3004"
+    static var backendURL: String = "http://192.168.0.43:3004"
+    
+    /// Default backend URL for resetting
+    private static let defaultBackendURL = "http://192.168.0.43:3004"
     
     /// Local WebSocket URLs for real-time communication
     static let websocketURL: String = "ws://192.168.0.43:3004/ws"          // Main chat WebSocket
@@ -102,6 +106,12 @@ struct AppConfig {
     /// Enable debug logging
     static let enableDebugLogging = true
     
+    /// Debug mode flag
+    static var isDebugMode = false
+    
+    /// Code editor font size
+    static var codeFontSize: CGFloat = 14.0
+    
     /// Enable crash reporting
     static let enableCrashReporting = true
     
@@ -111,13 +121,35 @@ struct AppConfig {
     // MARK: - UI Configuration
     
     /// Enable haptic feedback
-    static let enableHapticFeedback = true
+    static var enableHapticFeedback = true
     
     /// Animation duration
     static let animationDuration: TimeInterval = 0.3
     
     /// Keyboard animation duration
     static let keyboardAnimationDuration: TimeInterval = 0.25
+    
+    // MARK: - Configuration Methods
+    
+    /// Update the backend URL
+    static func updateBackendURL(_ url: String) {
+        backendURL = url
+        // Save to UserDefaults for persistence
+        UserDefaults.standard.set(url, forKey: "backendURL")
+    }
+    
+    /// Reset backend URL to default
+    static func resetBackendURL() {
+        backendURL = defaultBackendURL
+        UserDefaults.standard.removeObject(forKey: "backendURL")
+    }
+    
+    /// Load saved configuration
+    static func loadConfiguration() {
+        if let savedURL = UserDefaults.standard.string(forKey: "backendURL") {
+            backendURL = savedURL
+        }
+    }
     
     // MARK: - Hardcoded Configuration Notes
     

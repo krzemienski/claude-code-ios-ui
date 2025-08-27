@@ -11,7 +11,7 @@ struct SearchView: View {
     @ObservedObject var viewModel: SearchViewModel
     @State private var searchText = ""
     @State private var selectedScope = SearchScope.all
-    @State private var selectedFileTypes: Set<FileType> = []
+    @State private var selectedFileTypes: Set<SearchFileType> = []
     @State private var showingFilters = false
     
     init(viewModel: SearchViewModel? = nil) {
@@ -158,7 +158,7 @@ struct SearchView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 // File type filters
-                ForEach(FileType.allCases, id: \.self) { fileType in
+                ForEach(SearchFileType.allCases, id: \.self) { fileType in
                     FilterChip(
                         title: fileType.rawValue,
                         icon: fileType.icon,
@@ -352,14 +352,14 @@ struct FilterChip: View {
     }
 }
 
-enum SearchScope: String, CaseIterable {
+enum SearchScopeView: String, CaseIterable {
     case all = "All"
     case code = "Code"
     case files = "Files"
     case comments = "Comments"
 }
 
-enum FileType: String, CaseIterable {
+enum SearchFileType: String, CaseIterable {
     case swift = "Swift"
     case objectiveC = "Obj-C"
     case javascript = "JS"

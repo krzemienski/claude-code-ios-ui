@@ -14,7 +14,7 @@ class TypingIndicatorCell: UITableViewCell {
     // MARK: - Properties
     
     static let identifier = "TypingIndicatorCell"
-    private let typingIndicatorView = TypingIndicatorView()
+    private let typingIndicatorView = UIKitTypingIndicatorView()
     
     // MARK: - Initialization
     

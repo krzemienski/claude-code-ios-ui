@@ -43,18 +43,19 @@ class WebSocketReconnectionManager {
     
     // MARK: - Connection Observation
     private func observeConnectionStatus() {
-        webSocketManager.connectionStatePublisher
-            .sink { [weak self] state in
-                switch state {
-                case .disconnected:
-                    self?.handleDisconnection()
-                case .connected:
-                    self?.handleSuccessfulConnection()
-                default:
-                    break
-                }
-            }
-            .store(in: &cancellables)
+        // TODO: Implement connection state observation when WebSocketManager has publisher support
+        // webSocketManager.connectionStatePublisher
+        //     .sink { [weak self] state in
+        //         switch state {
+        //         case .disconnected:
+        //             self?.handleDisconnection()
+        //         case .connected:
+        //             self?.handleSuccessfulConnection()
+        //         default:
+        //             break
+        //         }
+        //     }
+        //     .store(in: &cancellables)
     }
     
     // MARK: - Reconnection Logic
@@ -96,7 +97,8 @@ class WebSocketReconnectionManager {
     
     private func attemptReconnect() {
         Logger.shared.info("Attempting WebSocket reconnection (attempt \(reconnectAttempts))")
-        webSocketManager.connect()
+        // TODO: Implement proper reconnection when WebSocketManager API is finalized
+        // webSocketManager.connect(to: lastEndpoint ?? "ws://localhost:3004/ws")
     }
     
     // MARK: - Manual Control

@@ -72,7 +72,7 @@ class ZoomTransition: NSObject, UIViewControllerAnimatedTransitioning {
 
 class SlideTransition: NSObject, UIViewControllerAnimatedTransitioning {
     
-    enum Direction {
+    enum Direction: Equatable {
         case left, right, up, down
     }
     
@@ -372,7 +372,7 @@ class TransitionCoordinator: NSObject {
         interactiveTransition?.handlePanGesture(gesture, in: viewController)
     }
     
-    enum TransitionType {
+    enum TransitionType: Equatable {
         case zoom(CGRect)
         case slide(SlideTransition.Direction)
         case fade

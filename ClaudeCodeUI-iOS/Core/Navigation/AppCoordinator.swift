@@ -470,11 +470,15 @@ extension AppCoordinator: UITabBarControllerDelegate {
         generator.impactOccurred()
         
         // Handle special cases for chat tab
+        // Note: ChatViewController type check commented out to avoid compilation issues
+        // The ChatViewController is in a different module and not directly visible here
+        /*
         if let navController = viewController as? UINavigationController,
            navController.viewControllers.first is ChatViewController {
             // Chat tab selected - could add analytics or special handling here
             Logger.shared.info("Chat tab touched")
         }
+        */
     }
 }
 

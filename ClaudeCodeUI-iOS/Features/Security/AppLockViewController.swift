@@ -11,7 +11,7 @@ class AppLockViewController: UIViewController {
     private let lockIconView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = CyberpunkTheme.neonCyan
+        imageView.tintColor = CyberpunkTheme.primaryCyan
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
@@ -40,14 +40,14 @@ class AppLockViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setTitle("Authenticate", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-        button.backgroundColor = CyberpunkTheme.neonPink
+        button.backgroundColor = CyberpunkTheme.accentPink
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 25
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(authenticateButtonTapped), for: .touchUpInside)
         
         // Add glow effect
-        button.layer.shadowColor = CyberpunkTheme.neonPink.cgColor
+        button.layer.shadowColor = CyberpunkTheme.accentPink.cgColor
         button.layer.shadowRadius = 10
         button.layer.shadowOpacity = 0.5
         button.layer.shadowOffset = .zero
@@ -78,7 +78,7 @@ class AppLockViewController: UIViewController {
     // MARK: - Setup
     
     private func setupUI() {
-        view.backgroundColor = CyberpunkTheme.backgroundColor
+        view.backgroundColor = CyberpunkTheme.background
         
         // Add blur background
         blurView.frame = view.bounds
@@ -219,7 +219,7 @@ class AppLockViewController: UIViewController {
         
         // Update UI
         subtitleLabel.text = error.localizedDescription
-        subtitleLabel.textColor = CyberpunkTheme.neonPink
+        subtitleLabel.textColor = CyberpunkTheme.accentPink
         
         // Reset after delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in

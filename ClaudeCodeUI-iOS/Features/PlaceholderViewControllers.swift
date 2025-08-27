@@ -11,68 +11,20 @@ import UIKit
 // REMOVED - Using the real implementation from Features/Projects/ProjectsViewController.swift
 
 // MARK: - SettingsViewController  
-class SettingsViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Settings"
-    }
-}
+// Already implemented in Features/Settings/SettingsViewController.swift
 
-// MARK: - TranscriptionViewController
-class TranscriptionViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Transcription"
-    }
-}
 
 // MARK: - MCPServerListViewController
-class MCPServerListViewController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "MCP Servers"
-    }
-}
+// Already implemented in Features/MCP/MCPServerListViewController.swift
 
 // MARK: - SearchViewController
-class SearchViewController: UIViewController {
-    init(project: Project?) {
-        super.init(nibName: nil, bundle: nil)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Search"
-    }
-}
+// Already implemented in Features/Search/SearchViewController.swift
 
 // MARK: - TerminalViewController
 // Already implemented in Features/Terminal/TerminalViewController.swift
 
 // MARK: - GitViewController
-class GitViewController: UIViewController {
-    init(project: Project?) {
-        super.init(nibName: nil, bundle: nil)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Git"
-    }
-}
+// Already implemented in Features/Git/GitViewController.swift
 
 // MARK: - SessionListViewController (for navigation)
 // Already implemented in Features/Sessions/SessionListViewController.swift

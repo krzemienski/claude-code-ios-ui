@@ -197,9 +197,9 @@ enum MemoryStatus {
     
     var color: UIColor {
         switch self {
-        case .normal: return CyberpunkTheme.neonGreen
-        case .warning: return CyberpunkTheme.neonYellow
-        case .critical: return CyberpunkTheme.neonPink
+        case .normal: return CyberpunkTheme.success
+        case .warning: return CyberpunkTheme.warning
+        case .critical: return CyberpunkTheme.error
         }
     }
     
@@ -222,7 +222,7 @@ enum MemoryPressureLevel {
 /// A memory-efficient array that automatically releases objects under memory pressure
 class MemoryOptimizedArray<T> {
     private var storage: [T] = []
-    private var weakStorage: [WeakBox<T>] = [] where T: AnyObject
+    private var weakStorage: [Any] = [] // Will be [WeakBox<T>] when T: AnyObject
     private let maxCount: Int
     
     init(maxCount: Int = 100) {

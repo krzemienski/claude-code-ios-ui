@@ -144,7 +144,7 @@ public class AnimationManager {
     }
     
     /// Neon glow pulse
-    func neonPulse(_ view: UIView, color: UIColor = CyberpunkTheme.neonCyan) {
+    func neonPulse(_ view: UIView, color: UIColor = CyberpunkTheme.primaryCyan) {
         view.layer.shadowColor = color.cgColor
         view.layer.shadowRadius = 10
         view.layer.shadowOpacity = 0.8
@@ -165,7 +165,7 @@ public class AnimationManager {
         scanlineLayer.frame = view.bounds
         scanlineLayer.colors = [
             UIColor.clear.cgColor,
-            CyberpunkTheme.neonCyan.withAlphaComponent(0.3).cgColor,
+            CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor,
             UIColor.clear.cgColor
         ]
         scanlineLayer.locations = [0, 0.5, 1]
@@ -341,7 +341,7 @@ public class AnimationManager {
     // MARK: - Loading Animations
     
     /// Create a loading spinner
-    func createLoadingSpinner(color: UIColor = CyberpunkTheme.neonCyan) -> UIView {
+    func createLoadingSpinner(color: UIColor = CyberpunkTheme.primaryCyan) -> UIView {
         let spinnerView = UIView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
         
         let circleLayer = CAShapeLayer()
@@ -378,7 +378,7 @@ public class AnimationManager {
         
         for i in 0..<3 {
             let dot = UIView(frame: CGRect(x: CGFloat(i) * 20 + 5, y: 5, width: 10, height: 10))
-            dot.backgroundColor = CyberpunkTheme.neonCyan
+            dot.backgroundColor = CyberpunkTheme.primaryCyan
             dot.layer.cornerRadius = 5
             containerView.addSubview(dot)
             
@@ -419,7 +419,7 @@ extension UIView {
     }
     
     /// Add gradient animation
-    func addGradientAnimation(colors: [UIColor] = [CyberpunkTheme.neonCyan, CyberpunkTheme.neonPink]) {
+    func addGradientAnimation(colors: [UIColor] = [CyberpunkTheme.primaryCyan, CyberpunkTheme.accentPink]) {
         let gradient = CAGradientLayer()
         gradient.frame = bounds
         gradient.colors = colors.map { $0.cgColor }

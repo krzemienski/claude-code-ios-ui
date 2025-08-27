@@ -41,7 +41,7 @@ class ProgressIndicatorView: UIView {
         containerView.backgroundColor = UIColor.black.withAlphaComponent(0.95)
         containerView.layer.cornerRadius = 16
         containerView.layer.borderWidth = 1
-        containerView.layer.borderColor = CyberpunkTheme.neonCyan.cgColor
+        containerView.layer.borderColor = CyberpunkTheme.primaryCyan.cgColor
         containerView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(containerView)
         
@@ -50,14 +50,14 @@ class ProgressIndicatorView: UIView {
         
         // Setup title
         titleLabel.font = .systemFont(ofSize: 18, weight: .bold)
-        titleLabel.textColor = CyberpunkTheme.neonCyan
+        titleLabel.textColor = CyberpunkTheme.primaryCyan
         titleLabel.textAlignment = .center
         titleLabel.text = "Processing..."
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(titleLabel)
         
         // Setup progress bar
-        progressBar.progressTintColor = CyberpunkTheme.neonCyan
+        progressBar.progressTintColor = CyberpunkTheme.primaryCyan
         progressBar.trackTintColor = UIColor.gray.withAlphaComponent(0.3)
         progressBar.layer.cornerRadius = 4
         progressBar.clipsToBounds = true
@@ -66,7 +66,7 @@ class ProgressIndicatorView: UIView {
         
         // Setup percentage label
         percentageLabel.font = .monospacedSystemFont(ofSize: 24, weight: .bold)
-        percentageLabel.textColor = CyberpunkTheme.neonCyan
+        percentageLabel.textColor = CyberpunkTheme.primaryCyan
         percentageLabel.textAlignment = .center
         percentageLabel.text = "0%"
         percentageLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -84,9 +84,9 @@ class ProgressIndicatorView: UIView {
         // Setup cancel button
         cancelButton.setTitle("Cancel", for: .normal)
         cancelButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        cancelButton.setTitleColor(CyberpunkTheme.neonPink, for: .normal)
+        cancelButton.setTitleColor(CyberpunkTheme.accentPink, for: .normal)
         cancelButton.layer.borderWidth = 1
-        cancelButton.layer.borderColor = CyberpunkTheme.neonPink.cgColor
+        cancelButton.layer.borderColor = CyberpunkTheme.accentPink.cgColor
         cancelButton.layer.cornerRadius = 8
         cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
@@ -124,8 +124,8 @@ class ProgressIndicatorView: UIView {
     
     private func setupGlowEffect() {
         glowLayer.colors = [
-            CyberpunkTheme.neonCyan.withAlphaComponent(0.3).cgColor,
-            CyberpunkTheme.neonCyan.withAlphaComponent(0.1).cgColor,
+            CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor,
+            CyberpunkTheme.primaryCyan.withAlphaComponent(0.1).cgColor,
             UIColor.clear.cgColor
         ]
         glowLayer.locations = [0, 0.5, 1]

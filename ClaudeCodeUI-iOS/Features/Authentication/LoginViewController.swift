@@ -124,7 +124,7 @@ class LoginViewController: BaseViewController {
     }()
     
     private lazy var loginButton: NeonButton = {
-        let button = NeonButton(style: .primary)
+        let button = NeonButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("Login", for: .normal)
         button.addTarget(self, action: #selector(handleLogin), for: .touchUpInside)
@@ -148,7 +148,7 @@ class LoginViewController: BaseViewController {
     // MARK: - Initialization
     
     init(errorHandler: ErrorHandlingService = DIContainer.shared.errorHandler,
-         dataContainer: SwiftDataContainer? = try? SwiftDataContainer()) {
+         dataContainer: SwiftDataContainer? = SwiftDataContainer.shared) {
         self.errorHandler = errorHandler
         self.dataContainer = dataContainer
         super.init(nibName: nil, bundle: nil)
@@ -276,7 +276,7 @@ class LoginViewController: BaseViewController {
         
         guard let username = usernameTextField.text, !username.isEmpty,
               let password = passwordTextField.text, !password.isEmpty else {
-            errorHandler.handle(ValidationError(message: "Please enter both username and password"))
+            errorHandler.handle(ValidationError.emptyField(fieldName: "Username and password"))
             return
         }
         
@@ -300,7 +300,7 @@ class LoginViewController: BaseViewController {
                 if let dataContainer = dataContainer {
                     var settings = try await dataContainer.fetchSettings() ?? Settings()
                     settings.authToken = token
-                    settings.lastUsername = username
+                    // Username is not stored in settings - could be added if needed
                     try await dataContainer.updateSettings(settings)
                 }
                 
@@ -357,10 +357,11 @@ class LoginViewController: BaseViewController {
             
             // Save to settings
             if let dataContainer = dataContainer {
-                var settings = try? await dataContainer.fetchSettings() ?? Settings()
-                settings.authToken = fakeToken
-                settings.lastUsername = "dev"
-                try? await dataContainer.updateSettings(settings)
+                if var settings = try? await dataContainer.fetchSettings() ?? Settings() {
+                    settings.authToken = fakeToken
+                    // Username is not stored in settings - could be added if needed
+                    try? await dataContainer.updateSettings(settings)
+                }
             }
             
             // Navigate to main app
