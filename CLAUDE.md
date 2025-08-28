@@ -598,25 +598,37 @@ For complete API documentation, see the full backend reference at the end of thi
 - **NEVER** guess coordinates from screenshots
 - Parse JSON from `describe_ui()` to find exact element positions
 
-#### 2. Log Management Strategy
-**Use Background Streaming** to avoid app restart issues:
+#### 2. Background-First Logging Workflow (CRITICAL - Prevents App Restarts)
+**✅ SOLUTION DISCOVERED**: Use `build_run_sim` command with background logging
+
+**The Complete Working Workflow**:
 ```bash
-# Start BEFORE launching app
-xcrun simctl spawn A707456B-44DB-472F-9722-C88153CDFFA1 log stream \
-  --predicate 'processImagePath contains "ClaudeCodeUI"' \
-  > test_logs.txt &
+# Step 1: ALWAYS start background logging FIRST
+./background-logging-system.sh start-logs
 
-# Store PID to kill later
-LOG_PID=$!
-
-# After testing, kill the stream
-kill $LOG_PID
-
-# Process logs in chunks to avoid memory issues
-tail -n 1000 test_logs.txt  # Last 1000 lines
-grep -i error test_logs.txt # Find errors
-head -n 500 test_logs.txt    # First 500 lines
+# Step 2: Use build_run_sim from Claude (NOT separate install/launch)
+# This single command works where others fail
 ```
+
+```javascript
+// From Claude - THIS WORKS:
+await mcp__XcodeBuildMCP__build_run_sim({
+  projectPath: "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj",
+  scheme: "ClaudeCodeUI",
+  simulatorId: "A707456B-44DB-472F-9722-C88153CDFFA1"
+});
+```
+
+**Why This Works**:
+- Background logging starts BEFORE any build/launch operations
+- Prevents app restarts that lose log context
+- Manages log size with automatic rotation at 50MB
+- `build_run_sim` avoids FBSOpenApplicationServiceErrorDomain errors
+
+**What Doesn't Work**:
+- ❌ `launch_app_logs_sim` - Causes app restart
+- ❌ Separate `install_app_sim` + `launch_app_sim` - Permission errors
+- ❌ Starting logs after launch - Misses critical startup events
 
 #### 3. Complete Testing Workflow
 ```javascript

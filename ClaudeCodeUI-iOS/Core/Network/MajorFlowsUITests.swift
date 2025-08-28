@@ -17,7 +17,6 @@ enum TestFlowType {
     case messaging
     case fileOperations
     case gitIntegration
-    case searchFunctionality
     case terminalOperations
     case errorHandling
     case navigationFlow
@@ -80,24 +79,6 @@ let majorTestFlows = [
         ]
     ),
     
-    // Flow 3: Search Auto-Selection
-    UITestFlow(
-        id: "FLOW-003",
-        name: "Search Project Auto-Selection",
-        type: .searchFunctionality,
-        priority: 2,
-        steps: [
-            TestStep(action: "Navigate", target: "Search tab", expectedResult: "Search screen loads"),
-            TestStep(action: "Trigger search", target: "Search field", expectedResult: "Search initiated"),
-            TestStep(action: "Verify", target: "Project context", expectedResult: "First project auto-selected")
-        ],
-        expectedOutcome: "SearchViewModel auto-selects first available project",
-        verificationPoints: [
-            "No project selection error",
-            "First project selected automatically",
-            "Search executes successfully"
-        ]
-    ),
     
     // Flow 4: Terminal HTTP Fallback
     UITestFlow(
@@ -361,7 +342,6 @@ func generateTestReport() -> String {
         (.messaging, "Messaging"),
         (.fileOperations, "File Operations"),
         (.gitIntegration, "Git Integration"),
-        (.searchFunctionality, "Search"),
         (.terminalOperations, "Terminal"),
         (.errorHandling, "Error Handling"),
         (.navigationFlow, "Navigation")

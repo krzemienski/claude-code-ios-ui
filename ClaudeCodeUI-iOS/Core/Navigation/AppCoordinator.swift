@@ -46,7 +46,7 @@ import SwiftUI
 // - Features/Settings/SettingsViewController.swift  
 // - Features/Transcription/TranscriptionViewController.swift
 // - Features/MCP/MCPServerListViewController.swift
-// - Features/Search/SearchViewController.swift
+// - Features/Terminal/TerminalViewController.swift
 // - Features/Git/GitViewController.swift
 
 // These imports will use the real implementations from Features folder

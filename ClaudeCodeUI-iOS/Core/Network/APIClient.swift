@@ -717,39 +717,6 @@ actor APIClient: APIClientProtocol {
         return try await request(endpoint)
     }
     
-    // MARK: - Cursor Integration Methods
-    
-    func getCursorConfig() async throws -> CursorConfig {
-        return try await request(.getCursorConfig)
-    }
-    
-    func updateCursorConfig(_ config: CursorConfig) async throws -> CursorConfig {
-        return try await request(.updateCursorConfig(config))
-    }
-    
-    func getCursorMCPServers() async throws -> [CursorMCPServer] {
-        return try await request(.getCursorMCPServers)
-    }
-    
-    func addCursorMCPServer(_ server: CursorMCPServerConfig) async throws -> CursorMCPServer {
-        return try await request(.addCursorMCPServer(server))
-    }
-    
-    func removeCursorMCPServer(_ serverId: String) async throws {
-        try await requestVoid(.removeCursorMCPServer(serverId))
-    }
-    
-    func getCursorSessions() async throws -> [CursorSession] {
-        return try await request(.getCursorSessions)
-    }
-    
-    func getCursorSession(_ sessionId: String) async throws -> CursorSession {
-        return try await request(.getCursorSession(sessionId))
-    }
-    
-    func restoreCursorSession(_ sessionId: String) async throws -> CursorSession {
-        return try await request(.restoreCursorSession(sessionId))
-    }
     
     // MARK: - Completion Handler Methods for Legacy Support
     
@@ -923,6 +890,115 @@ actor APIClient: APIClientProtocol {
         }
         
         return request
+    }
+    
+    // MARK: - Settings Sync API
+    
+    /// Fetch user settings from backend
+    /// - Returns: Dictionary containing user settings
+    func fetchSettings() async throws -> [String: Any] {
+        var request = URLRequest(url: URL(string: "\(baseURL)/api/settings")!)
+        request.httpMethod = "GET"
+        
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode, data: data)
+        }
+        
+        guard let settings = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+            throw APIError.invalidResponse
+        }
+        
+        return settings
+    }
+    
+    /// Sync local settings to backend
+    /// - Parameter settings: Dictionary containing settings to sync
+    func syncSettings(_ settings: [String: Any]) async throws {
+        var request = URLRequest(url: URL(string: "\(baseURL)/api/settings")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: settings, options: [])
+        
+        let (_, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode, data: Data())
+        }
+    }
+    
+    // MARK: - Transcription API
+    
+    /// Transcribe audio to text using backend service
+    /// - Parameters:
+    ///   - audioData: The audio data to transcribe
+    ///   - format: The audio format (e.g., "m4a", "wav", "mp3")
+    /// - Returns: Transcription response with text and confidence
+    func transcribeAudio(audioData: Data, format: String = "m4a") async throws -> TranscriptionResponse {
+        var request = URLRequest(url: URL(string: "\(baseURL)/api/transcribe")!)
+        request.httpMethod = "POST"
+        
+        // Create multipart form data
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        var body = Data()
+        
+        // Add audio file part
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"audio\"; filename=\"audio.\(format)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: audio/\(format)\r\n\r\n".data(using: .utf8)!)
+        body.append(audioData)
+        body.append("\r\n".data(using: .utf8)!)
+        
+        // Add format parameter
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"format\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(format)\r\n".data(using: .utf8)!)
+        
+        // Close boundary
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        // Add authentication
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // Send request
+        let (data, response) = try await session.data(for: request)
+        
+        // Check response
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw APIError.httpError(statusCode: httpResponse.statusCode, data: data)
+        }
+        
+        // Decode response
+        let transcription = try JSONDecoder().decode(TranscriptionResponse.self, from: data)
+        return transcription
     }
 }
 
@@ -1236,40 +1312,6 @@ extension APIEndpoint {
         return APIEndpoint(path: "/api/mcp/cli", method: .post, body: body)
     }
     
-    // MARK: - Cursor Integration Endpoints
-    static var getCursorConfig: APIEndpoint {
-        return APIEndpoint(path: "/api/cursor/config", method: .get)
-    }
-    
-    static func updateCursorConfig(_ config: CursorConfig) -> APIEndpoint {
-        let body = try? JSONEncoder().encode(config)
-        return APIEndpoint(path: "/api/cursor/config", method: .post, body: body)
-    }
-    
-    static var getCursorMCPServers: APIEndpoint {
-        return APIEndpoint(path: "/api/cursor/mcp/servers", method: .get)
-    }
-    
-    static func addCursorMCPServer(_ server: CursorMCPServerConfig) -> APIEndpoint {
-        let body = try? JSONEncoder().encode(server)
-        return APIEndpoint(path: "/api/cursor/mcp/servers", method: .post, body: body)
-    }
-    
-    static func removeCursorMCPServer(_ serverId: String) -> APIEndpoint {
-        return APIEndpoint(path: "/api/cursor/mcp/servers/\(serverId)", method: .delete)
-    }
-    
-    static var getCursorSessions: APIEndpoint {
-        return APIEndpoint(path: "/api/cursor/sessions", method: .get)
-    }
-    
-    static func getCursorSession(_ sessionId: String) -> APIEndpoint {
-        return APIEndpoint(path: "/api/cursor/sessions/\(sessionId)", method: .get)
-    }
-    
-    static func restoreCursorSession(_ sessionId: String) -> APIEndpoint {
-        return APIEndpoint(path: "/api/cursor/sessions/\(sessionId)/restore", method: .post)
-    }
 }
 
 // MARK: - Response Models
@@ -1413,37 +1455,23 @@ struct DirectoryDTO: Codable {
     let itemCount: Int
 }
 
+// MARK: - Missing API Endpoints TODOs
+
+// TODO[CM-API-02]: Implement settings GET endpoint
+// ENDPOINT: GET /api/settings
+// RESPONSE: {theme: String, fontSize: Int, ...}
+// PRIORITY: P2
+// func getSettings() async throws -> SettingsResponse {
+//     // Implementation needed
+// }
+
+// TODO[CM-API-03]: Implement settings POST endpoint
+// ENDPOINT: POST /api/settings
+// REQUEST: {theme: String, fontSize: Int, ...}
+// PRIORITY: P2
+// func updateSettings(_ settings: SettingsRequest) async throws {
+//     // Implementation needed
+// }
+
 // MARK: - Cursor Integration Models
-struct CursorConfig: Codable, Equatable {
-    let enabled: Bool
-    let apiKey: String?
-    let apiUrl: String?
-    let model: String?
-    let maxTokens: Int?
-    let temperature: Double?
-}
-
-struct CursorMCPServer: Codable {
-    let id: String
-    let name: String
-    let command: String
-    let args: [String]?
-    let env: [String: String]?
-    var enabled: Bool
-}
-
-struct CursorMCPServerConfig: Codable {
-    let name: String
-    let command: String
-    let args: [String]?
-    let env: [String: String]?
-}
-
-struct CursorSession: Codable {
-    let id: String
-    let name: String?
-    let createdAt: Date
-    let updatedAt: Date
-    let messageCount: Int
-    let projectPath: String?
-}
+// Models are defined in Core/Data/Models/CursorModels.swift

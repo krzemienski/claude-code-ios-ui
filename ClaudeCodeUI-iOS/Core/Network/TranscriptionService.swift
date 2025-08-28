@@ -130,55 +130,11 @@ final class TranscriptionService: NSObject {
         // Read audio file
         let audioData = try Data(contentsOf: url)
         
-        // Create multipart form data request
-        var request = URLRequest(url: URL(string: "\(baseURL)/api/transcribe")!)
-        request.httpMethod = "POST"
+        // Use APIClient for transcription
+        let transcription = try await APIClient.shared.transcribeAudio(audioData: audioData, format: "m4a")
         
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        
-        // Build multipart body
-        var body = Data()
-        
-        // Add audio file
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"audio\"; filename=\"recording.m4a\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: audio/m4a\r\n\r\n".data(using: .utf8)!)
-        body.append(audioData)
-        body.append("\r\n".data(using: .utf8)!)
-        
-        // Add parameters
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"format\"\r\n\r\n".data(using: .utf8)!)
-        body.append("m4a\r\n".data(using: .utf8)!)
-        
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        request.httpBody = body
-        
-        // Add JWT token if available
-        if let token = UserDefaults.standard.string(forKey: "jwt_token") {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        // Send request
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        // Check response
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw TranscriptionError.invalidResponse
-        }
-        
-        print("📥 Backend response: \(httpResponse.statusCode)")
-        
-        if httpResponse.statusCode == 200 {
-            let transcription = try JSONDecoder().decode(TranscriptionResponse.self, from: data)
-            print("✅ Transcription successful: \(transcription.text.prefix(100))...")
-            return transcription
-        } else {
-            print("❌ Transcription failed with status: \(httpResponse.statusCode)")
-            throw TranscriptionError.backendError(httpResponse.statusCode)
-        }
+        print("✅ Transcription successful: \(transcription.text.prefix(100))...")
+        return transcription
     }
     
     // MARK: - Local Transcription (Fallback)
@@ -326,31 +282,4 @@ enum TranscriptionError: LocalizedError {
     }
 }
 
-// MARK: - API Client Extension
-
-extension APIClient {
-    
-    func transcribeAudio(_ data: Data, format: String = "m4a") async throws -> TranscriptionResponse {
-        var request = URLRequest(url: URL(string: "\(AppConfig.backendURL)/api/transcribe")!)
-        request.httpMethod = "POST"
-        
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"audio\"; filename=\"audio.\(format)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: audio/\(format)\r\n\r\n".data(using: .utf8)!)
-        body.append(data)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        request.httpBody = body
-        
-        if let token = UserDefaults.standard.string(forKey: "jwt_token") {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        let (responseData, _) = try await URLSession.shared.data(for: request)
-        return try JSONDecoder().decode(TranscriptionResponse.self, from: responseData)
-    }
-}
+// Extension removed - functionality moved to APIClient.swift

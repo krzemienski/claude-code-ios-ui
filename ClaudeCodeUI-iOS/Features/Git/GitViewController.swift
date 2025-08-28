@@ -154,6 +154,7 @@ class GitViewController: BaseViewController {
     private func bindViewModel() {
         viewModel.onStatusUpdate = { [weak self] in
             DispatchQueue.main.async {
+                self?.tableView.hideSkeletonLoading()
                 self?.tableView.reloadData()
                 self?.updateCommitButton()
             }
@@ -161,12 +162,14 @@ class GitViewController: BaseViewController {
         
         viewModel.onBranchesUpdate = { [weak self] in
             DispatchQueue.main.async {
+                self?.tableView.hideSkeletonLoading()
                 self?.tableView.reloadData()
             }
         }
         
         viewModel.onCommitsUpdate = { [weak self] in
             DispatchQueue.main.async {
+                self?.tableView.hideSkeletonLoading()
                 self?.tableView.reloadData()
             }
         }
@@ -174,8 +177,11 @@ class GitViewController: BaseViewController {
         viewModel.onLoading = { [weak self] isLoading in
             DispatchQueue.main.async {
                 if isLoading {
+                    // Show skeleton loading instead of just spinner
+                    self?.tableView.showSkeletonLoading(count: 8, cellHeight: 70)
                     self?.loadingView.startAnimating()
                 } else {
+                    self?.tableView.hideSkeletonLoading()
                     self?.loadingView.stopAnimating()
                     self?.refreshControl?.endRefreshing()
                 }

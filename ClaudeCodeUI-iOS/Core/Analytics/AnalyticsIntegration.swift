@@ -98,7 +98,6 @@ extension UIViewController {
             "ChatViewController": "Chat",
             "FileExplorerViewController": "FileExplorer",
             "TerminalViewController": "Terminal",
-            "SearchViewController": "Search",
             "GitViewController": "Git",
             "MCPServerListViewController": "MCPServers",
             "SettingsViewController": "Settings",

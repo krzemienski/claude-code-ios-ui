@@ -27,6 +27,26 @@ struct MCPServerDetailView: View {
     @State private var editedApiKey: String
     @State private var editedIsDefault: Bool
     
+    // Helper computed properties to simplify complex views
+    private var statusGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(server.isConnected ? CyberpunkTheme.success : CyberpunkTheme.textTertiary),
+                Color(server.isConnected ? CyberpunkTheme.success : CyberpunkTheme.textTertiary).opacity(0.6)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
+    private var statusIconName: String {
+        server.isConnected ? "checkmark.circle" : "xmark.circle"
+    }
+    
+    private var statusOverlayColor: Color {
+        server.isConnected ? Color(CyberpunkTheme.success) : Color.clear
+    }
+    
     init(server: MCPServer, viewModel: MCPServerViewModel) {
         self.server = server
         self.viewModel = viewModel
@@ -84,26 +104,26 @@ struct MCPServerDetailView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if isEditing {
                         if isSaving {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: Color(UIColor.CyberpunkTheme.primaryCyan)))
+                                .progressViewStyle(CircularProgressViewStyle(tint: Color(CyberpunkTheme.primaryCyan)))
                                 .scaleEffect(0.8)
                         } else {
                             Button("Save") {
                                 saveChanges()
                             }
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                         }
                     } else {
                         Button("Edit") {
                             isEditing = true
                         }
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     }
                 }
             }
@@ -129,28 +149,16 @@ struct MCPServerDetailView: View {
             // Status icon
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                server.isConnected ? Color(UIColor.CyberpunkTheme.success) : Color(UIColor.CyberpunkTheme.textTertiary),
-                                server.isConnected ? Color(UIColor.CyberpunkTheme.success).opacity(0.6) : Color(UIColor.CyberpunkTheme.textTertiary).opacity(0.6)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(statusGradient)
                     .frame(width: 80, height: 80)
                 
-                Image(systemName: server.isConnected ? "checkmark.circle" : "xmark.circle")
+                Image(systemName: statusIconName)
                     .font(.system(size: 40))
                     .foregroundColor(.white)
             }
             .overlay(
                 Circle()
-                    .stroke(
-                        server.isConnected ? Color(UIColor.CyberpunkTheme.success) : Color.clear,
-                        lineWidth: 2
-                    )
+                    .stroke(statusOverlayColor, lineWidth: 2)
                     .frame(width: 90, height: 90)
                     .opacity(server.isConnected ? 0.5 : 0)
                     .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: server.isConnected)
@@ -159,24 +167,24 @@ struct MCPServerDetailView: View {
             VStack(spacing: 4) {
                 Text(server.isConnected ? "Connected" : "Disconnected")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 
                 Text(server.type.rawValue)
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
             }
         }
         .frame(maxWidth: .infinity)
         .padding(24)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(
                             server.isConnected ?
-                            Color(UIColor.CyberpunkTheme.success).opacity(0.3) :
-                            Color(UIColor.CyberpunkTheme.border),
+                            Color(CyberpunkTheme.success).opacity(0.3) :
+                            Color(CyberpunkTheme.border),
                             lineWidth: 1
                         )
                 )
@@ -202,8 +210,8 @@ struct MCPServerDetailView: View {
                 .background(
                     LinearGradient(
                         colors: [
-                            Color(UIColor.CyberpunkTheme.primaryCyan),
-                            Color(UIColor.CyberpunkTheme.gradientBlue)
+                            Color(CyberpunkTheme.primaryCyan),
+                            Color(CyberpunkTheme.gradientBlue)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -217,24 +225,24 @@ struct MCPServerDetailView: View {
             if let result = connectionTestResult {
                 HStack {
                     Image(systemName: result.success ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .foregroundColor(result.success ? Color(UIColor.CyberpunkTheme.success) : Color(UIColor.CyberpunkTheme.error))
+                        .foregroundColor(result.success ? Color(CyberpunkTheme.success) : Color(CyberpunkTheme.error))
                     
                     Text(result.message)
                         .font(.system(size: 12))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                        .foregroundColor(Color(CyberpunkTheme.textSecondary))
                     
                     Spacer()
                     
                     if let latency = result.latency {
                         Text("\(Int(latency))ms")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     }
                 }
                 .padding(12)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(UIColor.CyberpunkTheme.surface).opacity(0.5))
+                        .fill(Color(CyberpunkTheme.surface).opacity(0.5))
                 )
             }
         }
@@ -250,7 +258,7 @@ struct MCPServerDetailView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
     }
     
@@ -264,7 +272,7 @@ struct MCPServerDetailView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
     }
     
@@ -273,46 +281,46 @@ struct MCPServerDetailView: View {
             Toggle(isOn: isEditing ? $editedIsDefault : .constant(server.isDefault)) {
                 HStack {
                     Image(systemName: "star.fill")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.warning))
+                        .foregroundColor(Color(CyberpunkTheme.warning))
                     Text("Default Server")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 }
             }
-            .tint(Color(UIColor.CyberpunkTheme.primaryCyan))
+            .tint(Color(CyberpunkTheme.primaryCyan))
             .disabled(!isEditing)
             
             Divider()
-                .background(Color(UIColor.CyberpunkTheme.border))
+                .background(Color(CyberpunkTheme.border))
             
             HStack {
                 Text("Auto-connect")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 
                 Spacer()
                 
                 Text("Enabled")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .foregroundColor(Color(CyberpunkTheme.primaryCyan))
             }
             
             HStack {
                 Text("Last Connected")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 
                 Spacer()
                 
                 Text("2 hours ago")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                    .foregroundColor(Color(CyberpunkTheme.textTertiary))
             }
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
         )
     }
     
@@ -325,9 +333,9 @@ struct MCPServerDetailView: View {
                         .padding(.vertical, 12)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color(UIColor.CyberpunkTheme.textTertiary), lineWidth: 1)
+                                .stroke(Color(CyberpunkTheme.textTertiary), lineWidth: 1)
                         )
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                        .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 }
             }
             
@@ -339,13 +347,13 @@ struct MCPServerDetailView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
                 .background(
-                    Color(UIColor.CyberpunkTheme.error).opacity(0.2)
+                    Color(CyberpunkTheme.error).opacity(0.2)
                 )
-                .foregroundColor(Color(UIColor.CyberpunkTheme.error))
+                .foregroundColor(Color(CyberpunkTheme.error))
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(UIColor.CyberpunkTheme.error).opacity(0.5), lineWidth: 1)
+                        .stroke(Color(CyberpunkTheme.error).opacity(0.5), lineWidth: 1)
                 )
             }
         }
@@ -355,11 +363,11 @@ struct MCPServerDetailView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.system(size: 12))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                .foregroundColor(Color(CyberpunkTheme.textTertiary))
             
             Text(value)
                 .font(.system(size: 14))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                .foregroundColor(Color(CyberpunkTheme.textPrimary))
         }
     }
     
@@ -367,7 +375,7 @@ struct MCPServerDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
                 .font(.system(size: 12))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                .foregroundColor(Color(CyberpunkTheme.textTertiary))
             
             Group {
                 if isSecure {
@@ -379,10 +387,10 @@ struct MCPServerDetailView: View {
             .padding(8)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(UIColor.CyberpunkTheme.background))
+                    .fill(Color(CyberpunkTheme.background))
             )
-            .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
-            .accentColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+            .foregroundColor(Color(CyberpunkTheme.textPrimary))
+            .accentColor(Color(CyberpunkTheme.primaryCyan))
         }
     }
     
@@ -412,7 +420,7 @@ struct MCPServerDetailView: View {
         Task {
             do {
                 // Use async method to update server
-                await viewModel.updateServerAsync(updatedServer)
+                try await viewModel.updateServerAsync(updatedServer)
                 await MainActor.run {
                     isSaving = false
                     isEditing = false

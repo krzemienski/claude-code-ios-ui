@@ -373,10 +373,18 @@ class FileExplorerViewController: BaseViewController {
     
     @MainActor
     private func fetchFileTree() async {
+        print("🔍 FileExplorer: fetchFileTree called")
+        print("📁 Project name: '\(project.name)'")
+        print("📂 Project path: '\(project.path)'")
+        print("🏷️ Project display name: '\(project.displayName ?? "nil")'")
+        
         do {
             // Call backend API to get file tree
+            let apiPath = "/api/projects/\(project.name)/files"
+            print("🌐 API Path: \(apiPath)")
+            
             let endpoint = APIEndpoint(
-                path: "/api/projects/\(project.name)/files",
+                path: apiPath,
                 method: .get
             )
             
@@ -398,6 +406,9 @@ class FileExplorerViewController: BaseViewController {
                 tableView.isHidden = false
             }
         } catch {
+            print("❌ FileExplorer API Error: \(error)")
+            print("📍 Error type: \(type(of: error))")
+            print("📝 Error description: \(error.localizedDescription)")
             Logger.shared.error("Failed to load file tree: \(error)")
             hideFileExplorerSkeleton()
             

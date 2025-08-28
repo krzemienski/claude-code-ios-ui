@@ -11,6 +11,29 @@ import SwiftUI
 /// UIKit wrapper for the SwiftUI MCPServerListView
 public class MCPServerListViewController: UIViewController {
     
+    // TODO[CM-MCP-01]: Connect server list to backend API
+    // ISSUE: Table view not populating with MCP servers
+    // ACCEPTANCE: Shows all servers from GET /api/mcp/servers
+    // PRIORITY: P1
+    // DEBUG: Check APIClient.getMCPServers() response
+    
+    // TODO[CM-MCP-02]: Create MCP server add/edit form
+    // ACCEPTANCE: Form with name, URL, API key fields
+    // PRIORITY: P1
+    // ENDPOINT: POST /api/mcp/servers
+    // VALIDATION: Required fields, URL format
+    
+    // TODO[CM-MCP-03]: Add test connection button
+    // ACCEPTANCE: Button shows success/failure alert
+    // PRIORITY: P1
+    // ENDPOINT: POST /api/mcp/servers/:id/test
+    // UI: Activity indicator during test
+    
+    // TODO[CM-MCP-04]: Verify MCP tab shows at index 2
+    // ACCEPTANCE: MCP Servers tab visible and accessible
+    // PRIORITY: P1
+    // NOTE: Was index 4, now index 2 after removing Search/Cursor
+    
     // MARK: - Properties
     private var hostingController: UIHostingController<MCPServerListView>?
     

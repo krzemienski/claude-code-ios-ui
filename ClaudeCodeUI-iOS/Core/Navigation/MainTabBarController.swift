@@ -13,9 +13,8 @@ public class MainTabBarController: UITabBarController {
     // MARK: - Properties
     private let projectsVC = ProjectsViewController()
     private let settingsVC = SettingsViewController()
-    private let transcriptionVC = TranscriptionViewController()
     private let mcpServerVC = MCPServerListViewController()
-    private lazy var searchVC = SearchViewController(project: currentProject)
+    private let searchVC = SearchViewController()
     private lazy var terminalVC = TerminalViewController(project: currentProject)
     private lazy var gitVC = GitViewController(project: currentProject)
     private var currentProject: Project?
@@ -79,15 +78,6 @@ public class MainTabBarController: UITabBarController {
         _ = projectsVC.view
         print("🔴 DEBUG: Forced loading of ProjectsViewController view")
         
-        // Search Tab - Project-wide search functionality
-        searchVC.title = "Search"
-        let searchNav = UINavigationController(rootViewController: searchVC)
-        searchNav.tabBarItem = UITabBarItem(
-            title: "Search",
-            image: createTabIcon(systemName: "magnifyingglass"),
-            selectedImage: createTabIcon(systemName: "magnifyingglass.circle.fill")
-        )
-        
         // Terminal Tab - Command execution
         terminalVC.title = "Terminal"
         let terminalNav = UINavigationController(rootViewController: terminalVC)
@@ -97,13 +87,13 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "terminal.fill")
         )
         
-        // Git Tab - Version control management
-        gitVC.title = "Git"
-        let gitNav = UINavigationController(rootViewController: gitVC)
-        gitNav.tabBarItem = UITabBarItem(
-            title: "Git",
-            image: createTabIcon(systemName: "arrow.triangle.branch"),
-            selectedImage: createTabIcon(systemName: "arrow.triangle.branch")
+        // Search Tab - Full-text search across projects
+        searchVC.title = "Search"
+        let searchNav = UINavigationController(rootViewController: searchVC)
+        searchNav.tabBarItem = UITabBarItem(
+            title: "Search",
+            image: createTabIcon(systemName: "magnifyingglass"),
+            selectedImage: createTabIcon(systemName: "magnifyingglass.circle.fill")
         )
         
         // MCP Servers Tab - Integrated MCP server management
@@ -123,16 +113,14 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "gearshape.2.fill")
         )
         
-        // Set initial view controllers - limiting to 5 for iOS tab bar
-        // Order: Projects, Terminal, Search, MCP, Settings
-        // Git will be accessible from within projects
+        // Set initial view controllers - 5 tabs: Projects, Terminal, Search, MCP, Settings
         viewControllers = [projectsNav, terminalNav, searchNav, mcpNav, settingsNav]
         
         // Debug: Log tab count
         print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
         
         // Configure navigation bars
-        [projectsNav, searchNav, terminalNav, gitNav, mcpNav, settingsNav].forEach { nav in
+        [projectsNav, terminalNav, searchNav, mcpNav, settingsNav].forEach { nav in
             nav.navigationBar.prefersLargeTitles = true
             nav.navigationBar.isTranslucent = false
             nav.navigationBar.backgroundColor = CyberpunkTheme.background
@@ -200,16 +188,6 @@ public class MainTabBarController: UITabBarController {
             terminalNav.setViewControllers([newTerminalVC], animated: false)
         }
         
-        // Update SearchViewController with new project context (index 2)
-        if let searchNav = viewControllers?[2] as? UINavigationController {
-            // Create new SearchViewController with project context
-            let newSearchVC = SearchViewController(project: project)
-            newSearchVC.title = "Search"
-            searchNav.setViewControllers([newSearchVC], animated: false)
-        }
-        
-        // Git is no longer in tab bar - it's accessed through projects
-        
         // Navigate to session list within the Projects tab instead of replacing tabs
         if let projectsNav = viewControllers?[0] as? UINavigationController {
             let sessionListVC = SessionListViewController(project: project)
@@ -238,16 +216,12 @@ public class MainTabBarController: UITabBarController {
         selectedIndex = 1  // Terminal is at index 1
     }
     
-    func switchToSearch() {
-        selectedIndex = 2  // Search is at index 2
-    }
-    
     func switchToMCP() {
-        selectedIndex = 3  // MCP is at index 3
+        selectedIndex = 2  // MCP is at index 2 (after removing Search)
     }
     
     func switchToSettings() {
-        selectedIndex = 4  // Settings is at index 4
+        selectedIndex = 3  // Settings is at index 3 (after removing Search)
     }
     
     func switchToGit() {

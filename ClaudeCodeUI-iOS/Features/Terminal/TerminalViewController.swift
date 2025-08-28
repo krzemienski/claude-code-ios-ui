@@ -11,6 +11,28 @@ class TerminalViewController: BaseViewController {
     
     // MARK: - Properties
     
+    // TODO[CM-TERM-01]: Verify shell WebSocket connection
+    // ACCEPTANCE: Connects to ws://192.168.0.43:3004/shell
+    // PRIORITY: P1
+    // TEST: Log connection success/failure
+    // VERIFY: URL uses 192.168.0.43 not localhost
+    
+    // TODO[CM-TERM-02]: Test command execution flow
+    // ACCEPTANCE: Commands execute, output displays with ANSI colors
+    // PRIORITY: P1
+    // TEST COMMANDS: "ls -la", "pwd", "echo test"
+    // MESSAGE FORMAT: {"type": "shell-command", "command": "ls", "cwd": "/"}
+    
+    // TODO[CM-TERM-03]: Validate ANSI color parsing
+    // ACCEPTANCE: 16 colors, 256 colors, true color all render
+    // PRIORITY: P1
+    // TEST: "\033[31mRed\033[0m", "\033[38;5;214mOrange\033[0m"
+    
+    // TODO[CM-TERM-04]: Implement command history
+    // ACCEPTANCE: Up/down arrows navigate history
+    // PRIORITY: P1
+    // STORAGE: UserDefaults with 100 command limit
+    
     private let project: Project?
     private var commandHistory: [String] = []
     private var historyIndex = -1

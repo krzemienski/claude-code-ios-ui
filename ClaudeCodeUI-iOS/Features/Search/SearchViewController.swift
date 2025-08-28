@@ -2,36 +2,30 @@
 //  SearchViewController.swift
 //  ClaudeCodeUI
 //
-//  Created by Claude Code on 2025-01-20.
+//  Created for Priority 1: Search Functionality
 //
 
 import UIKit
 
 class SearchViewController: UIViewController {
     
-    // MARK: - Properties
-    private let project: Project?
-    private let viewModel = SearchViewModel()
-    
+    // MARK: - UI Components
     private let searchBar = UISearchBar()
     private let tableView = UITableView()
-    private let segmentedControl = UISegmentedControl(items: ["Files", "Code", "All"])
-    private let emptyStateView = NoDataView(type: .noSearchResults)
+    private let activityIndicator = UIActivityIndicatorView(style: .large)
     
+    // MARK: - Properties
     private var searchResults: [SearchResult] = []
-    private var hasSearched = false
-    private var animatedCells = Set<IndexPath>()
+    private var searchTimer: Timer?
     private var isSearching = false
     
-    // MARK: - Initialization
-    init(project: Project? = nil) {
-        self.project = project
-        super.init(nibName: nil, bundle: nil)
-    }
-    
-    required init?(coder: NSCoder) {
-        self.project = nil
-        super.init(coder: coder)
+    // MARK: - Models
+    struct SearchResult {
+        let fileName: String
+        let filePath: String
+        let lineNumber: Int
+        let lineContent: String
+        let projectName: String
     }
     
     // MARK: - Lifecycle
@@ -40,213 +34,143 @@ class SearchViewController: UIViewController {
         setupUI()
         setupConstraints()
         applyTheme()
-        
-        if let project = project {
-            // Set project context in viewModel
-            viewModel.projectName = project.name
-            viewModel.projectPath = project.path ?? project.localPath
-        }
-        
-        // Add entrance animation
-        AnimationManager.shared.slideIn(view, from: .bottom, duration: 0.4)
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        
-        // Animate search bar entrance
-        searchBar.alpha = 0
-        segmentedControl.alpha = 0
-        
-        UIView.animate(withDuration: 0.3, delay: 0.1, options: .curveEaseOut, animations: {
-            self.searchBar.alpha = 1
-        })
-        
-        UIView.animate(withDuration: 0.3, delay: 0.2, options: .curveEaseOut, animations: {
-            self.segmentedControl.alpha = 1
-        })
-    }
-    
-    // MARK: - Setup
+    // MARK: - UI Setup
     private func setupUI() {
+        title = "Search"
         view.backgroundColor = CyberpunkTheme.background
         
-        // Configure search bar
+        // Search Bar
         searchBar.delegate = self
-        searchBar.placeholder = "Search in \(project?.name ?? "project")..."
+        searchBar.placeholder = "Search in projects..."
         searchBar.searchBarStyle = .minimal
-        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        searchBar.returnKeyType = .search
         
-        // Configure segmented control
-        segmentedControl.selectedSegmentIndex = 2 // "All" by default
-        segmentedControl.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
-        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Configure table view
+        // Table View
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "SearchResultCell")
         tableView.backgroundColor = .clear
-        tableView.separatorStyle = .singleLine
-        tableView.separatorColor = CyberpunkTheme.border
-        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.separatorStyle = .none
+        tableView.keyboardDismissMode = .onDrag
+        tableView.register(SearchResultCell.self, forCellReuseIdentifier: "SearchResultCell")
+        
+        // Activity Indicator
+        activityIndicator.color = CyberpunkTheme.primaryCyan
+        activityIndicator.hidesWhenStopped = true
         
         // Add subviews
         view.addSubview(searchBar)
-        view.addSubview(segmentedControl)
         view.addSubview(tableView)
-        view.addSubview(emptyStateView)
-        
-        // Configure empty state
-        setupEmptyState()
+        view.addSubview(activityIndicator)
     }
     
     private func setupConstraints() {
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        
         NSLayoutConstraint.activate([
-            // Search bar
+            // Search Bar
             searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             
-            // Segmented control
-            segmentedControl.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 12),
-            segmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            segmentedControl.heightAnchor.constraint(equalToConstant: 32),
-            
-            // Table view
-            tableView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 12),
+            // Table View
+            tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
-            // Empty state view
-            emptyStateView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 12),
-            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            emptyStateView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            // Activity Indicator
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
-    }
-    
-    private func setupEmptyState() {
-        // Configure empty state view - NoDataView doesn't have configure method
-        // The type was set in init, so we just need to update visibility
-        emptyStateView.isHidden = true
-    }
-    
-    private func updateEmptyStateVisibility() {
-        let shouldShowEmpty = hasSearched && searchResults.isEmpty
-        
-        if shouldShowEmpty {
-            tableView.isHidden = true
-            emptyStateView.isHidden = false
-            UIView.animate(withDuration: 0.3) {
-                self.emptyStateView.alpha = 1
-            }
-        } else {
-            UIView.animate(withDuration: 0.3, animations: {
-                self.emptyStateView.alpha = 0
-            }) { _ in
-                self.emptyStateView.isHidden = true
-                self.tableView.isHidden = false
-            }
-        }
     }
     
     private func applyTheme() {
         // Apply cyberpunk theme to search bar
-        searchBar.tintColor = CyberpunkTheme.primaryCyan
         searchBar.barTintColor = CyberpunkTheme.surface
+        searchBar.tintColor = CyberpunkTheme.primaryCyan
         
         if let textField = searchBar.value(forKey: "searchField") as? UITextField {
             textField.textColor = CyberpunkTheme.textPrimary
-            textField.backgroundColor = CyberpunkTheme.surface
+            textField.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.3)
             
-            if let placeholderLabel = textField.value(forKey: "placeholderLabel") as? UILabel {
-                placeholderLabel.textColor = CyberpunkTheme.textTertiary
-            }
-        }
-        
-        // Apply theme to segmented control
-        segmentedControl.backgroundColor = CyberpunkTheme.surface
-        segmentedControl.selectedSegmentTintColor = CyberpunkTheme.primaryCyan
-        
-        let normalAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: CyberpunkTheme.textTertiary
-        ]
-        let selectedAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: CyberpunkTheme.background
-        ]
-        
-        segmentedControl.setTitleTextAttributes(normalAttributes, for: .normal)
-        segmentedControl.setTitleTextAttributes(selectedAttributes, for: .selected)
-    }
-    
-    // MARK: - Actions
-    @objc private func segmentChanged() {
-        // Add haptic feedback
-        let generator = UISelectionFeedbackGenerator()
-        generator.selectionChanged()
-        
-        // Animate segment change
-        AnimationManager.shared.pulse(segmentedControl, scale: 1.03, duration: 0.2)
-        
-        let scope: SearchScope
-        switch segmentedControl.selectedSegmentIndex {
-        case 0:
-            scope = .files
-        case 1:
-            scope = .code
-        default:
-            scope = .all
-        }
-        
-        // Update search scope in viewModel
-        viewModel.currentScope = scope
-        if let searchText = searchBar.text, !searchText.isEmpty {
-            performSearch(searchText)
+            // Style placeholder
+            let placeholderAttributes: [NSAttributedString.Key: Any] = [
+                .foregroundColor: CyberpunkTheme.textTertiary
+            ]
+            textField.attributedPlaceholder = NSAttributedString(
+                string: "Search in projects...",
+                attributes: placeholderAttributes
+            )
         }
     }
     
-    private func performSearch(_ query: String) {
-        hasSearched = true
+    // MARK: - Search Methods
+    private func performSearch(query: String) {
+        guard !query.isEmpty else {
+            searchResults = []
+            tableView.reloadData()
+            return
+        }
+        
+        // Cancel previous timer
+        searchTimer?.invalidate()
+        
+        // Debounce search
+        searchTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            self?.executeSearch(query: query)
+        }
+    }
+    
+    private func executeSearch(query: String) {
         isSearching = true
-        animatedCells.removeAll()
+        activityIndicator.startAnimating()
         
-        // Show loading animation
-        let loadingView = AnimationManager.shared.createLoadingSpinner(color: CyberpunkTheme.primaryCyan)
-        loadingView.center = tableView.center
-        view.addSubview(loadingView)
-        
-        viewModel.search(query: query, scope: viewModel.currentScope ?? .all, fileTypes: [])
-        
-        // Listen for search completion via Combine
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            loadingView.removeFromSuperview()
+        // For now, we'll use mock data since backend doesn't have search yet
+        // TODO: Replace with actual API call when backend implements search endpoint
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            self?.searchResults = self?.generateMockResults(for: query) ?? []
             self?.isSearching = false
-            self?.searchResults = self?.viewModel.searchResults ?? []
-            self?.animatedCells.removeAll()
-            
-            // Animate table reload
+            self?.activityIndicator.stopAnimating()
             self?.tableView.reloadData()
-            if !(self?.searchResults ?? []).isEmpty {
-                AnimationManager.shared.animateTableView(self?.tableView ?? UITableView())
-            }
-            
-            self?.updateEmptyStateVisibility()
         }
+    }
+    
+    private func generateMockResults(for query: String) -> [SearchResult] {
+        // Generate some mock search results for testing
+        return [
+            SearchResult(
+                fileName: "AppDelegate.swift",
+                filePath: "/MyProject/AppDelegate.swift",
+                lineNumber: 42,
+                lineContent: "func application(_ application: UIApplication, didFinishLaunchingWithOptions...",
+                projectName: "MyProject"
+            ),
+            SearchResult(
+                fileName: "ViewController.swift",
+                filePath: "/MyProject/ViewController.swift",
+                lineNumber: 15,
+                lineContent: "class ViewController: UIViewController {",
+                projectName: "MyProject"
+            ),
+            SearchResult(
+                fileName: "NetworkManager.swift",
+                filePath: "/MyProject/Managers/NetworkManager.swift",
+                lineNumber: 78,
+                lineContent: "func fetchData(from url: URL) async throws -> Data {",
+                projectName: "MyProject"
+            )
+        ]
     }
 }
 
 // MARK: - UISearchBarDelegate
 extension SearchViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if searchText.isEmpty {
-            searchResults = []
-            tableView.reloadData()
-        } else {
-            performSearch(searchText)
-        }
+        performSearch(query: searchText)
     }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
@@ -261,21 +185,9 @@ extension SearchViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "SearchResultCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "SearchResultCell", for: indexPath) as! SearchResultCell
         let result = searchResults[indexPath.row]
-        
-        cell.textLabel?.text = result.fileName
-        cell.detailTextLabel?.text = result.snippet ?? result.content
-        
-        // Apply theme
-        cell.backgroundColor = .clear
-        cell.textLabel?.textColor = CyberpunkTheme.textPrimary
-        cell.detailTextLabel?.textColor = CyberpunkTheme.textTertiary
-        
-        let selectedView = UIView()
-        selectedView.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.2)
-        cell.selectedBackgroundView = selectedView
-        
+        cell.configure(with: result)
         return cell
     }
 }
@@ -284,60 +196,89 @@ extension SearchViewController: UITableViewDataSource {
 extension SearchViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        
-        // Add haptic feedback
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
-        
-        // Animate cell selection
-        if let cell = tableView.cellForRow(at: indexPath) {
-            AnimationManager.shared.pulse(cell, scale: 1.03, duration: 0.2)
-        }
-        
         let result = searchResults[indexPath.row]
         // TODO: Navigate to file at specific line
-        print("Selected search result: \(result.fileName) at line \(result.line ?? 0)")
+        print("Selected: \(result.fileName) at line \(result.lineNumber)")
     }
     
-    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        // Add entrance animation for cells
-        guard !isSearching && !animatedCells.contains(indexPath) else { return }
-        animatedCells.insert(indexPath)
-        
-        cell.alpha = 0
-        cell.transform = CGAffineTransform(translationX: 50, y: 0)
-        
-        let delay = Double(indexPath.row) * 0.03
-        UIView.animate(
-            withDuration: 0.3,
-            delay: delay,
-            usingSpringWithDamping: 0.8,
-            initialSpringVelocity: 0.5,
-            options: .curveEaseOut,
-            animations: {
-                cell.alpha = 1
-                cell.transform = .identity
-            }
-        )
-        
-        // Add subtle glow to search results
-        cell.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
-        cell.layer.shadowOpacity = 0
-        cell.layer.shadowOffset = .zero
-        cell.layer.shadowRadius = 5
-        
-        UIView.animate(withDuration: 0.5, delay: delay + 0.2, options: .curveEaseOut, animations: {
-            cell.layer.shadowOpacity = 0.1
-        })
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 80
     }
 }
 
-// MARK: - Search Scope
-enum SearchScope: String {
-    case files
-    case code
-    case all
+// MARK: - SearchResultCell
+class SearchResultCell: UITableViewCell {
+    
+    private let fileNameLabel = UILabel()
+    private let lineContentLabel = UILabel()
+    private let metadataLabel = UILabel()
+    private let containerView = UIView()
+    
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        backgroundColor = .clear
+        selectionStyle = .none
+        
+        // Container
+        containerView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.3)
+        containerView.layer.cornerRadius = 8
+        containerView.layer.borderWidth = 1
+        containerView.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.2).cgColor
+        
+        // Labels
+        fileNameLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        fileNameLabel.textColor = CyberpunkTheme.primaryCyan
+        
+        lineContentLabel.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
+        lineContentLabel.textColor = CyberpunkTheme.textPrimary
+        lineContentLabel.numberOfLines = 1
+        
+        metadataLabel.font = .systemFont(ofSize: 11, weight: .regular)
+        metadataLabel.textColor = CyberpunkTheme.textTertiary
+        
+        // Add subviews
+        contentView.addSubview(containerView)
+        containerView.addSubview(fileNameLabel)
+        containerView.addSubview(lineContentLabel)
+        containerView.addSubview(metadataLabel)
+        
+        // Constraints
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        fileNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        lineContentLabel.translatesAutoresizingMaskIntoConstraints = false
+        metadataLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
+            
+            fileNameLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 8),
+            fileNameLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            fileNameLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+            
+            lineContentLabel.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor, constant: 4),
+            lineContentLabel.leadingAnchor.constraint(equalTo: fileNameLabel.leadingAnchor),
+            lineContentLabel.trailingAnchor.constraint(equalTo: fileNameLabel.trailingAnchor),
+            
+            metadataLabel.topAnchor.constraint(equalTo: lineContentLabel.bottomAnchor, constant: 4),
+            metadataLabel.leadingAnchor.constraint(equalTo: fileNameLabel.leadingAnchor),
+            metadataLabel.trailingAnchor.constraint(equalTo: fileNameLabel.trailingAnchor)
+        ])
+    }
+    
+    func configure(with result: SearchViewController.SearchResult) {
+        fileNameLabel.text = result.fileName
+        lineContentLabel.text = result.lineContent
+        metadataLabel.text = "Line \(result.lineNumber) • \(result.projectName)"
+    }
 }
-
-// MARK: - Search Result Model
-// Note: SearchResult is defined in SearchViewModel.swift

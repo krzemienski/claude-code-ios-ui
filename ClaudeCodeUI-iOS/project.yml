@@ -137,6 +137,8 @@ targets:
     dependencies:
       - target: ClaudeCodeUI
     settings:
+      PRODUCT_NAME: ClaudeCodeUITests
+      PRODUCT_BUNDLE_IDENTIFIER: com.claudecode.ui.tests
       TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ClaudeCodeUI.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ClaudeCodeUI"
       BUNDLE_LOADER: "$(TEST_HOST)"
 
@@ -149,6 +151,8 @@ targets:
     dependencies:
       - target: ClaudeCodeUI
     settings:
+      PRODUCT_NAME: ClaudeCodeUIUITests
+      PRODUCT_BUNDLE_IDENTIFIER: com.claudecode.ui.uitests
       TEST_TARGET_NAME: ClaudeCodeUI
 
   ClaudeCodeUIIntegrationTests:
@@ -160,6 +164,8 @@ targets:
     dependencies:
       - target: ClaudeCodeUI
     settings:
+      PRODUCT_NAME: ClaudeCodeUIIntegrationTests
+      PRODUCT_BUNDLE_IDENTIFIER: com.claudecode.ui.integrationtests
       TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ClaudeCodeUI.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ClaudeCodeUI"
       BUNDLE_LOADER: "$(TEST_HOST)"
 

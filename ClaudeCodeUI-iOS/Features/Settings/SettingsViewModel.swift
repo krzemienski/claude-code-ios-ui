@@ -86,6 +86,13 @@ class SettingsViewModel: ObservableObject {
     // MARK: - Data Management
     @Published var cacheSize = "0 MB"
     
+    // MARK: - Sync Settings
+    @Published var autoSyncEnabled = false {
+        didSet {
+            userDefaults.set(autoSyncEnabled, forKey: "AutoSyncEnabled")
+        }
+    }
+    
     // MARK: - About
     let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
     let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
@@ -96,9 +103,127 @@ class SettingsViewModel: ObservableObject {
     init() {
         loadSettings()
         calculateCacheSize()
+        
+        // Load auto-sync preference
+        autoSyncEnabled = userDefaults.bool(forKey: "AutoSyncEnabled")
+        
+        // Optionally fetch settings from backend on launch
+        if autoSyncEnabled {
+            fetchSettingsFromBackend()
+        }
     }
     
     // MARK: - Public Methods
+    
+    // MARK: - Backend Sync Methods
+    
+    @Published var isSyncing = false
+    @Published var syncStatus: String?
+    
+    func fetchSettingsFromBackend() {
+        Task {
+            isSyncing = true
+            syncStatus = nil
+            
+            do {
+                let backendSettings = try await APIClient.shared.fetchSettings()
+                
+                await MainActor.run {
+                    // Apply settings from backend
+                    if let themeString = backendSettings["theme"] as? String,
+                       let theme = AppTheme(rawValue: themeString) {
+                        self.selectedTheme = theme
+                    }
+                    
+                    if let size = backendSettings["fontSize"] as? Double {
+                        self.fontSize = size
+                    }
+                    
+                    if let glow = backendSettings["glowEffects"] as? Bool {
+                        self.glowEffectsEnabled = glow
+                    }
+                    
+                    if let animations = backendSettings["animations"] as? Bool {
+                        self.animationsEnabled = animations
+                    }
+                    
+                    if let lineNumbers = backendSettings["showLineNumbers"] as? Bool {
+                        self.showLineNumbers = lineNumbers
+                    }
+                    
+                    if let syntax = backendSettings["syntaxHighlighting"] as? Bool {
+                        self.syntaxHighlighting = syntax
+                    }
+                    
+                    if let tab = backendSettings["tabSize"] as? Int {
+                        self.tabSize = tab
+                    }
+                    
+                    if let wrap = backendSettings["wordWrap"] as? Bool {
+                        self.wordWrapEnabled = wrap
+                    }
+                    
+                    if let url = backendSettings["backendURL"] as? String {
+                        self.backendURL = url
+                    }
+                    
+                    self.isSyncing = false
+                    self.syncStatus = "Settings fetched successfully"
+                    
+                    // Save to local storage
+                    self.saveSettings()
+                    self.applyTheme()
+                    
+                    // Haptic feedback
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                }
+            } catch {
+                await MainActor.run {
+                    self.isSyncing = false
+                    self.syncStatus = "Failed to fetch settings: \(error.localizedDescription)"
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+            }
+        }
+    }
+    
+    func syncSettingsToBackend() {
+        Task {
+            isSyncing = true
+            syncStatus = nil
+            
+            let settings: [String: Any] = [
+                "theme": selectedTheme.rawValue,
+                "fontSize": fontSize,
+                "glowEffects": glowEffectsEnabled,
+                "animations": animationsEnabled,
+                "showLineNumbers": showLineNumbers,
+                "syntaxHighlighting": syntaxHighlighting,
+                "tabSize": tabSize,
+                "wordWrap": wordWrapEnabled,
+                "backendURL": backendURL,
+                "lastSyncDate": Date().timeIntervalSince1970
+            ]
+            
+            do {
+                try await APIClient.shared.syncSettings(settings)
+                
+                await MainActor.run {
+                    self.isSyncing = false
+                    self.syncStatus = "Settings synced successfully"
+                    
+                    // Haptic feedback
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                }
+            } catch {
+                await MainActor.run {
+                    self.isSyncing = false
+                    self.syncStatus = "Failed to sync settings: \(error.localizedDescription)"
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+            }
+        }
+    }
     
     func testConnection() {
         isTestingConnection = true
@@ -265,6 +390,11 @@ class SettingsViewModel: ObservableObject {
         
         if let data = try? JSONEncoder().encode(settings) {
             userDefaults.set(data, forKey: settingsKey)
+        }
+        
+        // Sync to backend if auto-sync is enabled
+        if autoSyncEnabled {
+            syncSettingsToBackend()
         }
     }
     

@@ -221,6 +221,31 @@ app.get('/api/projects/:projectName/sessions', async (req, res) => {
     }
 });
 
+// Create a new session for a project
+app.post('/api/projects/:projectName/sessions', async (req, res) => {
+    try {
+        const { projectName } = req.params;
+        // Generate a unique session ID
+        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Create a basic session object
+        const newSession = {
+            id: sessionId,
+            projectId: projectName,
+            summary: 'New chat session',
+            messageCount: 0,
+            lastActivity: new Date().toISOString(),
+            cwd: projectName,
+            status: 'active'
+        };
+        
+        // Return the created session
+        res.json(newSession);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Get messages for a specific session
 app.get('/api/projects/:projectName/sessions/:sessionId/messages', async (req, res) => {
     try {

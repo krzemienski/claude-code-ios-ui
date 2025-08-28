@@ -8,6 +8,7 @@
 import UIKit
 import Foundation
 import PhotosUI
+import SwiftData
 
 // Import types from MessageTypes.swift to avoid redeclaration
 // EnhancedMessageCell is defined in EnhancedMessageCell.swift
@@ -37,6 +38,12 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // Debug mode - shows raw JSON responses inline
     private let showRawJSON = false // Set to false in production
     
+    // TODO[CM-CHAT-05]: Update connection status UI dynamically
+    // ISSUE: Connection status view not reflecting WebSocket state
+    // ACCEPTANCE: Shows "Connecting...", "Connected", "Disconnected", "Reconnecting..."
+    // PRIORITY: P0 - CRITICAL
+    // IMPLEMENTATION: Listen to WebSocketManagerDelegate callbacks
+    
     // Connection status UI
     private let connectionStatusView = UIView()
     private let connectionStatusLabel = UILabel()
@@ -60,6 +67,16 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private var currentSessionId: String?
     private let emptyStateView = NoDataView(type: .noMessages)
     
+    // TODO[CM-CHAT-03]: Implement message persistence with SwiftData
+    // ISSUE: Messages not saved, lost on app restart
+    // ACCEPTANCE: Messages persist using SwiftData, reload on launch
+    // PRIORITY: P0 - CRITICAL
+    // IMPLEMENTATION:
+    //   1. Create MessageEntity SwiftData model
+    //   2. Save messages on receive/send
+    //   3. Load messages in viewDidLoad
+    //   4. Limit to last 100 messages for memory
+    
     // Add isLoading property needed by BaseViewController
     public override var isLoading: Bool {
         didSet {
@@ -74,6 +91,17 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // FIX #1: Per-message status tracking with timers
     private var messageStatusTimers: [String: Timer] = [:]
     private var lastSentMessageId: String?
+    
+    // TODO[CM-CHAT-01]: Fix message status state machine
+    // ISSUE: Status stuck on 'sending', never updates to 'delivered' or 'read'
+    // ACCEPTANCE: Status changes: sending → delivered (on WS response) → read (on view)
+    // PRIORITY: P0 - CRITICAL
+    // BACKEND: Check for status field in WebSocket response
+    // IMPLEMENTATION:
+    //   1. Track messageId in messageStatusTimers dict
+    //   2. On WebSocket response with matching ID, update to 'delivered'
+    //   3. On message visible in viewport, update to 'read'
+    //   4. Clear timer on status change
     
     // MARK: - UI Components
     
@@ -91,19 +119,19 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         tableView.dataSource = self
         tableView.prefetchDataSource = self
         
-        // Register all message cell types
-        tableView.register(TextMessageCell.self, forCellReuseIdentifier: TextMessageCell.identifier)
-        tableView.register(ToolUseMessageCell.self, forCellReuseIdentifier: ToolUseMessageCell.identifier)
-        tableView.register(ThinkingMessageCell.self, forCellReuseIdentifier: ThinkingMessageCell.identifier)
-        tableView.register(CodeMessageCell.self, forCellReuseIdentifier: CodeMessageCell.identifier)
-        tableView.register(ErrorMessageCell.self, forCellReuseIdentifier: ErrorMessageCell.identifier)
-        tableView.register(SystemMessageCell.self, forCellReuseIdentifier: SystemMessageCell.identifier)
-        tableView.register(TypingIndicatorCell.self, forCellReuseIdentifier: TypingIndicatorCell.identifier)
-        
-        // Legacy cells for backward compatibility
-        // Register EnhancedMessageCell from separate file (if included in project)
-        // tableView.register(EnhancedMessageCell.self, forCellReuseIdentifier: EnhancedMessageCell.identifier)
+        // Register only existing cell types - FIX: Non-existent cell classes were causing empty table view
+        // Using ChatMessageCell for all message types since other cell classes don't exist
         tableView.register(ChatMessageCell.self, forCellReuseIdentifier: ChatMessageCell.identifier)
+        
+        // These cell classes don't exist in the project - commenting out to fix empty table view issue:
+        // tableView.register(TextMessageCell.self, forCellReuseIdentifier: TextMessageCell.identifier)
+        // tableView.register(ToolUseMessageCell.self, forCellReuseIdentifier: ToolUseMessageCell.identifier)
+        // tableView.register(ThinkingMessageCell.self, forCellReuseIdentifier: ThinkingMessageCell.identifier)
+        // tableView.register(CodeMessageCell.self, forCellReuseIdentifier: CodeMessageCell.identifier)
+        // tableView.register(ErrorMessageCell.self, forCellReuseIdentifier: ErrorMessageCell.identifier)
+        // tableView.register(SystemMessageCell.self, forCellReuseIdentifier: SystemMessageCell.identifier)
+        // tableView.register(TypingIndicatorCell.self, forCellReuseIdentifier: TypingIndicatorCell.identifier)
+        // tableView.register(EnhancedMessageCell.self, forCellReuseIdentifier: EnhancedMessageCell.identifier)
         
         tableView.estimatedRowHeight = 100
         tableView.rowHeight = UITableView.automaticDimension
@@ -204,6 +232,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         setupUI()
         setupNavigationBar()
         setupKeyboardObservers()
+        
+        // CM-CHAT-03: Load persisted messages from SwiftData
+        loadPersistedMessages()
         
         // TODO[CM-Chat-03]: Add pull-to-refresh with haptic feedback
         // ACCEPTANCE: Cyberpunk-themed refresh control, haptic on trigger
@@ -1090,13 +1121,24 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         print("\n🚀🚀🚀 [SEND_MESSAGE] Starting at \(Date().ISO8601Format())")
         print("📤📤📤 sendMessage() called")
         
+        // CRITICAL DEBUG: Check inputTextView content before trimming
+        print("🔍🔍🔍 [INPUT_DEBUG] Raw inputTextView.text:")
+        if let rawText = inputTextView.text {
+            print("  Length: \(rawText.count)")
+            print("  Content: '\(rawText)'")
+            print("  First 50 chars: '\(String(rawText.prefix(50)))'")
+            print("  Last 50 chars: '\(String(rawText.suffix(50)))'")
+        } else {
+            print("  inputTextView.text is nil!")
+        }
+        
         guard let text = inputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !text.isEmpty else { 
             print("❌ [SEND_MESSAGE] Empty text, aborting at \(Date().ISO8601Format())")
             return 
         }
         
-        print("📝 [SEND_MESSAGE] Text content: '\(text)' at \(Date().ISO8601Format())")
+        print("📝 [SEND_MESSAGE] Trimmed text content: '\(text)' at \(Date().ISO8601Format())")
         print("📁 [SEND_MESSAGE] Project: \(project.name) at path: \(project.path)")
         print("🔑 [SEND_MESSAGE] Project ID: \(project.id)")
         
@@ -1130,6 +1172,27 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // FIX #1: Start per-message status timer
         print("⏱️ [SEND_MESSAGE] Starting status timer for message \(messageId) at \(Date().ISO8601Format())")
         startMessageStatusTimer(for: messageId)
+        
+        // CM-CHAT-03: Save message to SwiftData for persistence
+        Task { @MainActor in
+            do {
+                guard let sessionId = self.currentSessionId else {
+                    print("⚠️ [PERSISTENCE] No session ID available")
+                    return
+                }
+                let container = SwiftDataContainer.shared
+                if let session = try container.container.mainContext.fetch(
+                    FetchDescriptor<Session>(
+                        predicate: #Predicate { $0.id == sessionId }
+                    )
+                ).first {
+                    _ = try container.createMessage(for: session, role: .user, content: userMessage.content)
+                    print("💾 [PERSISTENCE] Saved user message to SwiftData")
+                }
+            } catch {
+                print("❌ [PERSISTENCE] Failed to save message: \(error)")
+            }
+        }
         
         // Add to messages array with animation
         print("➕ [SEND_MESSAGE] Adding message to array at \(Date().ISO8601Format())")
@@ -1180,7 +1243,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         
         let messageData: [String: Any] = [
             "type": "claude-command",
-            "content": text,  // ✅ FIXED: Using 'content' as backend expects
+            "command": text,  // ✅ FIXED: Using 'command' as backend expects
             "projectPath": project.path,  // ✅ FIXED: At top level, not nested
             "sessionId": sessionId as Any  // ✅ FIXED: At top level, not nested
         ]
@@ -1531,16 +1594,122 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         switch state {
         case .disconnected:
             print("   📵 State = DISCONNECTED")
+            updateNavigationStatusIndicator(isConnected: false, isConnecting: false)
         case .connecting:
             print("   🔄 State = CONNECTING...")
+            updateNavigationStatusIndicator(isConnected: false, isConnecting: true)
         case .connected:
             print("   ✅ State = CONNECTED")
+            updateNavigationStatusIndicator(isConnected: true, isConnecting: false)
         case .reconnecting:
             print("   🔁 State = RECONNECTING...")
+            updateNavigationStatusIndicator(isConnected: false, isConnecting: true)
         case .failed:
             print("   ❌ State = FAILED")
+            updateNavigationStatusIndicator(isConnected: false, isConnecting: false)
         }
         // Status updates will be handled in the individual connection methods
+    }
+    
+    // CM-CHAT-03: Load persisted messages from SwiftData
+    private func loadPersistedMessages() {
+        Task { @MainActor in
+            do {
+                guard let sessionId = self.currentSessionId else {
+                    print("⚠️ [PERSISTENCE] No session ID available for loading messages")
+                    return
+                }
+                let container = SwiftDataContainer.shared
+                let descriptor = FetchDescriptor<Session>(
+                    predicate: #Predicate { $0.id == sessionId }
+                )
+                
+                guard let session = try container.container.mainContext.fetch(descriptor).first else {
+                    print("⚠️ [PERSISTENCE] Session not found in SwiftData: \(sessionId)")
+                    return
+                }
+                
+                let messages = try container.fetchMessages(for: session)
+                print("💾 [PERSISTENCE] Loaded \(messages.count) persisted messages")
+                
+                // Convert SwiftData Messages to EnhancedChatMessages
+                for message in messages.sortedByTimestamp() {
+                    let chatMessage = EnhancedChatMessage(
+                        id: message.id,
+                        content: message.content,
+                        isUser: message.role.isUser,
+                        timestamp: message.timestamp,
+                        status: .delivered  // Persisted messages are delivered
+                    )
+                    chatMessage.detectMessageType()
+                    self.messages.append(chatMessage)
+                }
+                
+                // Reload table view
+                DispatchQueue.main.async {
+                    self.tableView.reloadData()
+                    if !self.messages.isEmpty {
+                        let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                        self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
+                    }
+                }
+            } catch {
+                print("❌ [PERSISTENCE] Failed to load persisted messages: \(error)")
+            }
+        }
+    }
+    
+    // CM-CHAT-05: Add connection status indicator to navigation bar
+    private func updateNavigationStatusIndicator(isConnected: Bool, isConnecting: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Create status indicator view
+            let statusView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
+            statusView.layer.cornerRadius = 5
+            statusView.clipsToBounds = true
+            
+            // Set color based on connection state
+            if isConnected {
+                statusView.backgroundColor = CyberpunkTheme.success // Green for connected
+            } else if isConnecting {
+                statusView.backgroundColor = .systemOrange // Orange for connecting/reconnecting
+                
+                // Add pulsing animation for connecting state
+                let pulseAnimation = CABasicAnimation(keyPath: "opacity")
+                pulseAnimation.fromValue = 1.0
+                pulseAnimation.toValue = 0.3
+                pulseAnimation.duration = 0.8
+                pulseAnimation.autoreverses = true
+                pulseAnimation.repeatCount = .infinity
+                statusView.layer.add(pulseAnimation, forKey: "pulse")
+            } else {
+                statusView.backgroundColor = CyberpunkTheme.accentPink // Red for disconnected/failed
+            }
+            
+            // Add glow effect
+            statusView.layer.shadowColor = statusView.backgroundColor?.cgColor
+            statusView.layer.shadowOffset = .zero
+            statusView.layer.shadowRadius = 5
+            statusView.layer.shadowOpacity = 0.8
+            
+            // Create bar button item with the status indicator
+            let statusBarItem = UIBarButtonItem(customView: statusView)
+            
+            // Get existing right bar items
+            var rightItems = self.navigationItem.rightBarButtonItems ?? []
+            
+            // Remove any existing status indicator (first item if it's a view)
+            if let firstItem = rightItems.first,
+               firstItem.customView != nil,
+               firstItem.customView?.frame.width == 10 {
+                rightItems.removeFirst()
+            }
+            
+            // Insert status indicator at the beginning
+            rightItems.insert(statusBarItem, at: 0)
+            self.navigationItem.rightBarButtonItems = rightItems
+        }
     }
     
     private func updateConnectionStatus(_ text: String, color: UIColor) {
@@ -1601,6 +1770,17 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                         preliminaryContent = nestedContent
                     } else if let nestedMessage = data["message"] as? String, !nestedMessage.isEmpty {
                         preliminaryContent = nestedMessage
+                    } else if let messageDict = data["message"] as? [String: Any],
+                              let contentArray = messageDict["content"] as? [[String: Any]] {
+                        // Handle Claude API response structure: data.message.content[{type: 'text', text: '...'}]
+                        let textParts = contentArray.compactMap { item -> String? in
+                            if let type = item["type"] as? String, type == "text",
+                               let text = item["text"] as? String {
+                                return text
+                            }
+                            return nil
+                        }
+                        preliminaryContent = textParts.joined(separator: "\n")
                     }
                 } else if let messageText = message.payload?["message"] as? String, !messageText.isEmpty {
                     preliminaryContent = messageText
@@ -1610,22 +1790,28 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 
                 // Check if we have content to evaluate
                 if let content = preliminaryContent {
-                    // FIX: More intelligent filtering - only skip if it's metadata-like content
-                    // Don't filter legitimate assistant responses
+                    // CM-CHAT-02: FIXED - More lenient assistant message filtering
+                    // Only filter out truly empty messages or pure session ID strings
+                    // Allow all legitimate assistant responses including those with UUIDs
+                    
                     let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
                     
-                    // Only skip if it's JUST a UUID with nothing else
-                    // UUID format: 8-4-4-4-12 hexadecimal characters
-                    let uuidRegex = try? NSRegularExpression(pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-                    let isJustUUID = uuidRegex?.firstMatch(in: trimmedContent, range: NSRange(trimmedContent.startIndex..., in: trimmedContent)) != nil
+                    // Very strict filtering - only skip if:
+                    // 1. Content is completely empty
+                    // 2. Content is EXACTLY a session ID (format: "session_" followed by UUID)
+                    let isEmpty = trimmedContent.isEmpty
                     
-                    // Also check for other metadata patterns (e.g., just numbers, just IDs)
-                    let isJustNumber = Int(trimmedContent) != nil
-                    let isSessionId = trimmedContent.hasPrefix("session_") && trimmedContent.count < 50
-                    let isMetadata = isJustUUID || isJustNumber || isSessionId || trimmedContent.isEmpty
+                    // Check if it's exactly a session ID using regex pattern
+                    let sessionIdPattern = "^session_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                    let isExactSessionId = trimmedContent.range(of: sessionIdPattern, options: .regularExpression) != nil && trimmedContent.count == 45 // "session_" (8) + UUID (36) + "-" (1) = 45
                     
-                    if isMetadata {
-                        print("🚫 [ChatVC] Skipping metadata-only message: '\(trimmedContent)' at \(Date().timeIntervalSince1970)")
+                    if isEmpty {
+                        print("🚫 [ChatVC] Skipping empty message at \(Date().timeIntervalSince1970)")
+                        return
+                    }
+                    
+                    if isExactSessionId {
+                        print("🚫 [ChatVC] Skipping pure session ID metadata at \(Date().timeIntervalSince1970)")
                         return
                     }
                     
@@ -1660,6 +1846,18 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     content = nestedContent
                 } else if let nestedMessage = data["message"] as? String {
                     content = nestedMessage
+                } else if let messageDict = data["message"] as? [String: Any],
+                          let contentArray = messageDict["content"] as? [[String: Any]] {
+                    // Handle Claude API response structure: data.message.content[{type: 'text', text: '...'}]
+                    let textParts = contentArray.compactMap { item -> String? in
+                        if let type = item["type"] as? String, type == "text",
+                           let text = item["text"] as? String {
+                            return text
+                        }
+                        return nil
+                    }
+                    content = textParts.joined(separator: "\n")
+                    print("📊 [HANDLE_WS] Extracted text from Claude API structure: \(content.prefix(100))...")
                 } else {
                     // Try to extract any text field from data
                     content = data.values.compactMap { $0 as? String }.first ?? ""
@@ -1740,6 +1938,27 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 }
                 
                 self.handleClaudeCompleteResponse(content: displayContent)
+                
+                // CM-CHAT-03: Save assistant message to SwiftData for persistence
+                Task { @MainActor in
+                    do {
+                        guard let sessionId = self.currentSessionId else {
+                            print("⚠️ [PERSISTENCE] No session ID available for saving assistant message")
+                            return
+                        }
+                        let container = SwiftDataContainer.shared
+                        if let session = try container.container.mainContext.fetch(
+                            FetchDescriptor<Session>(
+                                predicate: #Predicate { $0.id == sessionId }
+                            )
+                        ).first {
+                            _ = try container.createMessage(for: session, role: .assistant, content: displayContent)
+                            print("💾 [PERSISTENCE] Saved assistant message to SwiftData")
+                        }
+                    } catch {
+                        print("❌ [PERSISTENCE] Failed to save assistant message: \(error)")
+                    }
+                }
                 
             case .tool_use:
                 // Handle tool use messages with enhanced formatting
@@ -1975,6 +2194,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         print("📝 [COMPLETE_RESPONSE] Content length: \(content.count) chars")
         print("📊 [COMPLETE_RESPONSE] Content preview: \(String(content.prefix(200)))...")
         print("⏱️ [COMPLETE_RESPONSE] Timestamp: \(Date().timeIntervalSince1970)")
+        print("\n🔍🔍🔍 DEBUG - Messages array BEFORE adding response:")
+        print("   Total messages: \(messages.count)")
+        for (index, msg) in messages.enumerated() {
+            print("   [\(index)]: role=\(msg.isUser ? "user" : "assistant"), status=\(msg.status), content=\(msg.content.prefix(50))...")
+        }
         
         // Skip empty responses entirely
         guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -2033,13 +2257,27 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 status: .delivered
             )
             chatMessage.messageType = .claudeResponse
+            
+            print("\n➕ DEBUG - Adding new Claude message:")
+            print("   ID: \(chatMessage.id)")
+            print("   Content: \(chatMessage.content.prefix(100))...")
+            print("   Status: \(chatMessage.status)")
+            print("   Messages count before: \(messages.count)")
+            
             messages.append(chatMessage)
             
-            // Insert with animation
-            let indexPath = IndexPath(row: messages.count - 1, section: 0)
-            tableView.insertRows(at: [indexPath], with: .fade)
+            print("   Messages count after: \(messages.count)")
+            print("   Table view sections: \(tableView.numberOfSections)")
+            print("   Table view rows before reload: \(tableView.numberOfRows(inSection: 0))")
+            
+            // Reload the table view to show the new message
+            tableView.reloadData()
+            
+            print("   ✅ Reloaded table view")
+            print("   Table view rows after reload: \(tableView.numberOfRows(inSection: 0))")
             
             // Animate the message cell after insertion
+            let indexPath = IndexPath(row: messages.count - 1, section: 0)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
                 if let cell = self?.tableView.cellForRow(at: indexPath) {
                     // TODO: Add animations when MessageAnimator is added to project
@@ -2377,10 +2615,13 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         let count = isShowingTypingIndicator ? messages.count + 1 : messages.count
+        print("🔢 DEBUG - numberOfRowsInSection called: messages=\(messages.count), typingIndicator=\(isShowingTypingIndicator), returning=\(count)")
         return count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        print("📱 DEBUG - cellForRowAt called: row=\(indexPath.row), messages.count=\(messages.count), typingIndicator=\(isShowingTypingIndicator)")
+        
         // Show typing indicator if it's the last row
         if isShowingTypingIndicator && indexPath.row == messages.count {
             let cell = tableView.dequeueReusableCell(withIdentifier: TypingIndicatorCell.identifier, for: indexPath)
@@ -2390,55 +2631,29 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         }
         
         // Get message and determine cell type
+        guard indexPath.row < messages.count else {
+            print("⚠️ DEBUG - Index out of bounds: row=\(indexPath.row), messages.count=\(messages.count)")
+            return UITableViewCell()
+        }
+        
         let message = messages[indexPath.row]
+        print("   Message at row \(indexPath.row): isUser=\(message.isUser), type=\(message.messageType), content=\(message.content.prefix(50))...")
         
-        // Select appropriate cell based on message type
-        let cellIdentifier: String
-        switch message.messageType {
-        case .toolUse, .toolResult:
-            cellIdentifier = ToolUseMessageCell.identifier
-        case .thinking:
-            cellIdentifier = ThinkingMessageCell.identifier
-        case .code:
-            cellIdentifier = CodeMessageCell.identifier
-        case .error:
-            cellIdentifier = ErrorMessageCell.identifier
-        case .system:
-            cellIdentifier = SystemMessageCell.identifier
-        default:
-            cellIdentifier = TextMessageCell.identifier
+        // FIX: Use ChatMessageCell for all message types since other cell classes don't exist
+        // This was causing the empty table view issue - dequeueReusableCell was failing for non-existent cells
+        let cell = tableView.dequeueReusableCell(withIdentifier: ChatMessageCell.identifier, for: indexPath) as! ChatMessageCell
+        cell.configure(with: message)
+        
+        // Set retry handler for failed messages if needed
+        // Note: ChatMessageCell may not have onRetryTapped property - will need to check
+        if message.isUser && message.status == .failed {
+            // TODO: Implement retry functionality in ChatMessageCell if needed
+            // cell.onRetryTapped = { [weak self] in
+            //     self?.retryFailedMessage(at: indexPath)
+            // }
         }
         
-        // Dequeue and configure appropriate cell
-        if let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? BaseMessageCell {
-            cell.configure(with: message)
-            
-            // Set retry handler for failed messages
-            if message.isUser && message.status == .failed {
-                cell.onRetryTapped = { [weak self] in
-                    self?.retryFailedMessage(at: indexPath)
-                }
-            }
-            
-            return cell
-        } else if message.messageType == .system,
-                  let cell = tableView.dequeueReusableCell(withIdentifier: SystemMessageCell.identifier, for: indexPath) as? SystemMessageCell {
-            cell.configure(with: message)
-            return cell
-        } else {
-            // Fallback to text cell
-            let cell = tableView.dequeueReusableCell(withIdentifier: TextMessageCell.identifier, for: indexPath) as! TextMessageCell
-            cell.configure(with: message)
-            
-            // Set retry handler for failed messages
-            if message.isUser && message.status == .failed {
-                cell.onRetryTapped = { [weak self] in
-                    self?.retryFailedMessage(at: indexPath)
-                }
-            }
-            
-            return cell
-        }
+        return cell
     }
     
     // MARK: - UITableViewDelegate
@@ -2517,7 +2732,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // Send via WebSocket with CORRECT format
         let messageDict: [String: Any] = [
             "type": "claude-command",
-            "content": messageContent,  // ✅ FIXED: Using 'content' instead of 'command'
+            "command": messageContent,  // ✅ FIXED: Using 'command' as backend expects
             "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
             "sessionId": currentSessionId ?? ""  // ✅ FIXED: At top level, not nested
         ]

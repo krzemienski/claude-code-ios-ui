@@ -82,11 +82,11 @@ struct MCPServerListView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("MCP Servers")
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 
                 Text("\(viewModel.servers.count) servers configured")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                    .foregroundColor(Color(CyberpunkTheme.textTertiary))
             }
             
             Spacer()
@@ -94,13 +94,13 @@ struct MCPServerListView: View {
             Button(action: { showingAddServer = true }) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 24))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
-                    .shadow(color: Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.6), radius: 4)
+                    .foregroundColor(Color(CyberpunkTheme.primaryCyan))
+                    .shadow(color: Color(CyberpunkTheme.primaryCyan).opacity(0.6), radius: 4)
             }
         }
         .padding()
         .background(
-            Color(UIColor.CyberpunkTheme.surface)
+            Color(CyberpunkTheme.surface)
                 .opacity(0.3)
         )
     }
@@ -108,26 +108,26 @@ struct MCPServerListView: View {
     private var searchBar: some View {
         HStack {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                .foregroundColor(Color(CyberpunkTheme.textTertiary))
             
             TextField("Search servers...", text: $searchText)
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
-                .accentColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                .foregroundColor(Color(CyberpunkTheme.textPrimary))
+                .accentColor(Color(CyberpunkTheme.primaryCyan))
             
             if !searchText.isEmpty {
                 Button(action: { searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                        .foregroundColor(Color(CyberpunkTheme.textTertiary))
                 }
             }
         }
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(UIColor.CyberpunkTheme.surface))
+                .fill(Color(CyberpunkTheme.surface))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.3), lineWidth: 1)
+                        .stroke(Color(CyberpunkTheme.primaryCyan).opacity(0.3), lineWidth: 1)
                 )
         )
     }
@@ -153,12 +153,12 @@ struct MCPServerListView: View {
     private var loadingView: some View {
         VStack(spacing: 20) {
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: Color(UIColor.CyberpunkTheme.primaryCyan)))
+                .progressViewStyle(CircularProgressViewStyle(tint: Color(CyberpunkTheme.primaryCyan)))
                 .scaleEffect(1.5)
             
             Text("Loading servers...")
                 .font(.system(size: 16))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                .foregroundColor(Color(CyberpunkTheme.textSecondary))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -167,16 +167,16 @@ struct MCPServerListView: View {
         VStack(spacing: 24) {
             Image(systemName: "server.rack")
                 .font(.system(size: 64))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                .foregroundColor(Color(CyberpunkTheme.textTertiary))
             
             VStack(spacing: 8) {
                 Text("No MCP Servers")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 
                 Text("Add your first MCP server to get started")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                     .multilineTextAlignment(.center)
             }
             
@@ -190,8 +190,8 @@ struct MCPServerListView: View {
                 .background(
                     LinearGradient(
                         colors: [
-                            Color(UIColor.CyberpunkTheme.primaryCyan),
-                            Color(UIColor.CyberpunkTheme.gradientBlue)
+                            Color(CyberpunkTheme.primaryCyan),
+                            Color(CyberpunkTheme.gradientBlue)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -199,7 +199,7 @@ struct MCPServerListView: View {
                 )
                 .foregroundColor(.white)
                 .cornerRadius(12)
-                .shadow(color: Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.4), radius: 8)
+                .shadow(color: Color(CyberpunkTheme.primaryCyan).opacity(0.4), radius: 8)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -210,15 +210,15 @@ struct MCPServerListView: View {
         VStack(spacing: 16) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 48))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                .foregroundColor(Color(CyberpunkTheme.textTertiary))
             
             Text("No servers found")
                 .font(.system(size: 18, weight: .medium))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                .foregroundColor(Color(CyberpunkTheme.textPrimary))
             
             Text("Try a different search term")
                 .font(.system(size: 14))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                .foregroundColor(Color(CyberpunkTheme.textSecondary))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
@@ -227,11 +227,11 @@ struct MCPServerListView: View {
     private func errorBanner(message: String) -> some View {
         HStack {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(Color(UIColor.CyberpunkTheme.error))
+                .foregroundColor(Color(CyberpunkTheme.error))
             
             Text(message)
                 .font(.system(size: 14))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                .foregroundColor(Color(CyberpunkTheme.textPrimary))
                 .lineLimit(2)
             
             Spacer()
@@ -240,16 +240,16 @@ struct MCPServerListView: View {
                 viewModel.errorMessage = nil
             }) {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                    .foregroundColor(Color(CyberpunkTheme.textTertiary))
             }
         }
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(UIColor.CyberpunkTheme.error).opacity(0.1))
+                .fill(Color(CyberpunkTheme.error).opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(UIColor.CyberpunkTheme.error).opacity(0.3), lineWidth: 1)
+                        .stroke(Color(CyberpunkTheme.error).opacity(0.3), lineWidth: 1)
                 )
         )
     }
@@ -264,11 +264,11 @@ struct MCPServerRow: View {
             HStack(spacing: 16) {
                 // Status indicator
                 Circle()
-                    .fill(server.isConnected ? Color(UIColor.CyberpunkTheme.success) : Color(UIColor.CyberpunkTheme.textTertiary))
+                    .fill(server.isConnected ? Color(CyberpunkTheme.success) : Color(CyberpunkTheme.textTertiary))
                     .frame(width: 8, height: 8)
                     .overlay(
                         Circle()
-                            .stroke(server.isConnected ? Color(UIColor.CyberpunkTheme.success) : Color.clear, lineWidth: 2)
+                            .stroke(server.isConnected ? Color(CyberpunkTheme.success) : Color.clear, lineWidth: 2)
                             .frame(width: 16, height: 16)
                             .opacity(server.isConnected ? 0.5 : 0)
                     )
@@ -278,22 +278,22 @@ struct MCPServerRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(server.name)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                        .foregroundColor(Color(CyberpunkTheme.textPrimary))
                     
                     Text(server.description)
                         .font(.system(size: 12))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                        .foregroundColor(Color(CyberpunkTheme.textSecondary))
                         .lineLimit(1)
                     
                     HStack(spacing: 8) {
                         Label(server.type.rawValue, systemImage: server.type.icon)
                             .font(.system(size: 11))
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                         
                         if server.isDefault {
                             Label("Default", systemImage: "star.fill")
                                 .font(.system(size: 11))
-                                .foregroundColor(Color(UIColor.CyberpunkTheme.warning))
+                                .foregroundColor(Color(CyberpunkTheme.warning))
                         }
                     }
                 }
@@ -303,18 +303,18 @@ struct MCPServerRow: View {
                 // Chevron
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                    .foregroundColor(Color(CyberpunkTheme.textTertiary))
             }
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(UIColor.CyberpunkTheme.surface))
+                    .fill(Color(CyberpunkTheme.surface))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(
                                 server.isConnected ? 
-                                Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.3) :
-                                Color(UIColor.CyberpunkTheme.border),
+                                Color(CyberpunkTheme.primaryCyan).opacity(0.3) :
+                                Color(CyberpunkTheme.border),
                                 lineWidth: 1
                             )
                     )
@@ -361,7 +361,7 @@ struct AddMCPServerView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Server Type")
                                 .font(.system(size: 14))
-                                .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                                .foregroundColor(Color(CyberpunkTheme.textSecondary))
                             
                             Picker("Type", selection: $selectedType) {
                                 ForEach(MCPServerType.allCases, id: \.self) { type in
@@ -377,9 +377,9 @@ struct AddMCPServerView: View {
                         Toggle(isOn: $isDefault) {
                             Text("Set as default server")
                                 .font(.system(size: 14))
-                                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                                .foregroundColor(Color(CyberpunkTheme.textPrimary))
                         }
-                        .tint(Color(UIColor.CyberpunkTheme.primaryCyan))
+                        .tint(Color(CyberpunkTheme.primaryCyan))
                     }
                     .padding()
                 }
@@ -391,7 +391,7 @@ struct AddMCPServerView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.textSecondary))
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -409,7 +409,7 @@ struct AddMCPServerView: View {
                         viewModel.addServer(server)
                         dismiss()
                     }
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     .disabled(name.isEmpty || url.isEmpty)
                 }
             }
@@ -420,7 +420,7 @@ struct AddMCPServerView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.system(size: 14))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                .foregroundColor(Color(CyberpunkTheme.textSecondary))
             
             Group {
                 if isSecure {
@@ -432,14 +432,14 @@ struct AddMCPServerView: View {
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(UIColor.CyberpunkTheme.surface))
+                    .fill(Color(CyberpunkTheme.surface))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(UIColor.CyberpunkTheme.border), lineWidth: 1)
+                            .stroke(Color(CyberpunkTheme.border), lineWidth: 1)
                     )
             )
-            .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
-            .accentColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+            .foregroundColor(Color(CyberpunkTheme.textPrimary))
+            .accentColor(Color(CyberpunkTheme.primaryCyan))
         }
     }
 }

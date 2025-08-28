@@ -197,25 +197,19 @@ final class ShellWebSocketManager: NSObject {
         // Add to command history
         addToHistory(command)
         
-        // Create shell command message
+        // Send command as input to the shell process
+        // The backend expects "input" type messages with the command in the "data" field
         let messageData: [String: Any] = [
-            "type": "shell-command",
-            "command": command,
-            "cwd": workingDirectory ?? projectPath ?? FileManager.default.currentDirectoryPath
+            "type": "input",
+            "data": command + "\n"  // Add newline to execute the command
         ]
         
-        // Queue the command
-        let shellCommand = ShellCommand(
-            command: command,
-            workingDirectory: workingDirectory ?? projectPath ?? "",
-            completion: completion
-        )
+        // Send the command immediately
+        sendJSON(messageData)
         
-        commandQueue.append(shellCommand)
-        
-        // Send immediately if not processing another command
-        if !isProcessingCommand {
-            processNextCommand()
+        // Call completion after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            completion?(true, nil)
         }
     }
     

@@ -17,9 +17,6 @@ import UIKit
 // MARK: - MCPServerListViewController
 // Already implemented in Features/MCP/MCPServerListViewController.swift
 
-// MARK: - SearchViewController
-// Already implemented in Features/Search/SearchViewController.swift
-
 // MARK: - TerminalViewController
 // Already implemented in Features/Terminal/TerminalViewController.swift
 
@@ -28,3 +25,6 @@ import UIKit
 
 // MARK: - SessionListViewController (for navigation)
 // Already implemented in Features/Sessions/SessionListViewController.swift
+
+// MARK: - SearchViewController
+// Already implemented in Features/Search/SearchViewController.swift

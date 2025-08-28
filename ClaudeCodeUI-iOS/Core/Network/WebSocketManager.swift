@@ -19,7 +19,16 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
     // MARK: - Properties
     weak var delegate: WebSocketManagerDelegate?
     private var webSocketTask: URLSessionWebSocketTask?
-    private let session = URLSession(configuration: .default)
+    private lazy var session: URLSession = {
+        let config = URLSessionConfiguration.default
+        // Set a proper User-Agent to avoid iOS crash
+        let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        config.httpAdditionalHeaders = [
+            "User-Agent": "ClaudeCodeUI/\(appVersion) (iOS; Build/\(buildNumber))"
+        ]
+        return URLSession(configuration: config)
+    }()
     private var pingTimer: Timer?
     private var reconnectTimer: Timer?
     
@@ -37,6 +46,13 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
             }
         }
     }
+    
+    // TODO[CM-CHAT-04]: Implement exponential backoff for reconnection
+    // ISSUE: Fixed 3-second reconnect, needs exponential backoff
+    // ACCEPTANCE: 1s, 2s, 4s, 8s, 16s, max 30s retry intervals
+    // PRIORITY: P0 - CRITICAL
+    // NOTES: Reset backoff on successful connection
+    // CURRENT: Already implemented below with exponential formula
     
     // Reconnection settings
     private var enableAutoReconnect = true
@@ -410,6 +426,21 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
     /// Used for shell WebSocket which expects specific JSON format
     func sendRawText(_ text: String) {
         logInfo("📤📤📤 sendRawText called with: \(text.prefix(200))...", category: "WebSocket")
+        
+        // CRITICAL DEBUG: Log the full text being sent
+        print("🔍🔍🔍 [WEBSOCKET_DEBUG] Full message being sent:")
+        print("Length: \(text.count) characters")
+        print("Content: \(text)")
+        if let data = text.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            print("Parsed JSON:")
+            print("  Type: \(json["type"] ?? "nil")")
+            print("  Content: \(json["content"] ?? "nil")")
+            print("  ProjectPath: \(json["projectPath"] ?? "nil")")
+            print("  SessionId: \(json["sessionId"] ?? "nil")")
+        }
+        print("🔍🔍🔍 [WEBSOCKET_DEBUG] End of message content")
+        
         guard isConnected else {
             logError("❌ Cannot send - WebSocket not connected (state: \(connectionState))", category: "WebSocket")
             // Attempt reconnection if enabled
