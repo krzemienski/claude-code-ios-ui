@@ -64,6 +64,9 @@ class SwiftUIShowcaseViewController: UIViewController {
 struct SwiftUIShowcaseView: View {
     @StateObject private var viewModel = ShowcaseViewModel()
     @State private var showDemo = true
+    @State private var showError = false
+    @State private var showToast: ToastInfo?
+    @State private var showModal = false
     
     struct ToastInfo {
         let message: String
@@ -142,34 +145,25 @@ struct SwiftUIShowcaseView: View {
             
             // User message
             MessageBubbleView(
-                message: ChatMessage(
+                message: Message(
+                    id: "demo1",
+                    sessionId: "showcase",
                     content: "Can you help me build a REST API?",
-                    isCurrentUser: true,
-                    timestamp: Date(),
-                    status: .delivered,
-                    isTyping: false,
-                    isCode: false,
-                    codeLanguage: nil,
-                    toolUse: nil
+                    role: .user,
+                    timestamp: Date()
                 ),
-                isCurrentUser: true,
-                onRetry: nil,
-                onCopy: { print("Copy message") },
-                onDelete: { print("Delete message") }
+                isCurrentUser: true
             )
             
             // Assistant message with typing
             if viewModel.showTyping {
                 MessageBubbleView(
-                    message: ChatMessage(
-                        content: nil,
-                        isCurrentUser: false,
-                        timestamp: Date(),
-                        status: .sending,
-                        isTyping: true,
-                        isCode: false,
-                        codeLanguage: nil,
-                        toolUse: nil
+                    message: Message(
+                        id: "demo-typing",
+                        sessionId: "showcase",
+                        content: "...",
+                        role: .assistant,
+                        timestamp: Date()
                     ),
                     isCurrentUser: false
                 )
@@ -177,35 +171,24 @@ struct SwiftUIShowcaseView: View {
             
             // Assistant message with code
             MessageBubbleView(
-                message: ChatMessage(
+                message: Message(
+                    id: "demo2",
+                    sessionId: "showcase",
                     content: "const express = require('express');\nconst app = express();\n\napp.get('/', (req, res) => {\n  res.json({ message: 'Hello World' });\n});",
-                    isCurrentUser: false,
-                    timestamp: Date(),
-                    status: .delivered,
-                    isTyping: false,
-                    isCode: true,
-                    codeLanguage: "javascript",
-                    toolUse: nil
+                    role: .assistant,
+                    timestamp: Date()
                 ),
                 isCurrentUser: false
             )
             
-            // Message with tool use
+            // Message with tool use (simplified)
             MessageBubbleView(
-                message: ChatMessage(
+                message: Message(
+                    id: UUID().uuidString,
+                    sessionId: "showcase",
                     content: "I've searched for the best practices",
-                    isCurrentUser: false,
-                    timestamp: Date(),
-                    status: .delivered,
-                    isTyping: false,
-                    isCode: false,
-                    codeLanguage: nil,
-                    toolUse: ToolUse(
-                        name: "WebSearch",
-                        type: "search",
-                        input: "REST API best practices 2025",
-                        output: "Found 10 relevant articles..."
-                    )
+                    role: .assistant,
+                    timestamp: Date()
                 ),
                 isCurrentUser: false
             )
@@ -220,11 +203,7 @@ struct SwiftUIShowcaseView: View {
             // Mock sessions
             ForEach(viewModel.mockSessions) { session in
                 SessionRowView(
-                    session: session,
-                    onTap: { print("Tapped session: \(session.id)") },
-                    onDelete: { print("Delete session: \(session.id)") },
-                    onArchive: { print("Archive session: \(session.id)") },
-                    onPin: { viewModel.togglePin(for: session.id) }
+                    session: session
                 )
             }
         }
@@ -282,8 +261,8 @@ struct SwiftUIShowcaseView: View {
             
             if showError {
                 ErrorStateView(
-                    error: .network,
-                    onRetry: {
+                    error: NSError(domain: "Network", code: 500, userInfo: [NSLocalizedDescriptionKey: "Network error occurred"]),
+                    retryAction: {
                         showError = false
                         showToast = .init(
                             message: "Retrying connection...",
@@ -295,9 +274,9 @@ struct SwiftUIShowcaseView: View {
                 .frame(height: 300)
             } else {
                 EmptyStateView(
+                    icon: "folder.badge.plus",
                     title: "No Data",
                     message: "Start by creating your first project",
-                    iconName: "folder.badge.plus",
                     actionTitle: "Create Project",
                     action: {
                         showToast = .init(

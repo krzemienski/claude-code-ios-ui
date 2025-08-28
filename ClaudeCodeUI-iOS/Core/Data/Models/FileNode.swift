@@ -9,11 +9,11 @@ import Foundation
 
 // File tree node for representing project file structure
 // Not persisted with SwiftData as it's loaded dynamically
-class FileNode: Identifiable, ObservableObject, Decodable {
+class FileNode: Identifiable, ObservableObject, Codable {
     let id: String
     let name: String
     let path: String
-    let type: FileType
+    let type: FileNodeType
     @Published var isExpanded: Bool = false
     @Published var children: [FileNode] = []
     weak var parent: FileNode?
@@ -23,7 +23,7 @@ class FileNode: Identifiable, ObservableObject, Decodable {
     let modifiedDate: Date?
     let permissions: String?
     
-    init(name: String, path: String, type: FileType, size: Int64? = nil, modifiedDate: Date? = nil, permissions: String? = nil) {
+    init(name: String, path: String, type: FileNodeType, size: Int64? = nil, modifiedDate: Date? = nil, permissions: String? = nil) {
         self.id = path
         self.name = name
         self.path = path
@@ -48,7 +48,7 @@ class FileNode: Identifiable, ObservableObject, Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.name = try container.decode(String.self, forKey: .name)
         self.path = try container.decode(String.self, forKey: .path)
-        self.type = try container.decode(FileType.self, forKey: .type)
+        self.type = try container.decode(FileNodeType.self, forKey: .type)
         self.id = path
         self.children = try container.decodeIfPresent([FileNode].self, forKey: .children) ?? []
         self.size = try container.decodeIfPresent(Int64.self, forKey: .size)
@@ -60,6 +60,17 @@ class FileNode: Identifiable, ObservableObject, Decodable {
         for child in children {
             child.parent = self
         }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(name, forKey: .name)
+        try container.encode(path, forKey: .path)
+        try container.encode(type, forKey: .type)
+        try container.encode(children, forKey: .children)
+        try container.encodeIfPresent(size, forKey: .size)
+        try container.encodeIfPresent(modifiedDate, forKey: .modifiedDate)
+        try container.encodeIfPresent(permissions, forKey: .permissions)
     }
     
     // Helper computed properties
@@ -84,8 +95,8 @@ class FileNode: Identifiable, ObservableObject, Decodable {
     }
 }
 
-// MARK: - File Type
-enum FileType: String, Codable {
+// MARK: - File Node Type
+enum FileNodeType: String, Codable {
     case file
     case directory
     case symlink

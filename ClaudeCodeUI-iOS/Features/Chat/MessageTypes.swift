@@ -258,7 +258,7 @@ class EnhancedChatMessage: ChatMessage {
         detectMessageType()
     }
     
-    private func detectMessageType() {
+    func detectMessageType() {
         // Auto-detect message type from content
         // Strip leading emoji indicators first for better detection
         let cleanContent = self.content.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -58,7 +58,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private var hasMoreMessages = true
     private let messagePageSize = 50
     private var currentSessionId: String?
-    private let emptyStateView = NoDataView()
+    private let emptyStateView = NoDataView(type: .noMessages)
     
     // Add isLoading property needed by BaseViewController
     public override var isLoading: Bool {
@@ -323,13 +323,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     private func setupEmptyState() {
-        emptyStateView.configure(
-            artStyle: .noResults,
-            title: "No Messages Yet",
-            message: "Start a conversation with Claude by typing a message below",
-            buttonTitle: nil,
-            buttonAction: nil
-        )
+        // NoDataView is already configured with type .noMessages in init
+        // No need to configure it again
         emptyStateView.isHidden = true
     }
     
@@ -338,9 +333,15 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         
         if shouldShowEmpty {
             tableView.isHidden = true
-            emptyStateView.show(animated: true)
+            emptyStateView.isHidden = false
+            UIView.animate(withDuration: 0.3) {
+                self.emptyStateView.alpha = 1
+            }
         } else {
-            emptyStateView.hide(animated: true) { [weak self] in
+            UIView.animate(withDuration: 0.3, animations: {
+                self.emptyStateView.alpha = 0
+            }) { [weak self] _ in
+                self?.emptyStateView.isHidden = true
                 self?.tableView.isHidden = false
             }
         }
@@ -1021,42 +1022,62 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     // FIX #1: Update message status with per-message timer tracking
     private func updateMessageStatus(messageId: String, to status: MessageStatus) {
-        print("📊 [ChatVC] Updating message \(messageId) status to: \(status)")
+        print("\n🔄 [UPDATE_STATUS] Starting at \(Date().ISO8601Format())")
+        print("📊 [UPDATE_STATUS] Message ID: \(messageId)")
+        print("🎯 [UPDATE_STATUS] Target status: \(status)")
         
         guard let index = messages.firstIndex(where: { $0.id == messageId }) else {
-            print("⚠️ [ChatVC] Message \(messageId) not found for status update")
+            print("⚠️ [UPDATE_STATUS] Message \(messageId) not found in array at \(Date().ISO8601Format())")
             return
         }
         
+        let oldStatus = messages[index].status
+        print("🔄 [UPDATE_STATUS] Status transition: \(oldStatus) → \(status) at \(Date().ISO8601Format())")
         messages[index].status = status
         
         // Cancel timer if message succeeded
         if status == .delivered || status == .read || status == .failed {
+            print("⏹️ [UPDATE_STATUS] Canceling timer for message \(messageId) at \(Date().ISO8601Format())")
             messageStatusTimers[messageId]?.invalidate()
             messageStatusTimers.removeValue(forKey: messageId)
+            print("✅ [UPDATE_STATUS] Timer canceled and removed")
         }
         
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             let indexPath = IndexPath(row: index, section: 0)
+            print("📱 [UPDATE_STATUS] Updating UI cell at row \(index) at \(Date().ISO8601Format())")
             if let cell = self.tableView.cellForRow(at: indexPath) as? BaseMessageCell {
                 cell.updateStatus(status)
+                print("✅ [UPDATE_STATUS] Cell updated successfully")
+            } else {
+                print("⚠️ [UPDATE_STATUS] Cell not found or wrong type at row \(index)")
             }
         }
+        print("================================================\n")
     }
     
     // FIX #1: Start timeout timer for message delivery confirmation
     private func startMessageStatusTimer(for messageId: String) {
+        print("\n⏱️ [STATUS_TIMER] Starting timer for message \(messageId) at \(Date().ISO8601Format())")
+        
         // Cancel any existing timer
-        messageStatusTimers[messageId]?.invalidate()
+        if messageStatusTimers[messageId] != nil {
+            print("🔄 [STATUS_TIMER] Canceling existing timer for message \(messageId)")
+            messageStatusTimers[messageId]?.invalidate()
+        }
         
         // Start new timer - 30 seconds timeout
+        print("⏲️ [STATUS_TIMER] Creating 30-second timeout timer at \(Date().ISO8601Format())")
         let timer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: false) { [weak self] _ in
+            print("⚠️ [STATUS_TIMER] Timeout reached for message \(messageId) at \(Date().ISO8601Format())")
             self?.updateMessageStatus(messageId: messageId, to: .failed)
             self?.messageStatusTimers.removeValue(forKey: messageId)
         }
         
         messageStatusTimers[messageId] = timer
+        print("✅ [STATUS_TIMER] Timer started and tracking \(messageStatusTimers.count) active timers")
+        print("================================================\n")
     }
     
     @objc private func sendMessage() {
@@ -1066,26 +1087,29 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // DEPENDENCIES: StreamingMessageHandler.updateMessageStatus(), MessageCell.updateStatusIcon()
         // NOTES: Track individual message status, update cells when backend confirms delivery
         
+        print("\n🚀🚀🚀 [SEND_MESSAGE] Starting at \(Date().ISO8601Format())")
         print("📤📤📤 sendMessage() called")
         
         guard let text = inputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !text.isEmpty else { 
-            print("❌ [ChatVC] sendMessage: Empty text, aborting")
+            print("❌ [SEND_MESSAGE] Empty text, aborting at \(Date().ISO8601Format())")
             return 
         }
         
-        print("📤 Message text: \(text)")
-        print("🎯 Project: \(project.name) at path: \(project.path)")
-        print("🆔 Project ID: \(project.id)")
+        print("📝 [SEND_MESSAGE] Text content: '\(text)' at \(Date().ISO8601Format())")
+        print("📁 [SEND_MESSAGE] Project: \(project.name) at path: \(project.path)")
+        print("🔑 [SEND_MESSAGE] Project ID: \(project.id)")
         
         // Log timestamp for debugging
         let timestamp = Date()
-        print("📤 [ChatVC] sendMessage START - \(timestamp.timeIntervalSince1970)")
+        print("⏰ [SEND_MESSAGE] Timestamp: \(timestamp.ISO8601Format())")
+        print("   Unix time: \(timestamp.timeIntervalSince1970)")
         print("   Message: \(text)")
         print("   Project: \(project.name) at \(project.path)")
         
         // Create user message with unique ID
         let messageId = UUID().uuidString
+        print("🆔 [SEND_MESSAGE] Creating message with ID: \(messageId) at \(Date().ISO8601Format())")
         let userMessage = EnhancedChatMessage(
             id: messageId,
             content: text,
@@ -1093,26 +1117,36 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             timestamp: timestamp,
             status: .sending
         )
-        print("   Message ID: \(messageId)")
+        print("💬 [SEND_MESSAGE] Message created:")
+        print("   ID: \(messageId)")
+        print("   Status: \(userMessage.status)")
+        print("   IsUser: \(userMessage.isUser)")
+        print("   Content length: \(text.count) chars")
         
         // FIX #1: Track this message ID for status updates
+        print("📌 [SEND_MESSAGE] Setting lastSentMessageId: \(messageId) at \(Date().ISO8601Format())")
         lastSentMessageId = messageId
         
         // FIX #1: Start per-message status timer
+        print("⏱️ [SEND_MESSAGE] Starting status timer for message \(messageId) at \(Date().ISO8601Format())")
         startMessageStatusTimer(for: messageId)
         
         // Add to messages array with animation
+        print("➕ [SEND_MESSAGE] Adding message to array at \(Date().ISO8601Format())")
         messages.append(userMessage)
-        print("   Total messages: \(messages.count)")
+        print("📊 [SEND_MESSAGE] Total messages now: \(messages.count)")
         
         // Memory management: Trim history if needed
+        print("🧹 [SEND_MESSAGE] Performing memory management at \(Date().ISO8601Format())")
         trimMessageHistory()
         clearOldMessageData()
+        print("✅ [SEND_MESSAGE] Memory management complete")
         
         // Insert with animation
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        print("📋 [SEND_MESSAGE] Inserting row at index \(indexPath.row) at \(Date().ISO8601Format())")
         tableView.insertRows(at: [indexPath], with: .fade)
-        print("   Inserted at row: \(indexPath.row)")
+        print("✅ [SEND_MESSAGE] Row inserted successfully")
         
         // Animate the message cell after insertion
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -1129,10 +1163,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         print("   📜 Scroll to bottom queued")
         
         // Clear input
+        print("🧹 [SEND_MESSAGE] Clearing input field at \(Date().ISO8601Format())")
         inputTextView.text = ""
         placeholderLabel.isHidden = false
         sendButton.isEnabled = false
-        print("   🧹 Input cleared")
+        print("✅ [SEND_MESSAGE] Input cleared and UI updated")
         
         // Adjust text view height back to default
         inputTextViewHeightConstraint.constant = 44
@@ -1167,8 +1202,10 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 Logger.shared.info("✅ Verified content field: \(contentInJSON)", category: "ChatVC")
             }
             
+            Logger.shared.info("🌐 [SEND_MESSAGE] Sending via WebSocket at \(Date().ISO8601Format())", category: "ChatVC")
             Logger.shared.info("🚀 Calling webSocketManager.send()...", category: "ChatVC")
             webSocketManager.send(jsonString)
+            Logger.shared.info("✉️ [SEND_MESSAGE] WebSocket send initiated at \(Date().ISO8601Format())", category: "ChatVC")
             Logger.shared.info("✅✅✅ Message sent to WebSocketManager", category: "ChatVC")
         } else {
             Logger.shared.error("❌❌❌ Failed to serialize message data!", category: "ChatVC")
@@ -1186,7 +1223,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             }
         }
         
+        print("✅ [SEND_MESSAGE] Complete at \(Date().ISO8601Format())")
         print("📤 [ChatVC] sendMessage END - \(Date().timeIntervalSince1970)")
+        print("================================================\n")
     }
     
     @objc private func showAttachmentOptions() {
@@ -1428,15 +1467,19 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 message: "WebSocket connection lost. The app will automatically reconnect when the backend is available.",
                 retryAction: { [weak self] in
                     // Force reconnection attempt
-                    self?.webSocketManager.connect()
+                    guard let self = self else { return }
+                    let wsURL = AppConfig.websocketURL
+                    let token = UserDefaults.standard.string(forKey: "authToken")
+                    self.webSocketManager.connect(to: wsURL, with: token)
                 }
             )
         }
     }
     
     func webSocket(_ manager: any WebSocketProtocol, didReceiveMessage message: WebSocketMessage) {
-        print("📥📥📥 [ChatVC] WebSocket received message!")
-        print("   Timestamp: \(Date().timeIntervalSince1970)")
+        print("\n📥📥📥 [WS_RECEIVE] Message received at \(Date().ISO8601Format())")
+        print("📨 [WS_RECEIVE] Message details:")
+        print("   Unix timestamp: \(Date().timeIntervalSince1970)")
         print("   Type: \(message.type)")
         print("   Session ID: \(message.sessionId ?? "nil")")
         
@@ -1450,7 +1493,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         }
         
         // Handle the message based on its type
+        print("🎯 [WS_RECEIVE] Routing to handleWebSocketMessage at \(Date().ISO8601Format())")
         handleWebSocketMessage(message)
+        print("================================================\n")
     }
     
     func webSocket(_ manager: any WebSocketProtocol, didReceiveData data: Data) {
@@ -1527,6 +1572,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     private func handleWebSocketMessage(_ message: WebSocketMessage) {
+        print("\n🎯 [HANDLE_WS] Processing message at \(Date().ISO8601Format())")
         // TODO[CM-Chat-01]: Add real-time message status indicators - IMPLEMENTED ✅
         // Using MessageStatusManager for robust status tracking
         
@@ -1535,7 +1581,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             guard let self = self else { return }
             
             // Log raw message for debugging
-            print("📦 Raw WebSocket message type: \(message.type)")
+            print("📦 [HANDLE_WS] Message type: \(message.type) at \(Date().ISO8601Format())")
             if let payload = message.payload,
                let jsonData = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted),
                let jsonString = String(data: jsonData, encoding: .utf8) {
@@ -1640,10 +1686,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 }
             }
             
+            print("🔀 [HANDLE_WS] Entering switch statement at \(Date().ISO8601Format())")
             switch message.type {
             case .claudeOutput:
                 // Handle streaming Claude output (partial responses)
-                print("🌊 [ChatVC] Received claudeOutput at \(Date().timeIntervalSince1970)")
+                print("🌊 [HANDLE_WS] Case: claudeOutput at \(Date().ISO8601Format())")
                 print("   Content chunk length: \(content.count) chars")
                 print("   Last sent message ID: \(self.lastSentMessageId ?? "none")")
                 
@@ -1654,9 +1701,13 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 
                 // FIX #2: Mark user message as delivered when we start receiving stream
                 if let lastMessageId = self.lastSentMessageId {
-                    print("   📊 Marking message \(lastMessageId) as delivered (streaming started)")
+                    print("📡 [HANDLE_WS] Streaming started, updating message status at \(Date().ISO8601Format())")
+                    print("   📊 Message ID: \(lastMessageId)")
+                    print("   🎯 New status: delivered")
                     self.updateMessageStatus(messageId: lastMessageId, to: .delivered)
-                    print("   ✅ Message status updated to delivered")
+                    print("   ✅ Status update triggered")
+                } else {
+                    print("⚠️ [HANDLE_WS] No lastSentMessageId to update at \(Date().ISO8601Format())")
                 }
                 
                 self.handleClaudeStreamingOutput(content: content)
@@ -1665,17 +1716,19 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 // Handle complete Claude response
                 var displayContent = content
                 
-                print("🤖 [ChatVC] Received claudeResponse at \(Date().timeIntervalSince1970)")
+                print("🤖 [HANDLE_WS] Case: claudeResponse at \(Date().ISO8601Format())")
                 print("   Content length: \(content.count) chars")
                 print("   Last sent message ID: \(self.lastSentMessageId ?? "none")")
                 
                 // FIX #2: Mark the last sent message as delivered
                 if let lastMessageId = self.lastSentMessageId {
-                    print("   📊 Marking message \(lastMessageId) as delivered")
+                    print("🎯 [HANDLE_WS] Complete response received at \(Date().ISO8601Format())")
+                    print("   📊 Message ID to update: \(lastMessageId)")
                     self.updateMessageStatus(messageId: lastMessageId, to: .delivered)
-                    print("   ✅ Message status updated to delivered")
+                    print("   ✅ Delivery status applied")
+                    self.lastSentMessageId = nil // Clear after processing
                 } else {
-                    print("   ⚠️ No pending message to mark as delivered")
+                    print("⚠️ [HANDLE_WS] No pending message to mark as delivered at \(Date().ISO8601Format())")
                 }
                 
                 // Add raw JSON in debug mode (show the entire payload for debugging)
@@ -1785,22 +1838,34 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - Claude Response Handlers
     
     private func handleClaudeStreamingOutput(content: String) {
+        print("\n🌊 [STREAMING_OUTPUT] Starting at \(Date().ISO8601Format())")
+        print("📝 [STREAMING_OUTPUT] Content length: \(content.count) chars")
+        print("📊 [STREAMING_OUTPUT] Content preview: \(String(content.prefix(100)))...")
+        
         // Skip empty streaming content
         guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            print("⚠️ Skipping empty streaming content")
+            print("⚠️ [STREAMING_OUTPUT] Skipping empty streaming content at \(Date().ISO8601Format())")
             return
         }
+        print("✅ [STREAMING_OUTPUT] Content validated at \(Date().ISO8601Format())")
         
         // Process through streaming handler
+        print("🔄 [STREAMING_OUTPUT] Processing through handler at \(Date().ISO8601Format())")
         if let data = content.data(using: .utf8),
            let result = streamingHandler.processStreamingChunk(data) {
             
-            print("🔄 Streaming: id=\(result.messageId), complete=\(result.isComplete)")
+            print("🔄 [STREAMING_OUTPUT] Handler result at \(Date().ISO8601Format())")
+            print("   📊 Message ID: \(result.messageId)")
+            print("   ✅ Is complete: \(result.isComplete)")
+            print("   📝 Content length: \(result.content.count) chars")
             
             // Find or create message
+            print("🔍 [STREAMING_OUTPUT] Looking for existing message at \(Date().ISO8601Format())")
             if let existingIndex = messages.firstIndex(where: { $0.id == result.messageId }) {
+                print("✅ [STREAMING_OUTPUT] Found existing message at index \(existingIndex) at \(Date().ISO8601Format())")
                 // Update existing message
                 let message = messages[existingIndex]
+                print("📝 [STREAMING_OUTPUT] Updating content from \(message.content.count) to \(result.content.count) chars")
                 message.content = result.content
                 
                 // Detect and update message type
@@ -1808,8 +1873,10 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 message.messageType = structured.type
                 
                 if result.isComplete {
+                    print("✅ [STREAMING_OUTPUT] Stream complete, marking delivered at \(Date().ISO8601Format())")
                     message.status = .delivered
                     activeStreamingMessageId = nil
+                    print("🔄 [STREAMING_OUTPUT] Hiding typing indicator at \(Date().ISO8601Format())")
                     hideTypingIndicator()
                 }
                 
@@ -1823,7 +1890,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     }
                 }
             } else {
+                print("🆕 [STREAMING_OUTPUT] Creating new streaming message at \(Date().ISO8601Format())")
                 // Create new streaming message
+                print("🔄 [STREAMING_OUTPUT] Showing typing indicator at \(Date().ISO8601Format())")
                 showTypingIndicator()
                 let chatMessage = EnhancedChatMessage(
                     id: result.messageId,
@@ -1902,24 +1971,30 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     private func handleClaudeCompleteResponse(content: String) {
-        print("🤖 [ChatVC] handleClaudeCompleteResponse - \(Date().timeIntervalSince1970)")
-        print("   Content length: \(content.count) chars")
-        print("   Content preview: \(content.prefix(200))...")
+        print("\n🤖🤖🤖 [COMPLETE_RESPONSE] Starting at \(Date().ISO8601Format())")
+        print("📝 [COMPLETE_RESPONSE] Content length: \(content.count) chars")
+        print("📊 [COMPLETE_RESPONSE] Content preview: \(String(content.prefix(200)))...")
+        print("⏱️ [COMPLETE_RESPONSE] Timestamp: \(Date().timeIntervalSince1970)")
         
         // Skip empty responses entirely
         guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            print("   ⚠️ Skipping empty response in handleClaudeCompleteResponse")
+            print("⚠️ [COMPLETE_RESPONSE] Skipping empty response at \(Date().ISO8601Format())")
+            print("🔄 [COMPLETE_RESPONSE] Hiding typing indicator due to empty response")
             hideTypingIndicator()
             return
         }
+        print("✅ [COMPLETE_RESPONSE] Content validated, not empty at \(Date().ISO8601Format())")
         
         // Hide typing indicator
+        print("🔄 [COMPLETE_RESPONSE] Hiding typing indicator at \(Date().ISO8601Format())")
         hideTypingIndicator()
         
         // Mark user message as delivered since we got a response
+        print("🔍 [COMPLETE_RESPONSE] Looking for pending user message at \(Date().ISO8601Format())")
         // FIX: Find the most recent user message with 'sending' status instead of relying on lastSentMessageId
         if let pendingMessage = messages.last(where: { $0.isUser && $0.status == .sending }) {
             let messageId = pendingMessage.id
+            print("✅ [COMPLETE_RESPONSE] Found pending message: \(messageId) at \(Date().ISO8601Format())")
             updateUserMessageStatus(to: .delivered, messageId: messageId)
             print("   ✅ Marked user message \(messageId) as delivered")
             // Update the message directly as well
@@ -1991,10 +2066,14 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     private func handleToolUseMessage(message: WebSocketMessage) {
+        print("\n🔧 [TOOL_USE] Starting at \(Date().ISO8601Format())")
         let payload = message.payload ?? [:]
         let toolName = payload["name"] as? String ?? "Unknown Tool"
         let toolParams = payload["parameters"] as? [String: Any] ?? [:]
         let toolInput = payload["input"] as? String ?? ""
+        print("📝 [TOOL_USE] Tool name: \(toolName)")
+        print("📊 [TOOL_USE] Parameters count: \(toolParams.count)")
+        print("📝 [TOOL_USE] Input length: \(toolInput.count) chars")
         
         // Format tool use content
         var toolContent = "🔧 Using tool: \(toolName)"
@@ -2039,8 +2118,10 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     }
     
     private func handleSessionCreated(message: WebSocketMessage) {
+        print("\n🆕 [SESSION_CREATED] Starting at \(Date().ISO8601Format())")
         if let sessionId = message.payload?["sessionId"] as? String {
-            print("✅ Session created with ID: \(sessionId)")
+            print("✅ [SESSION_CREATED] Session created with ID: \(sessionId) at \(Date().ISO8601Format())")
+            print("📝 [SESSION_CREATED] Session ID length: \(sessionId.count) chars")
             
             // Store the session ID
             self.currentSessionId = sessionId

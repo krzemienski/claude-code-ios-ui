@@ -306,34 +306,34 @@ public class FileTreeViewController: BaseViewController {
         rootNode = FileNode(
             name: project.name,
             path: project.path,
-            type: .directory
+            type: FileNodeType.directory
         )
         
         // Create child nodes
-        let srcNode = FileNode(name: "src", path: "\(project.path)/src", type: .directory)
-        let modelsNode = FileNode(name: "models", path: "\(project.path)/src/models", type: .directory)
+        let srcNode = FileNode(name: "src", path: "\(project.path)/src", type: FileNodeType.directory)
+        let modelsNode = FileNode(name: "models", path: "\(project.path)/src/models", type: FileNodeType.directory)
         modelsNode.children = [
-            FileNode(name: "User.swift", path: "\(project.path)/src/models/User.swift", type: .file),
-            FileNode(name: "Project.swift", path: "\(project.path)/src/models/Project.swift", type: .file)
+            FileNode(name: "User.swift", path: "\(project.path)/src/models/User.swift", type: FileNodeType.file),
+            FileNode(name: "Project.swift", path: "\(project.path)/src/models/Project.swift", type: FileNodeType.file)
         ]
         
         srcNode.children = [
-            FileNode(name: "main.swift", path: "\(project.path)/src/main.swift", type: .file),
-            FileNode(name: "utils.swift", path: "\(project.path)/src/utils.swift", type: .file),
+            FileNode(name: "main.swift", path: "\(project.path)/src/main.swift", type: FileNodeType.file),
+            FileNode(name: "utils.swift", path: "\(project.path)/src/utils.swift", type: FileNodeType.file),
             modelsNode
         ]
         
-        let testsNode = FileNode(name: "tests", path: "\(project.path)/tests", type: .directory)
+        let testsNode = FileNode(name: "tests", path: "\(project.path)/tests", type: FileNodeType.directory)
         testsNode.children = [
-            FileNode(name: "MainTests.swift", path: "\(project.path)/tests/MainTests.swift", type: .file)
+            FileNode(name: "MainTests.swift", path: "\(project.path)/tests/MainTests.swift", type: FileNodeType.file)
         ]
         
         rootNode?.children = [
             srcNode,
             testsNode,
-            FileNode(name: "README.md", path: "\(project.path)/README.md", type: .file),
-            FileNode(name: "Package.swift", path: "\(project.path)/Package.swift", type: .file),
-            FileNode(name: ".gitignore", path: "\(project.path)/.gitignore", type: .file)
+            FileNode(name: "README.md", path: "\(project.path)/README.md", type: FileNodeType.file),
+            FileNode(name: "Package.swift", path: "\(project.path)/Package.swift", type: FileNodeType.file),
+            FileNode(name: ".gitignore", path: "\(project.path)/.gitignore", type: FileNodeType.file)
         ]
         rootNode?.isExpanded = true
         

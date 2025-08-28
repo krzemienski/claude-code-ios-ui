@@ -24,7 +24,7 @@ public class ProjectsViewController: BaseViewController {
         return collectionView
     }()
     
-    private let emptyStateView = NoDataView()
+    private let emptyStateView = NoDataView(type: .noProjects)
     
     // MARK: - Properties
     
@@ -200,15 +200,7 @@ public class ProjectsViewController: BaseViewController {
     }
     
     private func setupEmptyState() {
-        emptyStateView.configure(
-            artStyle: .noData,
-            title: "No Projects Yet",
-            message: "Create your first project to get started",
-            buttonTitle: "Create New Project",
-            buttonAction: { [weak self] in
-                self?.createNewProject()
-            }
-        )
+        // Empty state is already configured with type: .noProjects in initialization
         emptyStateView.isHidden = true
     }
     
@@ -493,11 +485,10 @@ public class ProjectsViewController: BaseViewController {
         
         if projects.isEmpty && !isShowingSkeletons {
             collectionView.isHidden = true
-            emptyStateView.show(animated: true)
+            emptyStateView.isHidden = false
         } else {
-            emptyStateView.hide(animated: true) { [weak self] in
-                self?.collectionView.isHidden = false
-            }
+            emptyStateView.isHidden = true
+            collectionView.isHidden = false
         }
         
         collectionView.reloadData()
@@ -644,7 +635,7 @@ public class ProjectsViewController: BaseViewController {
             }
             
             // Validate path format
-            if !self?.isValidPath(path) ?? false {
+            if !(self?.isValidPath(path) ?? false) {
                 self?.displayValidationError(message: "Invalid project path format. Use absolute paths (e.g., /Users/name/Projects) or tilde paths (e.g., ~/Projects).")
                 return
             }
@@ -782,7 +773,7 @@ public class ProjectsViewController: BaseViewController {
                     // Create duplicate via API
                     let duplicatedProject = try await APIClient.shared.createProject(
                         name: name,
-                        path: project.fullPath
+                        path: project.fullPath ?? project.path
                     )
                     
                     await MainActor.run {
@@ -794,7 +785,7 @@ public class ProjectsViewController: BaseViewController {
                            let cell = self?.collectionView.cellForItem(at: IndexPath(item: newIndex, section: 0)) {
                             // Pulse animation to highlight new project
                             AnimationManager.shared.popIn(cell)
-                            AnimationManager.shared.neonPulse(cell, color: CyberpunkTheme.neonGreen)
+                            AnimationManager.shared.neonPulse(cell, color: CyberpunkTheme.success)
                         }
                         
                         // Success feedback
@@ -1105,7 +1096,7 @@ extension ProjectsViewController: UICollectionViewDelegate {
                 self?.deleteProject(project)
             }
             
-            return UIMenu(title: project.displayName, children: [openAction, duplicateAction, renameAction, archiveAction, deleteAction])
+            return UIMenu(title: project.displayName ?? project.name, children: [openAction, duplicateAction, renameAction, archiveAction, deleteAction])
         }
     }
     

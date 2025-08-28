@@ -63,8 +63,9 @@ class SearchViewModel: ObservableObject {
     private let recentSearchesKey = "recentSearches"
     
     // Current project context (would be injected in production)
-    private var currentProjectPath: String = ""
-    private var currentProjectName: String = ""
+    var projectPath: String = ""
+    var projectName: String = ""
+    var currentScope: SearchScope? = .all
     
     // MARK: - Search Caching (CM-Search-03)
     private struct CacheKey: Hashable {
@@ -85,7 +86,7 @@ class SearchViewModel: ObservableObject {
     // MARK: - Search Debouncing (CM-Search-02)
     private var debounceTimer: Timer?
     private let debounceDelay: TimeInterval = 0.3 // 300ms
-    private var pendingSearchParams: (query: String, scope: SearchScope, fileTypes: [FileType])?
+    private var pendingSearchParams: (query: String, scope: SearchScope, fileTypes: [SearchFileType])?
     
     init() {
         loadRecentSearches()
@@ -94,7 +95,7 @@ class SearchViewModel: ObservableObject {
     // MARK: - Public Methods
     
     /// Debounced search method - delays execution by 300ms
-    func searchWithDebounce(query: String, scope: SearchScope, fileTypes: [FileType]) {
+    func searchWithDebounce(query: String, scope: SearchScope, fileTypes: [SearchFileType]) {
         // Store pending search parameters
         pendingSearchParams = (query, scope, fileTypes)
         
@@ -121,7 +122,7 @@ class SearchViewModel: ObservableObject {
     }
     
     /// Immediate search method (used internally after debouncing)
-    func search(query: String, scope: SearchScope, fileTypes: [FileType]) {
+    func search(query: String, scope: SearchScope, fileTypes: [SearchFileType]) {
         // Cancel any existing search
         searchTask?.cancel()
         debounceTimer?.invalidate()
@@ -173,7 +174,7 @@ class SearchViewModel: ObservableObject {
     // MARK: - Private Methods
     
     /// Performs search with caching support
-    private func performSearchWithCache(query: String, scope: SearchScope, fileTypes: [FileType]) async throws -> [SearchResult] {
+    private func performSearchWithCache(query: String, scope: SearchScope, fileTypes: [SearchFileType]) async throws -> [SearchResult] {
         // Create cache key
         let cacheKey = CacheKey(
             projectName: currentProjectName,
@@ -224,7 +225,7 @@ class SearchViewModel: ObservableObject {
         print("🗑️ Cleared all search cache entries")
     }
     
-    private func performSearch(query: String, scope: SearchScope, fileTypes: [FileType]) async throws -> [SearchResult] {
+    private func performSearch(query: String, scope: SearchScope, fileTypes: [SearchFileType]) async throws -> [SearchResult] {
         // ✅ COMPLETED[CM-Search-01]: Already using real API, not mock data
         // ✅ COMPLETED[CM-Search-02]: Caching implemented in performSearchWithCache
         // ✅ COMPLETED[CM-Search-03]: Debouncing implemented in searchWithDebounce

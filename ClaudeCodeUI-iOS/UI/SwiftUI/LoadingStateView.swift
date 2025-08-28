@@ -371,7 +371,7 @@ struct LoadingStateView_Previews: PreviewProvider {
                 
                 SkeletonLoadingView(rows: 3)
                 
-                ProgressIndicatorView(progress: 0.75, label: "Processing")
+                SwiftUIProgressIndicatorView(progress: 0.75, label: "Processing")
                 
                 PulsingDotLoader()
                 

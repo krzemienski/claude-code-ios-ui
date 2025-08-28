@@ -24,9 +24,8 @@ public class MCPServerListViewController: UIViewController {
     
     // MARK: - Setup
     private func setupUI() {
-        // Create SwiftUI view with view model
-        let viewModel = MCPServerViewModel()
-        let swiftUIView = MCPServerListView(viewModel: viewModel)
+        // Create SwiftUI view (it creates its own viewModel)
+        let swiftUIView = MCPServerListView()
         
         // Create hosting controller
         let hostingController = UIHostingController(rootView: swiftUIView)
@@ -143,17 +142,25 @@ public class MCPServerListViewController: UIViewController {
             
             // Add server through view model
             if let hostingController = self?.hostingController {
+                // Create and add the server - convert type string to MCPServerType
+                let serverType = MCPServerType(rawValue: type) ?? .rest
+                let newServer = MCPServer(
+                    id: UUID().uuidString,
+                    name: name,
+                    url: url,
+                    description: "\(name) - \(type) server",
+                    type: serverType,
+                    apiKey: apiKey,
+                    isDefault: false,
+                    isConnected: false,
+                    lastConnected: nil
+                )
+                
+                // Try to access the view model through reflection
                 let mirror = Mirror(reflecting: hostingController.rootView)
                 for child in mirror.children {
                     if let viewModel = child.value as? MCPServerViewModel {
-                        Task {
-                            await viewModel.addServer(
-                                name: name,
-                                url: url,
-                                type: type,
-                                apiKey: apiKey
-                            )
-                        }
+                        viewModel.addServer(newServer)
                         break
                     }
                 }
@@ -178,7 +185,7 @@ public class MCPServerListViewController: UIViewController {
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "OK", style: .default))
-        alert.view.tintColor = CyberpunkTheme.primaryPink
+        alert.view.tintColor = CyberpunkTheme.accentPink
         present(alert, animated: true)
     }
 }

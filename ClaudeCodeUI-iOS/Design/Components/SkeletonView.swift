@@ -413,12 +413,12 @@ extension UICollectionView {
 
 extension UIView {
     
-    var loadingStateManager: LoadingStateManager {
-        return LoadingStateManager(view: self)
+    var skeletonLoadingStateManager: SkeletonLoadingStateManager {
+        return SkeletonLoadingStateManager(view: self)
     }
 }
 
-struct LoadingStateManager {
+struct SkeletonLoadingStateManager {
     private weak var view: UIView?
     
     init(view: UIView) {

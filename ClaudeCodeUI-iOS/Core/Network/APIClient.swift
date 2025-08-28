@@ -163,6 +163,13 @@ actor APIClient: APIClientProtocol {
         try await requestVoid(.deleteProject(id: id))
     }
     
+    func renameProject(id: String, name: String) async throws -> Project {
+        // Use PUT /api/projects/:projectName/rename endpoint
+        let bodyData = try? JSONSerialization.data(withJSONObject: ["name": name], options: [])
+        let endpoint = APIEndpoint(path: "/api/projects/\(id)/rename", method: .put, body: bodyData)
+        return try await request(endpoint)
+    }
+    
     func submitFeedback(_ feedback: APIFeedbackData, completion: @escaping (Result<Void, Error>) -> Void) {
         Task {
             do {

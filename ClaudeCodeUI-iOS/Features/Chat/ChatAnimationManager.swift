@@ -14,7 +14,7 @@ public class ChatAnimationManager {
     
     private weak var tableView: UITableView?
     private weak var inputView: UIView?
-    private var typingIndicatorView: TypingIndicatorView?
+    private var typingIndicatorView: UIKitTypingIndicatorView?
     
     // MARK: - Initialization
     
@@ -29,7 +29,7 @@ public class ChatAnimationManager {
     private func setupTypingIndicator() {
         guard let tableView = tableView else { return }
         
-        typingIndicatorView = TypingIndicatorView()
+        typingIndicatorView = UIKitTypingIndicatorView()
         typingIndicatorView?.translatesAutoresizingMaskIntoConstraints = false
         typingIndicatorView?.isHidden = true
         
@@ -234,103 +234,3 @@ public class ChatAnimationManager {
     }
 }
 
-// MARK: - Typing Indicator View
-
-public class TypingIndicatorView: UIView {
-    
-    private let containerView = UIView()
-    private let dotViews: [UIView] = (0..<3).map { _ in UIView() }
-    private var animationTimer: Timer?
-    
-    public override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupView()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupView()
-    }
-    
-    private func setupView() {
-        backgroundColor = CyberpunkTheme.surface
-        layer.cornerRadius = 22
-        layer.masksToBounds = true
-        
-        // Add subtle border and glow
-        layer.borderWidth = 1
-        layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor
-        layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
-        layer.shadowRadius = 4
-        layer.shadowOpacity = 0.3
-        layer.shadowOffset = .zero
-        layer.masksToBounds = false
-        
-        addSubview(containerView)
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Setup dots
-        for (index, dot) in dotViews.enumerated() {
-            dot.backgroundColor = CyberpunkTheme.primaryCyan
-            dot.layer.cornerRadius = 4
-            dot.translatesAutoresizingMaskIntoConstraints = false
-            containerView.addSubview(dot)
-            
-            NSLayoutConstraint.activate([
-                dot.widthAnchor.constraint(equalToConstant: 8),
-                dot.heightAnchor.constraint(equalToConstant: 8),
-                dot.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
-            ])
-            
-            if index == 0 {
-                dot.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
-            } else {
-                dot.leadingAnchor.constraint(equalTo: dotViews[index - 1].trailingAnchor, constant: 8).isActive = true
-            }
-            
-            if index == dotViews.count - 1 {
-                dot.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
-            }
-        }
-        
-        NSLayoutConstraint.activate([
-            containerView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            containerView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            containerView.heightAnchor.constraint(equalToConstant: 20)
-        ])
-    }
-    
-    public func startAnimating() {
-        stopAnimating()
-        
-        for (index, dot) in dotViews.enumerated() {
-            let animation = CABasicAnimation(keyPath: "transform.scale")
-            animation.duration = 0.8
-            animation.fromValue = 1.0
-            animation.toValue = 1.5
-            animation.autoreverses = true
-            animation.repeatCount = .infinity
-            animation.timeOffset = Double(index) * 0.2
-            animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            
-            dot.layer.add(animation, forKey: "pulsing")
-            
-            // Add opacity animation
-            let opacityAnimation = CABasicAnimation(keyPath: "opacity")
-            opacityAnimation.duration = 0.8
-            opacityAnimation.fromValue = 0.5
-            opacityAnimation.toValue = 1.0
-            opacityAnimation.autoreverses = true
-            opacityAnimation.repeatCount = .infinity
-            opacityAnimation.timeOffset = Double(index) * 0.2
-            
-            dot.layer.add(opacityAnimation, forKey: "opacity")
-        }
-    }
-    
-    public func stopAnimating() {
-        dotViews.forEach { dot in
-            dot.layer.removeAllAnimations()
-        }
-    }
-}

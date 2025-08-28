@@ -422,7 +422,7 @@ struct SessionRowView: View {
         )
         .scaleEffect(isPressed ? 0.98 : 1.0)
         .onTapGesture {}
-        .onLongPressGesture(minimumDuration: 0.1, maximumDistance: .infinity) { _ in
+        .onLongPressGesture(minimumDuration: 0.1, maximumDistance: .infinity) {
             withAnimation(.spring(response: 0.3)) {
                 isPressed = true
             }
@@ -502,8 +502,7 @@ struct SessionListView_Previews: PreviewProvider {
                 project: Project(
                     id: "1",
                     name: "Test Project",
-                    path: "/test",
-                    sessions: []
+                    path: "/test"
                 ),
                 onSessionSelected: { _ in },
                 onCreateSession: {}

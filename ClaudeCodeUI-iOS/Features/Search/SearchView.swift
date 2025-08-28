@@ -67,26 +67,26 @@ struct SearchView: View {
             HStack {
                 Text("Search")
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.primaryText))
                 
                 Spacer()
                 
                 Button(action: { withAnimation { showingFilters.toggle() } }) {
                     Image(systemName: showingFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                         .font(.system(size: 24))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
-                        .shadow(color: Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.6), radius: 4)
+                        .foregroundColor(Color(CyberpunkTheme.primaryCyan))
+                        .shadow(color: Color(CyberpunkTheme.primaryCyan).opacity(0.6), radius: 4)
                 }
             }
             
             // Search field
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                    .foregroundColor(Color(CyberpunkTheme.tertiaryText))
                 
                 TextField("Search in project...", text: $searchText)
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
-                    .accentColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .foregroundColor(Color(CyberpunkTheme.primaryText))
+                    .accentColor(Color(CyberpunkTheme.primaryCyan))
                     .focused($isSearchFieldFocused)
                     .onSubmit {
                         performSearch()
@@ -98,7 +98,7 @@ struct SearchView: View {
                         viewModel.clearResults()
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                            .foregroundColor(Color(CyberpunkTheme.tertiaryText))
                     }
                 }
                 
@@ -111,8 +111,8 @@ struct SearchView: View {
                         .background(
                             LinearGradient(
                                 colors: [
-                                    Color(UIColor.CyberpunkTheme.primaryCyan),
-                                    Color(UIColor.CyberpunkTheme.gradientBlue)
+                                    Color(CyberpunkTheme.primaryCyan),
+                                    Color(CyberpunkTheme.gradientBlue)
                                 ],
                                 startPoint: .leading,
                                 endPoint: .trailing
@@ -125,13 +125,13 @@ struct SearchView: View {
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(UIColor.CyberpunkTheme.surface))
+                    .fill(Color(CyberpunkTheme.surface))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(
                                 isSearchFieldFocused ?
-                                Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.5) :
-                                Color(UIColor.CyberpunkTheme.border),
+                                Color(CyberpunkTheme.primaryCyan).opacity(0.5) :
+                                Color(CyberpunkTheme.border),
                                 lineWidth: 1
                             )
                     )
@@ -148,7 +148,7 @@ struct SearchView: View {
         }
         .padding()
         .background(
-            Color(UIColor.CyberpunkTheme.surface)
+            Color(CyberpunkTheme.surface)
                 .opacity(0.3)
                 .ignoresSafeArea(edges: .top)
         )
@@ -176,7 +176,7 @@ struct SearchView: View {
         }
         .padding(.vertical, 8)
         .background(
-            Color(UIColor.CyberpunkTheme.surface)
+            Color(CyberpunkTheme.surface)
                 .opacity(0.5)
         )
     }
@@ -188,14 +188,14 @@ struct SearchView: View {
                 HStack {
                     Text("\(viewModel.results.count) results found")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                        .foregroundColor(Color(CyberpunkTheme.secondaryText))
                     
                     Spacer()
                     
                     if viewModel.searchTime > 0 {
                         Text(String(format: "%.2fs", viewModel.searchTime))
                             .font(.system(size: 12))
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                            .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                     }
                 }
                 .padding(.horizontal)
@@ -213,12 +213,12 @@ struct SearchView: View {
     private var loadingView: some View {
         VStack(spacing: 20) {
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: Color(UIColor.CyberpunkTheme.primaryCyan)))
+                .progressViewStyle(CircularProgressViewStyle(tint: Color(CyberpunkTheme.primaryCyan)))
                 .scaleEffect(1.5)
             
             Text("Searching...")
                 .font(.system(size: 16))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                .foregroundColor(Color(CyberpunkTheme.secondaryText))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -227,16 +227,16 @@ struct SearchView: View {
         VStack(spacing: 24) {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 64))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                .foregroundColor(Color(CyberpunkTheme.tertiaryText))
             
             VStack(spacing: 8) {
                 Text("No results found")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.primaryText))
                 
                 Text("Try different keywords or adjust filters")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.secondaryText))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -247,17 +247,17 @@ struct SearchView: View {
         VStack(spacing: 32) {
             Image(systemName: "magnifyingglass.circle")
                 .font(.system(size: 80))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
-                .shadow(color: Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.3), radius: 20)
+                .foregroundColor(Color(CyberpunkTheme.primaryCyan))
+                .shadow(color: Color(CyberpunkTheme.primaryCyan).opacity(0.3), radius: 20)
             
             VStack(spacing: 16) {
                 Text("Search Your Project")
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.primaryText))
                 
                 Text("Find code, files, and content across your entire project")
                     .font(.system(size: 14))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                    .foregroundColor(Color(CyberpunkTheme.secondaryText))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
@@ -267,7 +267,7 @@ struct SearchView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Recent Searches")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                        .foregroundColor(Color(CyberpunkTheme.secondaryText))
                     
                     ForEach(viewModel.recentSearches, id: \.self) { search in
                         Button(action: {
@@ -281,7 +281,7 @@ struct SearchView: View {
                                     .font(.system(size: 14))
                                 Spacer()
                             }
-                            .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                            .foregroundColor(Color(CyberpunkTheme.tertiaryText))
                             .padding(.vertical, 8)
                         }
                     }
@@ -289,7 +289,7 @@ struct SearchView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(UIColor.CyberpunkTheme.surface))
+                        .fill(Color(CyberpunkTheme.surface))
                 )
                 .padding(.horizontal)
             }
@@ -304,7 +304,7 @@ struct SearchView: View {
         viewModel.search(
             query: searchText,
             scope: selectedScope,
-            fileTypes: Array(selectedFileTypes)
+            fileTypes: selectedFileTypes.map { SearchFileType(rawValue: $0.rawValue) ?? .other }
         )
     }
 }
@@ -329,23 +329,23 @@ struct FilterChip: View {
                 RoundedRectangle(cornerRadius: 16)
                     .fill(
                         isSelected ?
-                        Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.2) :
-                        Color(UIColor.CyberpunkTheme.surface)
+                        Color(CyberpunkTheme.primaryCyan).opacity(0.2) :
+                        Color(CyberpunkTheme.surface)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(
                                 isSelected ?
-                                Color(UIColor.CyberpunkTheme.primaryCyan) :
-                                Color(UIColor.CyberpunkTheme.border),
+                                Color(CyberpunkTheme.primaryCyan) :
+                                Color(CyberpunkTheme.border),
                                 lineWidth: 1
                             )
                     )
             )
             .foregroundColor(
                 isSelected ?
-                Color(UIColor.CyberpunkTheme.primaryCyan) :
-                Color(UIColor.CyberpunkTheme.textSecondary)
+                Color(CyberpunkTheme.primaryCyan) :
+                Color(CyberpunkTheme.secondaryText)
             )
         }
         .buttonStyle(PlainButtonStyle())

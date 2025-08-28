@@ -48,4 +48,419 @@ public class CyberpunkButton: UIButton {
     
     // Animation properties
     private var pulseTimer: Timer?
-    private var glowAnimation: CABasicAnimation?\n    \n    // MARK: - Initialization\n    \n    public init(style: ButtonStyle = .primary, size: ButtonSize = .medium) {\n        self.style = style\n        self.size = size\n        super.init(frame: .zero)\n        setupButton()\n    }\n    \n    required init?(coder: NSCoder) {\n        super.init(coder: coder)\n        setupButton()\n    }\n    \n    // MARK: - Setup\n    \n    private func setupButton() {\n        translatesAutoresizingMaskIntoConstraints = false\n        titleLabel?.font = CyberpunkTheme.bodyFont\n        layer.cornerRadius = 12\n        layer.masksToBounds = false\n        \n        // Set height constraint\n        heightAnchor.constraint(equalToConstant: size.height).isActive = true\n        \n        // Apply style\n        applyStyle()\n        \n        // Add touch events\n        addTarget(self, action: #selector(buttonTouchDown), for: .touchDown)\n        addTarget(self, action: #selector(buttonTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])\n        \n        // Add hover effect for Mac Catalyst\n        if #available(iOS 14.0, *) {\n            addTarget(self, action: #selector(buttonHoverEnter), for: .touchDragEnter)\n            addTarget(self, action: #selector(buttonHoverExit), for: .touchDragExit)\n        }\n    }\n    \n    private func applyStyle() {\n        switch style {\n        case .primary:\n            setupPrimaryStyle()\n        case .secondary:\n            setupSecondaryStyle()\n        case .outline:\n            setupOutlineStyle()\n        case .ghost:\n            setupGhostStyle()\n        case .destructive:\n            setupDestructiveStyle()\n        case .success:\n            setupSuccessStyle()\n        }\n    }\n    \n    private func setupPrimaryStyle() {\n        backgroundColor = CyberpunkTheme.primaryCyan\n        setTitleColor(.black, for: .normal)\n        setTitleColor(.black.withAlphaComponent(0.7), for: .highlighted)\n        \n        // Add gradient background\n        setupGradientBackground([\n            CyberpunkTheme.primaryCyan.cgColor,\n            CyberpunkTheme.primaryCyan.withAlphaComponent(0.8).cgColor\n        ])\n        \n        // Add glow effect\n        setupGlowEffect(color: CyberpunkTheme.primaryCyan)\n    }\n    \n    private func setupSecondaryStyle() {\n        backgroundColor = CyberpunkTheme.accentPink\n        setTitleColor(.white, for: .normal)\n        setTitleColor(.white.withAlphaComponent(0.7), for: .highlighted)\n        \n        setupGradientBackground([\n            CyberpunkTheme.accentPink.cgColor,\n            CyberpunkTheme.accentPink.withAlphaComponent(0.8).cgColor\n        ])\n        \n        setupGlowEffect(color: CyberpunkTheme.accentPink)\n    }\n    \n    private func setupOutlineStyle() {\n        backgroundColor = .clear\n        setTitleColor(CyberpunkTheme.primaryCyan, for: .normal)\n        setTitleColor(CyberpunkTheme.primaryCyan.withAlphaComponent(0.7), for: .highlighted)\n        \n        setupBorderEffect(color: CyberpunkTheme.primaryCyan)\n    }\n    \n    private func setupGhostStyle() {\n        backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.5)\n        setTitleColor(CyberpunkTheme.primaryText, for: .normal)\n        setTitleColor(CyberpunkTheme.primaryText.withAlphaComponent(0.7), for: .highlighted)\n        \n        layer.borderWidth = 1\n        layer.borderColor = CyberpunkTheme.border.cgColor\n    }\n    \n    private func setupDestructiveStyle() {\n        backgroundColor = CyberpunkTheme.error\n        setTitleColor(.white, for: .normal)\n        setTitleColor(.white.withAlphaComponent(0.7), for: .highlighted)\n        \n        setupGlowEffect(color: CyberpunkTheme.error)\n    }\n    \n    private func setupSuccessStyle() {\n        backgroundColor = CyberpunkTheme.success\n        setTitleColor(.black, for: .normal)\n        setTitleColor(.black.withAlphaComponent(0.7), for: .highlighted)\n        \n        setupGlowEffect(color: CyberpunkTheme.success)\n    }\n    \n    private func setupGradientBackground(_ colors: [CGColor]) {\n        backgroundGradientLayer?.removeFromSuperlayer()\n        \n        let gradientLayer = CAGradientLayer()\n        gradientLayer.colors = colors\n        gradientLayer.startPoint = CGPoint(x: 0, y: 0)\n        gradientLayer.endPoint = CGPoint(x: 1, y: 1)\n        gradientLayer.cornerRadius = layer.cornerRadius\n        \n        layer.insertSublayer(gradientLayer, at: 0)\n        backgroundGradientLayer = gradientLayer\n    }\n    \n    private func setupGlowEffect(color: UIColor) {\n        layer.shadowColor = color.cgColor\n        layer.shadowRadius = 8\n        layer.shadowOpacity = 0.6\n        layer.shadowOffset = .zero\n    }\n    \n    private func setupBorderEffect(color: UIColor) {\n        borderLayer?.removeFromSuperlayer()\n        \n        let borderLayer = CAShapeLayer()\n        borderLayer.strokeColor = color.cgColor\n        borderLayer.fillColor = UIColor.clear.cgColor\n        borderLayer.lineWidth = 2\n        borderLayer.cornerRadius = layer.cornerRadius\n        \n        layer.addSublayer(borderLayer)\n        self.borderLayer = borderLayer\n    }\n    \n    // MARK: - Layout\n    \n    public override func layoutSubviews() {\n        super.layoutSubviews()\n        \n        // Update gradient frame\n        backgroundGradientLayer?.frame = bounds\n        \n        // Update border frame\n        if let borderLayer = borderLayer {\n            borderLayer.frame = bounds\n            borderLayer.path = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath\n        }\n    }\n    \n    // MARK: - Touch Handling\n    \n    @objc private func buttonTouchDown() {\n        // Scale down animation\n        UIView.animate(\n            withDuration: 0.1,\n            delay: 0,\n            options: [.allowUserInteraction, .curveEaseOut],\n            animations: {\n                self.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)\n            }\n        )\n        \n        // Haptic feedback\n        let generator = UIImpactFeedbackGenerator(style: .light)\n        generator.impactOccurred()\n        \n        // Enhance glow effect\n        if layer.shadowOpacity > 0 {\n            layer.shadowOpacity = 0.9\n        }\n    }\n    \n    @objc private func buttonTouchUp() {\n        // Scale back up animation\n        UIView.animate(\n            withDuration: 0.2,\n            delay: 0,\n            usingSpringWithDamping: 0.8,\n            initialSpringVelocity: 0.5,\n            options: [.allowUserInteraction, .curveEaseOut],\n            animations: {\n                self.transform = .identity\n            }\n        )\n        \n        // Restore glow effect\n        if layer.shadowOpacity > 0.6 {\n            UIView.animate(withDuration: 0.3) {\n                self.layer.shadowOpacity = 0.6\n            }\n        }\n    }\n    \n    @objc private func buttonHoverEnter() {\n        UIView.animate(withDuration: 0.2) {\n            self.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)\n            self.layer.shadowOpacity = 0.9\n        }\n    }\n    \n    @objc private func buttonHoverExit() {\n        UIView.animate(withDuration: 0.2) {\n            self.transform = .identity\n            self.layer.shadowOpacity = 0.6\n        }\n    }\n    \n    // MARK: - Loading State\n    \n    public func setLoading(_ loading: Bool, animated: Bool = true) {\n        if loading {\n            startLoadingAnimation()\n        } else {\n            stopLoadingAnimation()\n        }\n    }\n    \n    private func startLoadingAnimation() {\n        isEnabled = false\n        \n        // Hide title\n        titleLabel?.alpha = 0\n        \n        // Add loading spinner\n        let spinner = createLoadingSpinner()\n        addSubview(spinner)\n        spinner.center = CGPoint(x: bounds.midX, y: bounds.midY)\n        spinner.tag = 999 // For identification\n        \n        // Start spinner animation\n        let rotationAnimation = CABasicAnimation(keyPath: \"transform.rotation\")\n        rotationAnimation.duration = 1.0\n        rotationAnimation.fromValue = 0\n        rotationAnimation.toValue = 2 * Double.pi\n        rotationAnimation.repeatCount = .infinity\n        spinner.layer.add(rotationAnimation, forKey: \"rotation\")\n    }\n    \n    private func stopLoadingAnimation() {\n        isEnabled = true\n        \n        // Show title\n        UIView.animate(withDuration: 0.3) {\n            self.titleLabel?.alpha = 1\n        }\n        \n        // Remove spinner\n        viewWithTag(999)?.removeFromSuperview()\n    }\n    \n    private func createLoadingSpinner() -> UIView {\n        let size: CGFloat = min(bounds.height * 0.6, 24)\n        let spinner = UIView(frame: CGRect(x: 0, y: 0, width: size, height: size))\n        \n        let circle = CAShapeLayer()\n        let path = UIBezierPath(arcCenter: CGPoint(x: size/2, y: size/2), radius: size/2 - 2, startAngle: 0, endAngle: 1.5 * .pi, clockwise: true)\n        \n        circle.path = path.cgPath\n        circle.strokeColor = (titleColor(for: .normal) ?? .white).cgColor\n        circle.fillColor = UIColor.clear.cgColor\n        circle.lineWidth = 2\n        circle.lineCap = .round\n        \n        spinner.layer.addSublayer(circle)\n        return spinner\n    }\n    \n    // MARK: - Pulse Animation\n    \n    public func startPulseAnimation() {\n        guard !isAnimating else { return }\n        isAnimating = true\n        \n        let pulseAnimation = CABasicAnimation(keyPath: \"transform.scale\")\n        pulseAnimation.duration = 1.0\n        pulseAnimation.fromValue = 1.0\n        pulseAnimation.toValue = 1.05\n        pulseAnimation.autoreverses = true\n        pulseAnimation.repeatCount = .infinity\n        pulseAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)\n        \n        layer.add(pulseAnimation, forKey: \"pulse\")\n    }\n    \n    public func stopPulseAnimation() {\n        isAnimating = false\n        layer.removeAnimation(forKey: \"pulse\")\n    }\n    \n    // MARK: - Configuration Methods\n    \n    public func setStyle(_ style: ButtonStyle) {\n        self.style = style\n        applyStyle()\n    }\n    \n    public func setSize(_ size: ButtonSize) {\n        self.size = size\n        \n        // Update height constraint\n        for constraint in constraints {\n            if constraint.firstAttribute == .height {\n                constraint.constant = size.height\n            }\n        }\n    }\n    \n    // MARK: - Success/Error States\n    \n    public func showSuccess(completion: (() -> Void)? = nil) {\n        let originalTitle = title(for: .normal)\n        let originalColor = backgroundColor\n        \n        // Change to success state\n        setTitle(\"✓\", for: .normal)\n        backgroundColor = CyberpunkTheme.success\n        \n        // Scale animation\n        UIView.animate(\n            withDuration: 0.3,\n            animations: {\n                self.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)\n            }\n        ) { _ in\n            UIView.animate(\n                withDuration: 0.3,\n                delay: 0.5,\n                animations: {\n                    self.transform = .identity\n                    self.setTitle(originalTitle, for: .normal)\n                    self.backgroundColor = originalColor\n                }\n            ) { _ in\n                completion?()\n            }\n        }\n    }\n    \n    public func showError(completion: (() -> Void)? = nil) {\n        let originalTitle = title(for: .normal)\n        let originalColor = backgroundColor\n        \n        // Change to error state\n        setTitle(\"✗\", for: .normal)\n        backgroundColor = CyberpunkTheme.error\n        \n        // Shake animation\n        let shake = CABasicAnimation(keyPath: \"position\")\n        shake.duration = 0.1\n        shake.repeatCount = 2\n        shake.autoreverses = true\n        shake.fromValue = NSValue(cgPoint: CGPoint(x: center.x - 5, y: center.y))\n        shake.toValue = NSValue(cgPoint: CGPoint(x: center.x + 5, y: center.y))\n        \n        layer.add(shake, forKey: \"shake\")\n        \n        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {\n            UIView.animate(\n                withDuration: 0.3,\n                animations: {\n                    self.setTitle(originalTitle, for: .normal)\n                    self.backgroundColor = originalColor\n                }\n            ) { _ in\n                completion?()\n            }\n        }\n    }\n}\n\n// MARK: - Convenience Initializers\n\nextension CyberpunkButton {\n    \n    public static func primary(title: String, size: ButtonSize = .medium) -> CyberpunkButton {\n        let button = CyberpunkButton(style: .primary, size: size)\n        button.setTitle(title, for: .normal)\n        return button\n    }\n    \n    public static func secondary(title: String, size: ButtonSize = .medium) -> CyberpunkButton {\n        let button = CyberpunkButton(style: .secondary, size: size)\n        button.setTitle(title, for: .normal)\n        return button\n    }\n    \n    public static func outline(title: String, size: ButtonSize = .medium) -> CyberpunkButton {\n        let button = CyberpunkButton(style: .outline, size: size)\n        button.setTitle(title, for: .normal)\n        return button\n    }\n    \n    public static func destructive(title: String, size: ButtonSize = .medium) -> CyberpunkButton {\n        let button = CyberpunkButton(style: .destructive, size: size)\n        button.setTitle(title, for: .normal)\n        return button\n    }\n}\n
+    private var glowAnimation: CABasicAnimation?
+    
+    // MARK: - Initialization
+    
+    public init(style: ButtonStyle = .primary, size: ButtonSize = .medium) {
+        self.style = style
+        self.size = size
+        super.init(frame: .zero)
+        setupButton()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupButton()
+    }
+    
+    // MARK: - Setup
+    
+    private func setupButton() {
+        translatesAutoresizingMaskIntoConstraints = false
+        titleLabel?.font = CyberpunkTheme.bodyFont
+        layer.cornerRadius = 12
+        layer.masksToBounds = false
+        
+        // Set height constraint
+        heightAnchor.constraint(equalToConstant: size.height).isActive = true
+        
+        // Apply style
+        applyStyle()
+        
+        // Add touch events
+        addTarget(self, action: #selector(buttonTouchDown), for: .touchDown)
+        addTarget(self, action: #selector(buttonTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])
+        
+        // Add hover effect for Mac Catalyst
+        if #available(iOS 14.0, *) {
+            addTarget(self, action: #selector(buttonHoverEnter), for: .touchDragEnter)
+            addTarget(self, action: #selector(buttonHoverExit), for: .touchDragExit)
+        }
+    }
+    
+    private func applyStyle() {
+        switch style {
+        case .primary:
+            setupPrimaryStyle()
+        case .secondary:
+            setupSecondaryStyle()
+        case .outline:
+            setupOutlineStyle()
+        case .ghost:
+            setupGhostStyle()
+        case .destructive:
+            setupDestructiveStyle()
+        case .success:
+            setupSuccessStyle()
+        }
+    }
+    
+    private func setupPrimaryStyle() {
+        backgroundColor = CyberpunkTheme.primaryCyan
+        setTitleColor(.black, for: .normal)
+        setTitleColor(.black.withAlphaComponent(0.7), for: .highlighted)
+        
+        // Add gradient background
+        setupGradientBackground([
+            CyberpunkTheme.primaryCyan.cgColor,
+            CyberpunkTheme.primaryCyan.withAlphaComponent(0.8).cgColor
+        ])
+        
+        // Add glow effect
+        setupGlowEffect(color: CyberpunkTheme.primaryCyan)
+    }
+    
+    private func setupSecondaryStyle() {
+        backgroundColor = CyberpunkTheme.accentPink
+        setTitleColor(.white, for: .normal)
+        setTitleColor(.white.withAlphaComponent(0.7), for: .highlighted)
+        
+        setupGradientBackground([
+            CyberpunkTheme.accentPink.cgColor,
+            CyberpunkTheme.accentPink.withAlphaComponent(0.8).cgColor
+        ])
+        
+        setupGlowEffect(color: CyberpunkTheme.accentPink)
+    }
+    
+    private func setupOutlineStyle() {
+        backgroundColor = .clear
+        setTitleColor(CyberpunkTheme.primaryCyan, for: .normal)
+        setTitleColor(CyberpunkTheme.primaryCyan.withAlphaComponent(0.7), for: .highlighted)
+        
+        setupBorderEffect(color: CyberpunkTheme.primaryCyan)
+    }
+    
+    private func setupGhostStyle() {
+        backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.5)
+        setTitleColor(CyberpunkTheme.primaryText, for: .normal)
+        setTitleColor(CyberpunkTheme.primaryText.withAlphaComponent(0.7), for: .highlighted)
+        
+        layer.borderWidth = 1
+        layer.borderColor = CyberpunkTheme.border.cgColor
+    }
+    
+    private func setupDestructiveStyle() {
+        backgroundColor = CyberpunkTheme.error
+        setTitleColor(.white, for: .normal)
+        setTitleColor(.white.withAlphaComponent(0.7), for: .highlighted)
+        
+        setupGlowEffect(color: CyberpunkTheme.error)
+    }
+    
+    private func setupSuccessStyle() {
+        backgroundColor = CyberpunkTheme.success
+        setTitleColor(.black, for: .normal)
+        setTitleColor(.black.withAlphaComponent(0.7), for: .highlighted)
+        
+        setupGlowEffect(color: CyberpunkTheme.success)
+    }
+    
+    private func setupGradientBackground(_ colors: [CGColor]) {
+        backgroundGradientLayer?.removeFromSuperlayer()
+        
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.colors = colors
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 1)
+        gradientLayer.cornerRadius = layer.cornerRadius
+        
+        layer.insertSublayer(gradientLayer, at: 0)
+        backgroundGradientLayer = gradientLayer
+    }
+    
+    private func setupGlowEffect(color: UIColor) {
+        layer.shadowColor = color.cgColor
+        layer.shadowRadius = 8
+        layer.shadowOpacity = 0.6
+        layer.shadowOffset = .zero
+    }
+    
+    private func setupBorderEffect(color: UIColor) {
+        borderLayer?.removeFromSuperlayer()
+        
+        let borderLayer = CAShapeLayer()
+        borderLayer.strokeColor = color.cgColor
+        borderLayer.fillColor = UIColor.clear.cgColor
+        borderLayer.lineWidth = 2
+        borderLayer.cornerRadius = layer.cornerRadius
+        
+        layer.addSublayer(borderLayer)
+        self.borderLayer = borderLayer
+    }
+    
+    // MARK: - Layout
+    
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        
+        // Update gradient frame
+        backgroundGradientLayer?.frame = bounds
+        
+        // Update border frame
+        if let borderLayer = borderLayer {
+            borderLayer.frame = bounds
+            borderLayer.path = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath
+        }
+    }
+    
+    // MARK: - Touch Handling
+    
+    @objc private func buttonTouchDown() {
+        // Scale down animation
+        UIView.animate(
+            withDuration: 0.1,
+            delay: 0,
+            options: [.allowUserInteraction, .curveEaseOut],
+            animations: {
+                self.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+            }
+        )
+        
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        // Enhance glow effect
+        if layer.shadowOpacity > 0 {
+            layer.shadowOpacity = 0.9
+        }
+    }
+    
+    @objc private func buttonTouchUp() {
+        // Scale back up animation
+        UIView.animate(
+            withDuration: 0.2,
+            delay: 0,
+            usingSpringWithDamping: 0.8,
+            initialSpringVelocity: 0.5,
+            options: [.allowUserInteraction, .curveEaseOut],
+            animations: {
+                self.transform = .identity
+            }
+        )
+        
+        // Restore glow effect
+        if layer.shadowOpacity > 0.6 {
+            UIView.animate(withDuration: 0.3) {
+                self.layer.shadowOpacity = 0.6
+            }
+        }
+    }
+    
+    @objc private func buttonHoverEnter() {
+        UIView.animate(withDuration: 0.2) {
+            self.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+            self.layer.shadowOpacity = 0.9
+        }
+    }
+    
+    @objc private func buttonHoverExit() {
+        UIView.animate(withDuration: 0.2) {
+            self.transform = .identity
+            self.layer.shadowOpacity = 0.6
+        }
+    }
+    
+    // MARK: - Loading State
+    
+    public func setLoading(_ loading: Bool, animated: Bool = true) {
+        if loading {
+            startLoadingAnimation()
+        } else {
+            stopLoadingAnimation()
+        }
+    }
+    
+    private func startLoadingAnimation() {
+        isEnabled = false
+        
+        // Hide title
+        titleLabel?.alpha = 0
+        
+        // Add loading spinner
+        let spinner = createLoadingSpinner()
+        addSubview(spinner)
+        spinner.center = CGPoint(x: bounds.midX, y: bounds.midY)
+        spinner.tag = 999 // For identification
+        
+        // Start spinner animation
+        let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
+        rotationAnimation.duration = 1.0
+        rotationAnimation.fromValue = 0
+        rotationAnimation.toValue = 2 * Double.pi
+        rotationAnimation.repeatCount = .infinity
+        spinner.layer.add(rotationAnimation, forKey: "rotation")
+    }
+    
+    private func stopLoadingAnimation() {
+        isEnabled = true
+        
+        // Show title
+        UIView.animate(withDuration: 0.3) {
+            self.titleLabel?.alpha = 1
+        }
+        
+        // Remove spinner
+        viewWithTag(999)?.removeFromSuperview()
+    }
+    
+    private func createLoadingSpinner() -> UIView {
+        let size: CGFloat = min(bounds.height * 0.6, 24)
+        let spinner = UIView(frame: CGRect(x: 0, y: 0, width: size, height: size))
+        
+        let circle = CAShapeLayer()
+        let path = UIBezierPath(arcCenter: CGPoint(x: size/2, y: size/2), radius: size/2 - 2, startAngle: 0, endAngle: 1.5 * .pi, clockwise: true)
+        
+        circle.path = path.cgPath
+        circle.strokeColor = (titleColor(for: .normal) ?? .white).cgColor
+        circle.fillColor = UIColor.clear.cgColor
+        circle.lineWidth = 2
+        circle.lineCap = .round
+        
+        spinner.layer.addSublayer(circle)
+        return spinner
+    }
+    
+    // MARK: - Pulse Animation
+    
+    public func startPulseAnimation() {
+        guard !isAnimating else { return }
+        isAnimating = true
+        
+        let pulseAnimation = CABasicAnimation(keyPath: "transform.scale")
+        pulseAnimation.duration = 1.0
+        pulseAnimation.fromValue = 1.0
+        pulseAnimation.toValue = 1.05
+        pulseAnimation.autoreverses = true
+        pulseAnimation.repeatCount = .infinity
+        pulseAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        
+        layer.add(pulseAnimation, forKey: "pulse")
+    }
+    
+    public func stopPulseAnimation() {
+        isAnimating = false
+        layer.removeAnimation(forKey: "pulse")
+    }
+    
+    // MARK: - Configuration Methods
+    
+    public func setStyle(_ style: ButtonStyle) {
+        self.style = style
+        applyStyle()
+    }
+    
+    public func setSize(_ size: ButtonSize) {
+        self.size = size
+        
+        // Update height constraint
+        for constraint in constraints {
+            if constraint.firstAttribute == .height {
+                constraint.constant = size.height
+            }
+        }
+    }
+    
+    // MARK: - Success/Error States
+    
+    public func showSuccess(completion: (() -> Void)? = nil) {
+        let originalTitle = title(for: .normal)
+        let originalColor = backgroundColor
+        
+        // Change to success state
+        setTitle("✓", for: .normal)
+        backgroundColor = CyberpunkTheme.success
+        
+        // Scale animation
+        UIView.animate(
+            withDuration: 0.3,
+            animations: {
+                self.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+            }
+        ) { _ in
+            UIView.animate(
+                withDuration: 0.3,
+                delay: 0.5,
+                animations: {
+                    self.transform = .identity
+                    self.setTitle(originalTitle, for: .normal)
+                    self.backgroundColor = originalColor
+                }
+            ) { _ in
+                completion?()
+            }
+        }
+    }
+    
+    public func showError(completion: (() -> Void)? = nil) {
+        let originalTitle = title(for: .normal)
+        let originalColor = backgroundColor
+        
+        // Change to error state
+        setTitle("✗", for: .normal)
+        backgroundColor = CyberpunkTheme.error
+        
+        // Shake animation
+        let shake = CABasicAnimation(keyPath: "position")
+        shake.duration = 0.1
+        shake.repeatCount = 2
+        shake.autoreverses = true
+        shake.fromValue = NSValue(cgPoint: CGPoint(x: center.x - 5, y: center.y))
+        shake.toValue = NSValue(cgPoint: CGPoint(x: center.x + 5, y: center.y))
+        
+        layer.add(shake, forKey: "shake")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            UIView.animate(
+                withDuration: 0.3,
+                animations: {
+                    self.setTitle(originalTitle, for: .normal)
+                    self.backgroundColor = originalColor
+                }
+            ) { _ in
+                completion?()
+            }
+        }
+    }
+}
+
+// MARK: - Convenience Initializers
+
+extension CyberpunkButton {
+    
+    public static func primary(title: String, size: ButtonSize = .medium) -> CyberpunkButton {
+        let button = CyberpunkButton(style: .primary, size: size)
+        button.setTitle(title, for: .normal)
+        return button
+    }
+    
+    public static func secondary(title: String, size: ButtonSize = .medium) -> CyberpunkButton {
+        let button = CyberpunkButton(style: .secondary, size: size)
+        button.setTitle(title, for: .normal)
+        return button
+    }
+    
+    public static func outline(title: String, size: ButtonSize = .medium) -> CyberpunkButton {
+        let button = CyberpunkButton(style: .outline, size: size)
+        button.setTitle(title, for: .normal)
+        return button
+    }
+    
+    public static func destructive(title: String, size: ButtonSize = .medium) -> CyberpunkButton {
+        let button = CyberpunkButton(style: .destructive, size: size)
+        button.setTitle(title, for: .normal)
+        return button
+    }
+}

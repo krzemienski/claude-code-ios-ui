@@ -373,16 +373,8 @@ class FeedbackViewController: UIViewController {
         present(loadingAlert, animated: true)
         
         // Convert to API format
-        let feedbackType: FeedbackType
-        switch feedback.type {
-        case .bug: feedbackType = .bug
-        case .feature: feedbackType = .feature
-        case .improvement: feedbackType = .improvement
-        case .other: feedbackType = .other
-        }
-        
         let apiFeedback = APIFeedbackData(
-            type: feedbackType,
+            type: feedback.apiType,
             message: feedback.message,
             email: feedback.email,
             deviceInfo: feedback.deviceInfo,
@@ -391,15 +383,16 @@ class FeedbackViewController: UIViewController {
         )
         
         // Submit to backend
-        APIClient.shared.submitFeedback(apiFeedback) { [weak self] result in
-            DispatchQueue.main.async {
-                loadingAlert.dismiss(animated: true) {
-                    switch result {
-                    case .success:
-                        self?.showSuccessAndDismiss()
-                    case .failure(let error):
-                        self?.showError(error)
-                    }
+        Task { @MainActor in
+            do {
+                // Use async call instead of callback-based one
+                try await APIClient.shared.requestVoid(.submitFeedback(apiFeedback))
+                loadingAlert.dismiss(animated: true) { [weak self] in
+                    self?.showSuccessAndDismiss()
+                }
+            } catch {
+                loadingAlert.dismiss(animated: true) { [weak self] in
+                    self?.showError(error)
                 }
             }
         }
@@ -442,12 +435,12 @@ class FeedbackViewController: UIViewController {
     @objc private func keyboardWillShow(_ notification: Notification) {
         guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
         scrollView.contentInset.bottom = keyboardFrame.height
-        scrollView.scrollIndicatorInsets.bottom = keyboardFrame.height
+        scrollView.verticalScrollIndicatorInsets.bottom = keyboardFrame.height
     }
     
     @objc private func keyboardWillHide(_ notification: Notification) {
         scrollView.contentInset.bottom = 0
-        scrollView.scrollIndicatorInsets.bottom = 0
+        scrollView.verticalScrollIndicatorInsets.bottom = 0
     }
     
     @objc private func dismissKeyboard() {
@@ -499,4 +492,15 @@ struct FeedbackData {
     let screenshot: UIImage?
     let deviceInfo: String
     let appVersion: String
+    
+    // Helper to convert to API FeedbackType
+    var apiType: FeedbackType {
+        switch type {
+        case .bug: return .bug
+        case .feature: return .feature
+        case .improvement: return .general  // Map improvement to general
+        case .praise: return .general       // Map praise to general
+        case .other: return .general        // Map other to general
+        }
+    }
 }

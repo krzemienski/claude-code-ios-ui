@@ -239,10 +239,10 @@ public class EnhancedChatViewController: BaseViewController {
         
         let newMessage = Message(
             id: UUID().uuidString,
+            sessionId: session?.id ?? "default",
             content: text,
             role: .user,
-            timestamp: Date(),
-            status: .sending
+            timestamp: Date()
         )
         
         messages.append(newMessage)
@@ -338,17 +338,17 @@ struct SwiftUIIntegration_Previews: PreviewProvider {
             messages: [
                 Message(
                     id: "1",
+                    sessionId: "preview",
                     content: "Hello! How can I help you today?",
                     role: .assistant,
-                    timestamp: Date(),
-                    status: .delivered
+                    timestamp: Date()
                 ),
                 Message(
                     id: "2",
+                    sessionId: "preview",
                     content: "I need help with SwiftUI",
                     role: .user,
-                    timestamp: Date(),
-                    status: .delivered
+                    timestamp: Date()
                 )
             ],
             onRetry: { _ in },

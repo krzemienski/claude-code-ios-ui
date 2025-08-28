@@ -85,7 +85,9 @@ class FileExplorerViewController: BaseViewController {
         return searchBar
     }()
     
-    private let emptyStateView = NoDataView()
+    private lazy var emptyStateView = NoDataView(type: .noFiles, action: { [weak self] in
+        self?.createNewFile()
+    })
     
     // MARK: - Initialization
     
@@ -159,15 +161,8 @@ class FileExplorerViewController: BaseViewController {
     }
     
     private func setupEmptyState() {
-        emptyStateView.configure(
-            artStyle: .noData,
-            title: "No Files in Project",
-            message: "Create your first file or folder to get started",
-            buttonTitle: "Create New File",
-            buttonAction: { [weak self] in
-                self?.createNewFile()
-            }
-        )
+        // NoDataView is configured during initialization
+        // It shows the appropriate empty state for .noFiles type
         emptyStateView.isHidden = true
     }
     
@@ -397,11 +392,10 @@ class FileExplorerViewController: BaseViewController {
             // Update empty state visibility
             if rootNode == nil || rootNode?.children?.isEmpty ?? true {
                 tableView.isHidden = true
-                emptyStateView.show(animated: true)
+                emptyStateView.isHidden = false
             } else {
-                emptyStateView.hide(animated: true) { [weak self] in
-                    self?.tableView.isHidden = false
-                }
+                emptyStateView.isHidden = true
+                tableView.isHidden = false
             }
         } catch {
             Logger.shared.error("Failed to load file tree: \(error)")
@@ -411,7 +405,7 @@ class FileExplorerViewController: BaseViewController {
             await MainActor.run {
                 self.showError("Failed to load file tree: \(error.localizedDescription)")
                 self.tableView.isHidden = true
-                self.emptyStateView.show(animated: true)
+                self.emptyStateView.isHidden = false
                 self.tableView.reloadData()
             }
         }
@@ -520,11 +514,10 @@ class FileExplorerViewController: BaseViewController {
             // Update empty state visibility
             if rootNode == nil || rootNode?.children?.isEmpty ?? true {
                 tableView.isHidden = true
-                emptyStateView.show(animated: true)
+                emptyStateView.isHidden = false
             } else {
-                emptyStateView.hide(animated: true) { [weak self] in
-                    self?.tableView.isHidden = false
-                }
+                emptyStateView.isHidden = true
+                tableView.isHidden = false
             }
             
             // Haptic feedback on successful refresh

@@ -10,7 +10,7 @@ import UIKit
 
 // MARK: - Empty State Types
 
-enum EmptyStateType {
+public enum EmptyStateType {
     case noSessions
     case noProjects
     case noMessages
@@ -134,7 +134,7 @@ enum EmptyStateType {
 
 // MARK: - NoDataView Component
 
-class NoDataView: UIView {
+public class NoDataView: UIView {
     
     // MARK: - Properties
     
@@ -155,7 +155,7 @@ class NoDataView: UIView {
     
     // MARK: - Initialization
     
-    init(type: EmptyStateType, action: (() -> Void)? = nil) {
+    public init(type: EmptyStateType, action: (() -> Void)? = nil) {
         self.type = type
         self.action = action
         super.init(frame: .zero)
@@ -453,7 +453,7 @@ class NoDataView: UIView {
         glowAnimationTimer = glitchTimer
     }
     
-    override func layoutSubviews() {
+    public override func layoutSubviews() {
         super.layoutSubviews()
         
         // Update particle positions for new bounds

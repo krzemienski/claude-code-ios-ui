@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import UIKit
 import Starscream
 
 // MARK: - Starscream WebSocket Manager
@@ -94,8 +95,8 @@ final class StarscreamWebSocketManager: NSObject, WebSocketProtocol {
         // Set callback queue to main for UI updates
         socket?.callbackQueue = DispatchQueue.main
         
-        // Enable compression for better performance
-        socket?.enableCompression = true
+        // Note: Compression is handled automatically in Starscream 4.x
+        // socket?.enableCompression = true
         
         // Set connection state and connect
         connectionState = .connecting

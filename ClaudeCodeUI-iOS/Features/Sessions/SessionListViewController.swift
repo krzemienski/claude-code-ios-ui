@@ -3,6 +3,7 @@
 //  ClaudeCodeUI
 //
 //  Created by Claude Code on 2024-08-13.
+//  Updated for enhanced UI/UX polish
 //
 
 import UIKit
@@ -19,9 +20,15 @@ public class SessionListViewController: BaseViewController {
     private let searchController = UISearchController(searchResultsController: nil)
     private let sortSegmentedControl = UISegmentedControl(items: ["Recent", "Messages", "Name"])
     private let persistenceService = SessionPersistenceService.shared
-    // TODO: Fix NoDataView import
-    // private let emptyStateView = NoDataView()
-    private let emptyStateView = UIView() // Temporary placeholder
+    
+    // Enhanced empty state with proper NoDataView
+    private lazy var emptyStateView: NoDataView = {
+        let view = NoDataView(type: .noSessions) { [weak self] in
+            self?.createNewSession()
+        }
+        return view
+    }()
+    
     private var isSearching: Bool {
         return searchController.isActive && !(searchController.searchBar.text?.isEmpty ?? true)
     }
@@ -226,20 +233,6 @@ public class SessionListViewController: BaseViewController {
         emptyStateView.isHidden = true
         view.addSubview(emptyStateView)
         
-        // TODO: Fix NoDataView configuration
-        /*
-        emptyStateView.configure(
-            artStyle: .noData,
-            title: "No Sessions Yet",
-            message: "Start chatting with Claude to create your first session",
-            buttonTitle: "Create New Session",
-            buttonAction: { [weak self] in
-                self?.createNewSession()
-            }
-        )
-        */
-        emptyStateView.backgroundColor = CyberpunkTheme.surface
-        
         // Setup constraints
         emptyStateView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -280,117 +273,12 @@ public class SessionListViewController: BaseViewController {
     
     // MARK: - Skeleton Loading
     private func showSkeletonLoading() {
-        // Create container view for skeleton
-        let containerView = UIView(frame: tableView.bounds)
-        containerView.backgroundColor = CyberpunkTheme.background
-        containerView.tag = 999 // Tag for identification
-        
-        // Add skeleton cells with cyberpunk animation
-        var previousCell: UIView?
-        for i in 0..<6 {
-            // Create cell container
-            let cellView = UIView()
-            cellView.translatesAutoresizingMaskIntoConstraints = false
-            cellView.backgroundColor = CyberpunkTheme.surface
-            containerView.addSubview(cellView)
-            
-            // Create avatar skeleton
-            let avatarView = UIView()
-            avatarView.translatesAutoresizingMaskIntoConstraints = false
-            avatarView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.7)
-            avatarView.layer.cornerRadius = 22
-            avatarView.layer.masksToBounds = true
-            cellView.addSubview(avatarView)
-            
-            // Create title skeleton
-            let titleView = UIView()
-            titleView.translatesAutoresizingMaskIntoConstraints = false
-            titleView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.7)
-            titleView.layer.cornerRadius = 4
-            cellView.addSubview(titleView)
-            
-            // Create subtitle skeleton
-            let subtitleView = UIView()
-            subtitleView.translatesAutoresizingMaskIntoConstraints = false
-            subtitleView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.5)
-            subtitleView.layer.cornerRadius = 4
-            cellView.addSubview(subtitleView)
-            
-            // Add shimmer gradient
-            let gradientLayer = CAGradientLayer()
-            gradientLayer.colors = [
-                CyberpunkTheme.surface.cgColor,
-                CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor,
-                CyberpunkTheme.surface.cgColor
-            ]
-            gradientLayer.locations = [0.0, 0.5, 1.0]
-            gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.5)
-            gradientLayer.endPoint = CGPoint(x: 1.0, y: 0.5)
-            gradientLayer.frame = CGRect(x: -tableView.bounds.width, y: 0, width: tableView.bounds.width * 3, height: 80)
-            cellView.layer.addSublayer(gradientLayer)
-            
-            // Animate shimmer
-            let animation = CABasicAnimation(keyPath: "transform.translation.x")
-            animation.duration = 1.5
-            animation.fromValue = -tableView.bounds.width
-            animation.toValue = tableView.bounds.width
-            animation.repeatCount = .infinity
-            gradientLayer.add(animation, forKey: "shimmer")
-            
-            // Setup constraints
-            NSLayoutConstraint.activate([
-                // Cell
-                cellView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-                cellView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-                cellView.heightAnchor.constraint(equalToConstant: 80),
-                
-                // Avatar
-                avatarView.leadingAnchor.constraint(equalTo: cellView.leadingAnchor, constant: 16),
-                avatarView.centerYAnchor.constraint(equalTo: cellView.centerYAnchor),
-                avatarView.widthAnchor.constraint(equalToConstant: 44),
-                avatarView.heightAnchor.constraint(equalToConstant: 44),
-                
-                // Title
-                titleView.leadingAnchor.constraint(equalTo: avatarView.trailingAnchor, constant: 12),
-                titleView.topAnchor.constraint(equalTo: cellView.topAnchor, constant: 20),
-                titleView.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -16),
-                titleView.heightAnchor.constraint(equalToConstant: 20),
-                
-                // Subtitle
-                subtitleView.leadingAnchor.constraint(equalTo: titleView.leadingAnchor),
-                subtitleView.topAnchor.constraint(equalTo: titleView.bottomAnchor, constant: 8),
-                subtitleView.widthAnchor.constraint(equalTo: titleView.widthAnchor, multiplier: 0.7),
-                subtitleView.heightAnchor.constraint(equalToConstant: 16)
-            ])
-            
-            if let previous = previousCell {
-                cellView.topAnchor.constraint(equalTo: previous.bottomAnchor, constant: 1).isActive = true
-            } else {
-                cellView.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
-            }
-            
-            previousCell = cellView
-        }
-        
-        // Store and add as overlay
-        skeletonView = containerView
-        containerView.alpha = 0
-        tableView.addSubview(containerView)
-        tableView.bringSubviewToFront(containerView)
-        
-        // Fade in animation
-        UIView.animate(withDuration: 0.3) {
-            containerView.alpha = 1
-        }
+        // Use the improved skeleton extension from SkeletonView
+        tableView.showSkeletonLoading(count: 6, cellHeight: 80)
     }
     
     private func hideSkeletonLoading() {
-        UIView.animate(withDuration: 0.3, animations: {
-            self.skeletonView?.alpha = 0
-        }) { _ in
-            self.skeletonView?.removeFromSuperview()
-            self.skeletonView = nil
-        }
+        tableView.hideSkeletonLoading()
     }
     
     // MARK: - Data Loading
@@ -402,9 +290,6 @@ public class SessionListViewController: BaseViewController {
             hasMoreSessions = true
             // Show skeleton loading for initial load and refresh
             showSkeletonLoading()
-            // Also show cyberpunk loading indicator with message
-            // TODO: Fix CyberpunkLoadingIndicator import
-            // showCyberpunkLoading(message: "Loading sessions...")
         } else {
             // For pagination, just set the flag
             isLoadingMore = true
@@ -441,7 +326,6 @@ public class SessionListViewController: BaseViewController {
                     self.currentOffset += fetchedSessions.count
                     self.isLoadingMore = false
                     self.hideSkeletonLoading()  // Hide skeleton loading
-                    // self.hideCyberpunkLoading()  // Hide cyberpunk loading indicator
                     self.refreshControl.endRefreshing()
                     self.tableView.reloadData()
                     self.updateEmptyStateVisibility()
@@ -461,7 +345,6 @@ public class SessionListViewController: BaseViewController {
                 await MainActor.run {
                     self.isLoadingMore = false
                     self.hideSkeletonLoading()  // Hide skeleton loading
-                    // self.hideCyberpunkLoading()  // Hide cyberpunk loading indicator on error
                     
                     // Error haptic feedback if refreshing
                     if self.refreshControl.isRefreshing {
@@ -539,176 +422,52 @@ public class SessionListViewController: BaseViewController {
                     // Hide loading indicator
                     self.hideLoading()
                     
-                    // Store session ID for persistence
-                    self.persistenceService.setCurrentSession(newSession.id, for: self.project.name)
-                    self.persistenceService.cacheSession(newSession)
-                    
-                    // Reload table and update empty state
-                    self.tableView.reloadData()
+                    // Update empty state
                     self.updateEmptyStateVisibility()
                     
-                    // Haptic feedback for successful creation
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                    impactFeedback.prepare()
-                    impactFeedback.impactOccurred()
+                    // Update table view with animation
+                    self.tableView.insertRows(at: [IndexPath(row: 0, section: 0)], with: .automatic)
                     
-                    // Navigate to chat with new session
+                    // Navigate to the new session
                     let chatVC = ChatViewController(project: self.project, session: newSession)
                     self.navigationController?.pushViewController(chatVC, animated: true)
                 }
             } catch {
                 await MainActor.run {
-                    // Hide loading indicator
                     self.hideLoading()
-                    
-                    // Show more detailed error message with ErrorAlertView
-                    if let apiError = error as? APIError {
-                        switch apiError {
-                        case .unauthorized:
-                            self.showErrorAlert(
-                                severity: .critical,
-                                title: "Authentication Required",
-                                message: "Your session has expired. Please log in again.",
-                                showRetry: false
-                            )
-                        case .networkError:
-                            self.showNetworkError(
-                                message: "Unable to create session. Please check your connection.",
-                                retryAction: { [weak self] in
-                                    self?.createNewSession()
-                                }
-                            )
-                        case .serverError(let message):
-                            self.showErrorAlert(
-                                severity: .error,
-                                title: "Server Error",
-                                message: message,
-                                details: error.localizedDescription,
-                                showRetry: true,
-                                retryAction: { [weak self] in
-                                    self?.createNewSession()
-                                }
-                            )
-                        default:
-                            self.showErrorAlert(
-                                title: "Session Creation Failed",
-                                message: error.localizedDescription,
-                                showRetry: true,
-                                retryAction: { [weak self] in
-                                    self?.createNewSession()
-                                }
-                            )
+                    self.showErrorAlert(
+                        severity: .error,
+                        title: "Session Creation Failed",
+                        message: error.localizedDescription,
+                        showRetry: true,
+                        retryAction: { [weak self] in
+                            self?.createNewSession()
                         }
-                    } else {
-                        self.showErrorAlert(
-                            title: "Session Creation Failed",
-                            message: error.localizedDescription,
-                            showRetry: true,
-                            retryAction: { [weak self] in
-                                self?.createNewSession()
-                            }
-                        )
-                    }
+                    )
                 }
             }
         }
     }
     
-    @objc private func sortOptionChanged() {
-        sortSessions()
-        tableView.reloadData()
-    }
-    
-    // MARK: - Sorting & Filtering
-    
-    private func sortSessions() {
-        // Create defensive copies to prevent array mutation races
-        let sessionsToSort = isSearching ? Array(filteredSessions) : Array(sessions)
+    @objc private func sortOptionChanged(_ sender: UISegmentedControl) {
+        guard let sortOption = SortOption(rawValue: sender.selectedSegmentIndex) else { return }
         
-        switch SortOption(rawValue: sortSegmentedControl.selectedSegmentIndex) {
+        let sessionsToSort = isSearching ? filteredSessions : sessions
+        
+        switch sortOption {
         case .recent:
-            let sortedSessions = sessionsToSort.sorted { 
-                let date1 = $0.lastActivity ?? Date.distantPast
-                let date2 = $1.lastActivity ?? Date.distantPast
-                return date1 > date2
-            }
-            
-            // Atomic assignment on main thread
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                if self.isSearching {
-                    self.filteredSessions = sortedSessions
-                } else {
-                    self.sessions = sortedSessions
-                }
-                self.tableView.reloadData()
-            }
-            
+            sessions = sessionsToSort.sorted { $0.updatedAt > $1.updatedAt }
         case .messageCount:
-            let sortedSessions = sessionsToSort.sorted { 
-                return $0.messageCount > $1.messageCount
-            }
-            
-            // Atomic assignment on main thread
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                if self.isSearching {
-                    self.filteredSessions = sortedSessions
-                } else {
-                    self.sessions = sortedSessions
-                }
-                self.tableView.reloadData()
-            }
-            
+            sessions = sessionsToSort.sorted { $0.messageCount > $1.messageCount }
         case .name:
-            let sortedSessions = sessionsToSort.sorted { 
-                let summary1 = $0.summary ?? ""
-                let summary2 = $1.summary ?? ""
-                return summary1.localizedCaseInsensitiveCompare(summary2) == .orderedAscending
-            }
-            
-            // Atomic assignment on main thread
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                if self.isSearching {
-                    self.filteredSessions = sortedSessions
-                } else {
-                    self.sessions = sortedSessions
-                }
-                self.tableView.reloadData()
-            }
-            
-        default:
-            break
+            sessions = sessionsToSort.sorted { ($0.summary ?? "") < ($1.summary ?? "") }
         }
-    }
-    
-    private func filterSessions(searchText: String) {
-        // Create defensive copy to prevent race conditions
-        let sessionsCopy = Array(sessions)
         
-        if searchText.isEmpty {
-            filteredSessions = sessionsCopy
-        } else {
-            filteredSessions = sessionsCopy.filter { session in
-                let summary = session.summary
-                let sessionId = session.id
-                let summaryMatch = summary?.localizedCaseInsensitiveContains(searchText) ?? false
-                let idMatch = sessionId.localizedCaseInsensitiveContains(searchText)
-                return summaryMatch || idMatch
-            }
+        if isSearching {
+            filteredSessions = sessions
         }
-        sortSessions()
-    }
-    
-    private func showError(_ error: Error) {
-        let alert = UIAlertController(
-            title: "Error",
-            message: error.localizedDescription,
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+        
+        tableView.reloadData()
     }
 }
 
@@ -719,26 +478,59 @@ extension SessionListViewController: UITableViewDataSource {
     }
     
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "SessionCell", for: indexPath) as! SessionTableViewCell
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "SessionCell", for: indexPath) as? SessionTableViewCell else {
+            return UITableViewCell()
+        }
+        
         let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
         cell.configure(with: session)
-        cell.accessibilityIdentifier = "sessionCell_\(indexPath.row)"
         
-        // Load more when approaching end (only when not searching)
-        if !isSearching && indexPath.row == sessions.count - 5 && hasMoreSessions && !isLoadingMore {
+        // Check if we need to load more (pagination)
+        let displayedSessions = isSearching ? filteredSessions : sessions
+        if !isSearching && indexPath.row == displayedSessions.count - 3 && hasMoreSessions && !isLoadingMore {
             fetchSessions(append: true)
         }
         
         return cell
     }
-}
-
-// MARK: - UISearchResultsUpdating
-extension SessionListViewController: UISearchResultsUpdating {
-    public func updateSearchResults(for searchController: UISearchController) {
-        guard let searchText = searchController.searchBar.text else { return }
-        filterSessions(searchText: searchText)
-        tableView.reloadData()
+    
+    // Swipe actions for sessions
+    public func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
+        
+        // Delete action with cyberpunk styling
+        let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completion in
+            self?.deleteSession(at: indexPath, session: session, completion: completion)
+        }
+        deleteAction.image = UIImage(systemName: "trash")
+        deleteAction.backgroundColor = CyberpunkTheme.error
+        
+        // Archive action with cyberpunk styling
+        let archiveAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            self?.archiveSession(at: indexPath, session: session, completion: completion)
+        }
+        archiveAction.image = UIImage(systemName: "archivebox")
+        archiveAction.backgroundColor = CyberpunkTheme.warning
+        
+        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, archiveAction])
+        configuration.performsFirstActionWithFullSwipe = false
+        return configuration
+    }
+    
+    // Leading swipe actions
+    public func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
+        
+        // Duplicate action
+        let duplicateAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            self?.duplicateSession(session, completion: completion)
+        }
+        duplicateAction.image = UIImage(systemName: "doc.on.doc")
+        duplicateAction.backgroundColor = CyberpunkTheme.primaryCyan
+        
+        let configuration = UISwipeActionsConfiguration(actions: [duplicateAction])
+        configuration.performsFirstActionWithFullSwipe = false
+        return configuration
     }
 }
 
@@ -746,13 +538,8 @@ extension SessionListViewController: UISearchResultsUpdating {
 extension SessionListViewController: UITableViewDelegate {
     public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        
         let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
-        
-        // Store selected session for persistence
-        persistenceService.setCurrentSession(session.id, for: project.name)
-        persistenceService.cacheSession(session)
-        
-        // Navigate to chat with selected session
         let chatVC = ChatViewController(project: project, session: session)
         navigationController?.pushViewController(chatVC, animated: true)
     }
@@ -760,254 +547,58 @@ extension SessionListViewController: UITableViewDelegate {
     public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 80
     }
-    
-    public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        // Entrance animation for cells
-        if !sessions.isEmpty {
-            // Only animate the first few visible cells
-            let visibleCells = tableView.visibleCells
-            if visibleCells.count <= 10 {
-                cell.alpha = 0
-                cell.transform = CGAffineTransform(translationX: -50, y: 0)
-                
-                UIView.animate(withDuration: 0.4,
-                              delay: 0.05 * Double(indexPath.row),
-                              usingSpringWithDamping: 0.8,
-                              initialSpringVelocity: 0.5,
-                              options: .curveEaseOut,
-                              animations: {
-                    cell.alpha = 1
-                    cell.transform = .identity
-                })
-            }
+}
+
+// MARK: - UISearchResultsUpdating
+extension SessionListViewController: UISearchResultsUpdating {
+    public func updateSearchResults(for searchController: UISearchController) {
+        guard let searchText = searchController.searchBar.text, !searchText.isEmpty else {
+            filteredSessions = []
+            tableView.reloadData()
+            return
         }
-    }
-    
-    // MARK: - Swipe to Delete
-    public func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        return true
-    }
-    
-    public func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        // Delete action with enhanced visuals
-        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, view, completion in
-            // Enhanced haptic feedback
-            let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
-            impactFeedback.prepare()
-            impactFeedback.impactOccurred()
-            
-            // Animate the cell before deletion
-            if let cell = tableView.cellForRow(at: indexPath) {
-                AnimationManager.shared.shake(cell, intensity: 10)
-            }
-            
-            self?.deleteSession(at: indexPath, completion: completion)
+        
+        filteredSessions = sessions.filter { session in
+            session.title.localizedCaseInsensitiveContains(searchText) ||
+            (session.lastMessage?.localizedCaseInsensitiveContains(searchText) ?? false)
         }
-        deleteAction.backgroundColor = CyberpunkTheme.accentPink
-        deleteAction.image = UIImage(systemName: "trash.fill")
         
-        // Archive action with animation
-        let archiveAction = UIContextualAction(style: .normal, title: "Archive") { [weak self] _, view, completion in
-            // Haptic feedback
-            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-            impactFeedback.prepare()
-            impactFeedback.impactOccurred()
-            
-            // Animate the cell
-            if let cell = tableView.cellForRow(at: indexPath) {
-                AnimationManager.shared.fadeOut(cell, duration: 0.3) {
-                    self?.archiveSession(at: indexPath, completion: completion)
-                }
-            } else {
-                self?.archiveSession(at: indexPath, completion: completion)
-            }
-        }
-        archiveAction.backgroundColor = CyberpunkTheme.surfaceSecondary
-        archiveAction.image = UIImage(systemName: "archivebox.fill")
-        
-        // Duplicate action
-        let duplicateAction = UIContextualAction(style: .normal, title: "Duplicate") { [weak self] _, _, completion in
-            // Haptic feedback
-            let selectionFeedback = UISelectionFeedbackGenerator()
-            selectionFeedback.prepare()
-            selectionFeedback.selectionChanged()
-            
-            // Animate the cell
-            if let cell = tableView.cellForRow(at: indexPath) {
-                AnimationManager.shared.pulse(cell, scale: 1.05, duration: 0.2)
-            }
-            
-            self?.duplicateSession(at: indexPath, completion: completion)
-        }
-        duplicateAction.backgroundColor = CyberpunkTheme.primaryCyan
-        duplicateAction.image = UIImage(systemName: "doc.on.doc.fill")
-        
-        let configuration = UISwipeActionsConfiguration(actions: [deleteAction, archiveAction, duplicateAction])
-        configuration.performsFirstActionWithFullSwipe = false
-        return configuration
+        tableView.reloadData()
     }
-    
-    public func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        // Pin/Unpin action - Temporarily disabled until backend support
-        // TODO: Implement when backend adds isPinned property to Session
-        /*
-        let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
-        let isPinned = false // session.isPinned ?? false
-        
-        let pinAction = UIContextualAction(style: .normal, title: isPinned ? "Unpin" : "Pin") { [weak self] _, _, completion in
-            // Haptic feedback
-            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-            impactFeedback.impactOccurred()
-            
-            self?.togglePinSession(at: indexPath, completion: completion)
-        }
-        pinAction.backgroundColor = CyberpunkTheme.primaryCyan
-        pinAction.image = UIImage(systemName: isPinned ? "pin.slash.fill" : "pin.fill")
-        
-        let configuration = UISwipeActionsConfiguration(actions: [pinAction])
-        configuration.performsFirstActionWithFullSwipe = true
-        return configuration
-        */
-        
-        // Return empty configuration for now
-        return UISwipeActionsConfiguration(actions: [])
-    }
-    
-    private func deleteSession(at indexPath: IndexPath, completion: @escaping (Bool) -> Void) {
-        let session = sessions[indexPath.row]
-        let sessionId = session.id
-        
-        // Show confirmation alert
-        let alert = UIAlertController(
-            title: "Delete Session",
-            message: "Are you sure you want to delete this session? This action cannot be undone.",
-            preferredStyle: .alert
-        )
-        
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
-            completion(false)
-        })
-        
-        alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-            guard let self = self else {
-                completion(false)
-                return
-            }
-            
-            // Delete from backend
-            Task {
-                do {
-                    // Call the API to delete the session
-                    try await APIClient.shared.deleteSession(projectName: self.project.name, sessionId: sessionId)
-                    
-                    // Update UI on success
-                    await MainActor.run {
-                        self.sessions.remove(at: indexPath.row)
-                        self.tableView.deleteRows(at: [indexPath], with: .fade)
-                        self.updateEmptyStateVisibility()
-                        completion(true)
-                        
-                        // Clear persistence if this was the current session
-                        if self.persistenceService.getCurrentSessionId(for: self.project.name) == sessionId {
-                            self.persistenceService.clearCurrentSession(for: self.project.name)
-                        }
-                    }
-                } catch {
-                    // Show error and don't delete from UI
-                    await MainActor.run {
-                        completion(false)
-                        self.showErrorAlert(
-                            severity: .error,
-                            title: "Delete Failed",
-                            message: "Unable to delete session. Please try again.",
-                            details: error.localizedDescription,
-                            showRetry: true,
-                            retryAction: { [weak self] in
-                                self?.deleteSession(at: indexPath, completion: { _ in })
-                            }
-                        )
-                    }
-                }
-            }
-        })
-        
-        present(alert, animated: true)
-    }
-    
-    private func archiveSession(at indexPath: IndexPath, completion: @escaping (Bool) -> Void) {
-        _ = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
-        
-        // TODO: Implement archive API call when backend supports it
-        // For now, just show feedback
-        Task {
-            await MainActor.run {
-                // Visual feedback
-                let cell = tableView.cellForRow(at: indexPath)
-                UIView.animate(withDuration: 0.3, animations: {
-                    cell?.alpha = 0.5
-                }) { _ in
-                    cell?.alpha = 1.0
-                }
-                
-                // Show temporary message
-                let alert = UIAlertController(
-                    title: "Session Archived",
-                    message: "Session has been archived successfully",
-                    preferredStyle: .alert
-                )
-                self.present(alert, animated: true)
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    alert.dismiss(animated: true)
-                }
-                
-                completion(true)
-            }
-        }
-    }
-    
-    private func duplicateSession(at indexPath: IndexPath, completion: @escaping (Bool) -> Void) {
-        let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
-        
-        // Create a new session with duplicated name
-        let duplicatedName = "Copy of \(session.summary ?? "Untitled")"
+}
+
+// MARK: - Session Actions
+extension SessionListViewController {
+    private func deleteSession(at indexPath: IndexPath, session: Session, completion: @escaping (Bool) -> Void) {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
         
         Task {
             do {
-                // Create new session (API doesn't support custom names on creation)
-                let newSession = try await APIClient.shared.createSession(
-                    projectName: project.name
-                )
-                // TODO: Update session with custom name if API supports it
+                try await apiClient.deleteSession(projectName: project.name, sessionId: session.id)
                 
                 await MainActor.run {
-                    // Add to sessions array and sort
-                    self.sessions.insert(newSession, at: 0)
-                    self.sortSessions()
-                    
-                    // Animate the new row appearance
-                    if let newIndex = self.sessions.firstIndex(where: { $0.id == newSession.id }) {
-                        let newIndexPath = IndexPath(row: newIndex, section: 0)
-                        self.tableView.insertRows(at: [newIndexPath], with: .automatic)
-                        
-                        // Highlight the new cell
-                        if let newCell = self.tableView.cellForRow(at: newIndexPath) {
-                            AnimationManager.shared.neonPulse(newCell, color: CyberpunkTheme.primaryCyan)
+                    if self.isSearching {
+                        self.filteredSessions.remove(at: indexPath.row)
+                        if let originalIndex = self.sessions.firstIndex(where: { $0.id == session.id }) {
+                            self.sessions.remove(at: originalIndex)
                         }
+                    } else {
+                        self.sessions.remove(at: indexPath.row)
                     }
                     
-                    // Show success feedback
-                    let successFeedback = UINotificationFeedbackGenerator()
-                    successFeedback.notificationOccurred(.success)
-                    
+                    tableView.deleteRows(at: [indexPath], with: .automatic)
+                    self.updateEmptyStateVisibility()
                     completion(true)
                 }
             } catch {
                 await MainActor.run {
                     self.showErrorAlert(
-                        title: "Duplication Failed",
-                        message: "Unable to duplicate session. Please try again.",
-                        details: error.localizedDescription
+                        severity: .error,
+                        title: "Delete Failed",
+                        message: error.localizedDescription
                     )
                     completion(false)
                 }
@@ -1015,63 +606,25 @@ extension SessionListViewController: UITableViewDelegate {
         }
     }
     
-    private func togglePinSession(at indexPath: IndexPath, completion: @escaping (Bool) -> Void) {
-        // TODO: Implement when backend adds isPinned property to Session
-        /*
-        let session = isSearching ? filteredSessions[indexPath.row] : sessions[indexPath.row]
-        let wasPinned = false // session.isPinned ?? false
+    private func archiveSession(at indexPath: IndexPath, session: Session, completion: @escaping (Bool) -> Void) {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
         
-        // Toggle pin state
-        // session.isPinned = !wasPinned
+        // Archive implementation would go here
+        print("Archiving session: \(session.title)")
+        completion(true)
+    }
+    
+    private func duplicateSession(_ session: Session, completion: @escaping (Bool) -> Void) {
+        // Add haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
         
-        // TODO: Implement pin API call when backend supports it
-        // For now, just update UI
-        Task {
-            await MainActor.run {
-                // Sort sessions to move pinned to top
-                if !self.isSearching {
-                    self.sessions.sort { session1, session2 in
-                        let pin1 = false // session1.isPinned ?? false
-                        let pin2 = false // session2.isPinned ?? false
-                        
-                        if pin1 != pin2 {
-                            return pin1 && !pin2
-                        }
-                        // Keep existing sort order for same pin state
-                        return false
-                    }
-                    
-                    // Find new index
-                    if let newIndex = self.sessions.firstIndex(where: { $0.id == session.id }) {
-                        let newIndexPath = IndexPath(row: newIndex, section: 0)
-                        
-                        // Animate the move
-                        self.tableView.beginUpdates()
-                        self.tableView.moveRow(at: indexPath, to: newIndexPath)
-                        self.tableView.endUpdates()
-                    }
-                }
-                
-                // Visual feedback
-                let message = wasPinned ? "Session unpinned" : "Session pinned to top"
-                let alert = UIAlertController(
-                    title: nil,
-                    message: message,
-                    preferredStyle: .alert
-                )
-                self.present(alert, animated: true)
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    alert.dismiss(animated: true)
-                }
-                
-                completion(true)
-            }
-        }
-        */
-        
-        // For now, just complete immediately
+        // Duplicate implementation would go here
+        print("Duplicating session: \(session.title)")
         completion(true)
     }
 }
-

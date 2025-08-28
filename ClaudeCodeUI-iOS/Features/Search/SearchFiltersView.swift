@@ -7,6 +7,23 @@
 
 import SwiftUI
 
+// MARK: - Search History Item
+struct SearchHistoryItem {
+    let query: String
+    let fileTypes: [SearchFileType]
+    let dateRange: DateRange
+    let timestamp: Date
+    let resultCount: Int
+    
+    init(query: String, fileTypes: [SearchFileType] = [], dateRange: DateRange = .anytime, timestamp: Date = Date(), resultCount: Int = 0) {
+        self.query = query
+        self.fileTypes = fileTypes
+        self.dateRange = dateRange
+        self.timestamp = timestamp
+        self.resultCount = resultCount
+    }
+}
+
 struct SearchFiltersView: View {
     @ObservedObject var viewModel: SearchViewModel
     @Binding var isPresented: Bool
@@ -34,7 +51,7 @@ struct SearchFiltersView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Label("File Types", systemImage: "doc.text")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                                .foregroundColor(Color(CyberpunkTheme.primaryText))
                             
                             LazyVGrid(columns: [
                                 GridItem(.flexible()),
@@ -50,13 +67,13 @@ struct SearchFiltersView: View {
                         }
                         
                         Divider()
-                            .background(Color(UIColor.CyberpunkTheme.border))
+                            .background(Color(CyberpunkTheme.border))
                         
                         // Search Options Section
                         VStack(alignment: .leading, spacing: 16) {
                             Label("Search Options", systemImage: "magnifyingglass")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                                .foregroundColor(Color(CyberpunkTheme.primaryText))
                             
                             // Regex Toggle
                             ToggleRow(
@@ -84,13 +101,13 @@ struct SearchFiltersView: View {
                         }
                         
                         Divider()
-                            .background(Color(UIColor.CyberpunkTheme.border))
+                            .background(Color(CyberpunkTheme.border))
                         
                         // Date Range Section
                         VStack(alignment: .leading, spacing: 12) {
                             Label("Modified Date", systemImage: "calendar")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                                .foregroundColor(Color(CyberpunkTheme.primaryText))
                             
                             Picker("Date Range", selection: $selectedDateRange) {
                                 ForEach(DateRange.allCases, id: \.self) { range in
@@ -106,25 +123,25 @@ struct SearchFiltersView: View {
                                         selection: $customStartDate,
                                         displayedComponents: .date
                                     )
-                                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                                    .foregroundColor(Color(CyberpunkTheme.secondaryText))
                                     
                                     DatePicker(
                                         "To",
                                         selection: $customEndDate,
                                         displayedComponents: .date
                                     )
-                                    .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+                                    .foregroundColor(Color(CyberpunkTheme.secondaryText))
                                 }
                                 .padding()
                                 .background(
                                     RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color(UIColor.CyberpunkTheme.surface))
+                                        .fill(Color(CyberpunkTheme.surface))
                                 )
                             }
                         }
                         
                         Divider()
-                            .background(Color(UIColor.CyberpunkTheme.border))
+                            .background(Color(CyberpunkTheme.border))
                         
                         // Search History Section
                         if !viewModel.searchHistory.isEmpty {
@@ -132,7 +149,7 @@ struct SearchFiltersView: View {
                                 HStack {
                                     Label("Search History", systemImage: "clock.arrow.circlepath")
                                         .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                                        .foregroundColor(Color(CyberpunkTheme.primaryText))
                                     
                                     Spacer()
                                     
@@ -141,7 +158,7 @@ struct SearchFiltersView: View {
                                     }) {
                                         Text("Clear")
                                             .font(.system(size: 12))
-                                            .foregroundColor(Color(UIColor.CyberpunkTheme.warning))
+                                            .foregroundColor(Color(CyberpunkTheme.warning))
                                     }
                                 }
                                 
@@ -168,23 +185,23 @@ struct SearchFiltersView: View {
                     Button("Reset") {
                         resetFilters()
                     }
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.warning))
+                    .foregroundColor(Color(CyberpunkTheme.warning))
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         isPresented = false
                     }
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                 }
             }
         }
     }
     
     private func resetFilters() {
-        viewModel.regexEnabled = false
-        viewModel.caseSensitive = false
-        viewModel.wholeWord = false
+        viewModel.$regexEnabled.wrappedValue = false
+        viewModel.$caseSensitive.wrappedValue = false
+        viewModel.$wholeWord.wrappedValue = false
         selectedDateRange = .anytime
     }
     
@@ -195,7 +212,7 @@ struct SearchFiltersView: View {
 }
 
 struct FileTypeToggle: View {
-    let fileType: FileType
+    let fileType: SearchFileType
     let isSelected: Bool
     
     var body: some View {
@@ -207,7 +224,7 @@ struct FileTypeToggle: View {
             Spacer()
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                    .foregroundColor(Color(CyberpunkTheme.primaryCyan))
             }
         }
         .padding(12)
@@ -215,23 +232,23 @@ struct FileTypeToggle: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(
                     isSelected ?
-                    Color(UIColor.CyberpunkTheme.primaryCyan).opacity(0.1) :
-                    Color(UIColor.CyberpunkTheme.surface)
+                    Color(CyberpunkTheme.primaryCyan).opacity(0.1) :
+                    Color(CyberpunkTheme.surface)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(
                             isSelected ?
-                            Color(UIColor.CyberpunkTheme.primaryCyan) :
-                            Color(UIColor.CyberpunkTheme.border),
+                            Color(CyberpunkTheme.primaryCyan) :
+                            Color(CyberpunkTheme.border),
                             lineWidth: 1
                         )
                 )
         )
         .foregroundColor(
             isSelected ?
-            Color(UIColor.CyberpunkTheme.primaryCyan) :
-            Color(UIColor.CyberpunkTheme.textSecondary)
+            Color(CyberpunkTheme.primaryCyan) :
+            Color(CyberpunkTheme.secondaryText)
         )
     }
 }
@@ -246,23 +263,23 @@ struct ToggleRow: View {
         HStack {
             Image(systemName: icon)
                 .font(.system(size: 16))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.primaryCyan))
+                .foregroundColor(Color(CyberpunkTheme.primaryCyan))
                 .frame(width: 24)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textPrimary))
+                    .foregroundColor(Color(CyberpunkTheme.primaryText))
                 Text(description)
                     .font(.system(size: 11))
-                    .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                    .foregroundColor(Color(CyberpunkTheme.tertiaryText))
             }
             
             Spacer()
             
             Toggle("", isOn: $isOn)
                 .labelsHidden()
-                .tint(Color(UIColor.CyberpunkTheme.primaryCyan))
+                .tint(Color(CyberpunkTheme.primaryCyan))
         }
         .padding(.vertical, 4)
     }
@@ -284,19 +301,19 @@ struct SearchHistoryChip: View {
                     Text(item.timestamp, style: .relative)
                 }
                 .font(.system(size: 10))
-                .foregroundColor(Color(UIColor.CyberpunkTheme.textTertiary))
+                .foregroundColor(Color(CyberpunkTheme.tertiaryText))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(UIColor.CyberpunkTheme.surface))
+                    .fill(Color(CyberpunkTheme.surface))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color(UIColor.CyberpunkTheme.border), lineWidth: 1)
+                            .stroke(Color(CyberpunkTheme.border), lineWidth: 1)
                     )
             )
-            .foregroundColor(Color(UIColor.CyberpunkTheme.textSecondary))
+            .foregroundColor(Color(CyberpunkTheme.secondaryText))
         }
         .buttonStyle(PlainButtonStyle())
     }

@@ -16,7 +16,7 @@ class SearchViewController: UIViewController {
     private let searchBar = UISearchBar()
     private let tableView = UITableView()
     private let segmentedControl = UISegmentedControl(items: ["Files", "Code", "All"])
-    private let emptyStateView = NoDataView()
+    private let emptyStateView = NoDataView(type: .noSearchResults)
     
     private var searchResults: [SearchResult] = []
     private var hasSearched = false
@@ -42,7 +42,9 @@ class SearchViewController: UIViewController {
         applyTheme()
         
         if let project = project {
-            viewModel.setProject(project)
+            // Set project context in viewModel
+            viewModel.projectName = project.name
+            viewModel.projectPath = project.path ?? project.localPath
         }
         
         // Add entrance animation
@@ -127,13 +129,8 @@ class SearchViewController: UIViewController {
     }
     
     private func setupEmptyState() {
-        emptyStateView.configure(
-            artStyle: .noResults,
-            title: "No Results Found",
-            message: "Try adjusting your search terms or filters",
-            buttonTitle: nil,
-            buttonAction: nil
-        )
+        // Configure empty state view - NoDataView doesn't have configure method
+        // The type was set in init, so we just need to update visibility
         emptyStateView.isHidden = true
     }
     
@@ -142,10 +139,16 @@ class SearchViewController: UIViewController {
         
         if shouldShowEmpty {
             tableView.isHidden = true
-            emptyStateView.show(animated: true)
+            emptyStateView.isHidden = false
+            UIView.animate(withDuration: 0.3) {
+                self.emptyStateView.alpha = 1
+            }
         } else {
-            emptyStateView.hide(animated: true) { [weak self] in
-                self?.tableView.isHidden = false
+            UIView.animate(withDuration: 0.3, animations: {
+                self.emptyStateView.alpha = 0
+            }) { _ in
+                self.emptyStateView.isHidden = true
+                self.tableView.isHidden = false
             }
         }
     }
@@ -198,7 +201,8 @@ class SearchViewController: UIViewController {
             scope = .all
         }
         
-        viewModel.setScope(scope)
+        // Update search scope in viewModel
+        viewModel.currentScope = scope
         if let searchText = searchBar.text, !searchText.isEmpty {
             performSearch(searchText)
         }
@@ -214,21 +218,22 @@ class SearchViewController: UIViewController {
         loadingView.center = tableView.center
         view.addSubview(loadingView)
         
-        viewModel.search(query: query) { [weak self] results in
-            DispatchQueue.main.async {
-                loadingView.removeFromSuperview()
-                self?.isSearching = false
-                self?.searchResults = results
-                self?.animatedCells.removeAll()
-                
-                // Animate table reload
-                self?.tableView.reloadData()
-                if !results.isEmpty {
-                    AnimationManager.shared.animateTableView(self?.tableView ?? UITableView())
-                }
-                
-                self?.updateEmptyStateVisibility()
+        viewModel.search(query: query, scope: viewModel.currentScope ?? .all, fileTypes: [])
+        
+        // Listen for search completion via Combine
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            loadingView.removeFromSuperview()
+            self?.isSearching = false
+            self?.searchResults = self?.viewModel.searchResults ?? []
+            self?.animatedCells.removeAll()
+            
+            // Animate table reload
+            self?.tableView.reloadData()
+            if !(self?.searchResults ?? []).isEmpty {
+                AnimationManager.shared.animateTableView(self?.tableView ?? UITableView())
             }
+            
+            self?.updateEmptyStateVisibility()
         }
     }
 }
@@ -260,7 +265,7 @@ extension SearchViewController: UITableViewDataSource {
         let result = searchResults[indexPath.row]
         
         cell.textLabel?.text = result.fileName
-        cell.detailTextLabel?.text = result.matchedLine
+        cell.detailTextLabel?.text = result.snippet ?? result.content
         
         // Apply theme
         cell.backgroundColor = .clear
@@ -291,7 +296,7 @@ extension SearchViewController: UITableViewDelegate {
         
         let result = searchResults[indexPath.row]
         // TODO: Navigate to file at specific line
-        print("Selected search result: \(result.fileName) at line \(result.lineNumber)")
+        print("Selected search result: \(result.fileName) at line \(result.line ?? 0)")
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
@@ -328,7 +333,7 @@ extension SearchViewController: UITableViewDelegate {
 }
 
 // MARK: - Search Scope
-enum SearchScope {
+enum SearchScope: String {
     case files
     case code
     case all

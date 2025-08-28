@@ -69,8 +69,8 @@ struct MessageBubbleView: View {
             
             // Tool use indicator if applicable
             if let metadata = message.metadata,
-               let toolUse = metadata["tool_use"] as? [String: Any] {
-                ToolUseIndicator(toolUse: toolUse)
+               metadata.commandType == "tool_use" {
+                ToolUseIndicator(toolName: metadata.commandType ?? "Tool")
             }
         }
         .padding(12)
@@ -177,10 +177,8 @@ struct MessageBubbleView: View {
             return "cpu"
         case .system:
             return "gear"
-        case .user:
+        case .user, .human:
             return "person.fill"
-        case .tool:
-            return "wrench.and.screwdriver"
         }
     }
     
@@ -190,10 +188,8 @@ struct MessageBubbleView: View {
             return Color(red: 1, green: 0, blue: 0.43) // Pink
         case .system:
             return .orange
-        case .user:
+        case .user, .human:
             return Color(red: 0, green: 0.85, blue: 1) // Cyan
-        case .tool:
-            return .green
         }
     }
     
@@ -203,31 +199,17 @@ struct MessageBubbleView: View {
     
     private var statusIcon: some View {
         Group {
-            switch message.status {
-            case .sending:
-                ProgressView()
-                    .scaleEffect(0.5)
-            case .sent:
-                Image(systemName: "checkmark")
-                    .font(.system(size: 10))
-                    .foregroundColor(.gray)
-            case .delivered:
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(Color(red: 0, green: 0.85, blue: 1))
-            case .failed:
-                Image(systemName: "exclamationmark.circle.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(.red)
-            default:
-                EmptyView()
-            }
+            // Status tracking could be added to Message model later
+            // For now, show delivered for all messages
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 10))
+                .foregroundColor(Color(red: 0, green: 0.85, blue: 1))
         }
     }
     
     private var isCodeMessage: Bool {
         message.content.contains("```") || 
-        (message.metadata?["type"] as? String) == "code"
+        message.metadata?.commandType == "code"
     }
     
     // MARK: - Helper Methods
@@ -345,7 +327,7 @@ struct CodeBlockView: View {
 
 // MARK: - Tool Use Indicator
 struct ToolUseIndicator: View {
-    let toolUse: [String: Any]
+    let toolName: String
     @State private var isExpanded = false
     
     var body: some View {
@@ -374,20 +356,9 @@ struct ToolUseIndicator: View {
             
             if isExpanded {
                 VStack(alignment: .leading, spacing: 4) {
-                    if let input = toolUse["input"] as? [String: Any] {
-                        ForEach(Array(input.keys), id: \.self) { key in
-                            HStack {
-                                Text(key)
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundColor(.gray)
-                                
-                                Text(String(describing: input[key] ?? ""))
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.white)
-                                    .lineLimit(1)
-                            }
-                        }
-                    }
+                    Text("Tool: \(toolName)")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white)
                 }
                 .padding(8)
                 .background(Color.black.opacity(0.3))
@@ -403,10 +374,6 @@ struct ToolUseIndicator: View {
                         .stroke(Color.green.opacity(0.3), lineWidth: 1)
                 )
         )
-    }
-    
-    private var toolName: String {
-        (toolUse["name"] as? String) ?? "Tool"
     }
 }
 
@@ -458,10 +425,10 @@ struct MessageBubbleView_Previews: PreviewProvider {
             MessageBubbleView(
                 message: Message(
                     id: "1",
+                    sessionId: "preview-session",
                     content: "Hello! How can I help you today?",
                     role: .assistant,
-                    timestamp: Date(),
-                    status: .delivered
+                    timestamp: Date()
                 ),
                 isCurrentUser: false
             )
@@ -469,10 +436,10 @@ struct MessageBubbleView_Previews: PreviewProvider {
             MessageBubbleView(
                 message: Message(
                     id: "2",
+                    sessionId: "preview-session",
                     content: "Can you help me fix a bug in my SwiftUI code?",
                     role: .user,
-                    timestamp: Date(),
-                    status: .delivered
+                    timestamp: Date()
                 ),
                 isCurrentUser: true
             )

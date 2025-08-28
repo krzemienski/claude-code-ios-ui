@@ -49,15 +49,14 @@ final class CursorViewModel: ObservableObject {
         guard !searchText.isEmpty else { return sessions }
         
         return sessions.filter { session in
-            session.title.localizedCaseInsensitiveContains(searchText) ||
-            session.messages.contains { message in
-                message.content.localizedCaseInsensitiveContains(searchText)
-            }
+            // Use name instead of title, and search in name/projectPath
+            (session.name?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+            (session.projectPath?.localizedCaseInsensitiveContains(searchText) ?? false)
         }
     }
     
     var totalTokenCount: Int {
-        sessions.compactMap { $0.metadata?.tokenCount }.reduce(0, +)
+        sessions.compactMap { $0.metadata?.totalTokens }.reduce(0, +)
     }
     
     var estimatedCost: Double {

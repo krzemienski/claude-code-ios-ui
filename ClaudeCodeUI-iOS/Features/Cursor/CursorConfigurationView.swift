@@ -15,6 +15,7 @@ struct CursorModelSettings {
     var topP: Double = 1.0
     var frequencyPenalty: Double = 0.0
     var presencePenalty: Double = 0.0
+    var streamingEnabled: Bool = false
 }
 
 // MARK: - Cursor Features
@@ -30,6 +31,10 @@ struct ExtendedCursorConfig {
     var enabled: Bool = false
     var apiKey: String = ""
     var apiUrl: String = "https://api.openai.com"
+    var workspacePath: String? = nil
+    var extensionsPath: String? = nil
+    var configPath: String? = nil
+    var lastSyncDate: Date? = nil
     var modelSettings: CursorModelSettings? = CursorModelSettings()
     var features: CursorFeatures? = CursorFeatures()
     
@@ -45,7 +50,8 @@ struct ExtendedCursorConfig {
                 maxTokens: config.maxTokens ?? 2048,
                 topP: 1.0,
                 frequencyPenalty: 0.0,
-                presencePenalty: 0.0
+                presencePenalty: 0.0,
+                streamingEnabled: false
             )
             self.features = CursorFeatures()
         }

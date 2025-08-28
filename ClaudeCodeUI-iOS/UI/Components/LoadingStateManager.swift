@@ -20,16 +20,6 @@ public class LoadingStateManager {
         case skeleton(count: Int)
     }
     
-    public enum EmptyStateType {
-        case noProjects
-        case noSessions
-        case noMessages
-        case noFiles
-        case noSearchResults
-        case noConnection
-        case generic(title: String, message: String)
-    }
-    
     // MARK: - Properties
     
     private weak var parentView: UIView?
@@ -106,4 +96,281 @@ public class LoadingStateManager {
             loadingView.centerYAnchor.constraint(equalTo: parentView.centerYAnchor),
             loadingView.leadingAnchor.constraint(greaterThanOrEqualTo: parentView.leadingAnchor, constant: 40),
             loadingView.trailingAnchor.constraint(lessThanOrEqualTo: parentView.trailingAnchor, constant: -40)
-        ])\n        \n        if animated {\n            loadingView.alpha = 0\n            loadingView.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)\n            \n            UIView.animate(\n                withDuration: 0.4,\n                delay: 0,\n                usingSpringWithDamping: 0.8,\n                initialSpringVelocity: 0.5,\n                options: .curveEaseOut,\n                animations: {\n                    loadingView.alpha = 1\n                    loadingView.transform = .identity\n                }\n            )\n        }\n    }\n    \n    private func createCyberpunkLoadingView(message: String?) -> UIView {\n        let containerView = UIView()\n        containerView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.95)\n        containerView.layer.cornerRadius = 20\n        containerView.layer.borderWidth = 1\n        containerView.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.5).cgColor\n        \n        // Add glow effect\n        containerView.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor\n        containerView.layer.shadowRadius = 12\n        containerView.layer.shadowOpacity = 0.3\n        containerView.layer.shadowOffset = .zero\n        \n        // Create animated rings\n        let ringsContainer = UIView()\n        ringsContainer.translatesAutoresizingMaskIntoConstraints = false\n        containerView.addSubview(ringsContainer)\n        \n        for i in 0..<3 {\n            let ring = createAnimatedRing(index: i)\n            ringsContainer.addSubview(ring)\n        }\n        \n        // Loading text\n        let messageLabel = UILabel()\n        messageLabel.text = message ?? \"Loading...\"\n        messageLabel.font = CyberpunkTheme.bodyFont\n        messageLabel.textColor = CyberpunkTheme.primaryText\n        messageLabel.textAlignment = .center\n        messageLabel.numberOfLines = 0\n        messageLabel.translatesAutoresizingMaskIntoConstraints = false\n        containerView.addSubview(messageLabel)\n        \n        NSLayoutConstraint.activate([\n            // Rings container\n            ringsContainer.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 30),\n            ringsContainer.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),\n            ringsContainer.widthAnchor.constraint(equalToConstant: 80),\n            ringsContainer.heightAnchor.constraint(equalToConstant: 80),\n            \n            // Message label\n            messageLabel.topAnchor.constraint(equalTo: ringsContainer.bottomAnchor, constant: 20),\n            messageLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 24),\n            messageLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),\n            messageLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -30)\n        ])\n        \n        return containerView\n    }\n    \n    private func createAnimatedRing(index: Int) -> UIView {\n        let ringView = UIView()\n        let size: CGFloat = 60 - CGFloat(index * 15)\n        \n        ringView.frame = CGRect(x: (80 - size) / 2, y: (80 - size) / 2, width: size, height: size)\n        ringView.layer.borderWidth = 2\n        ringView.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.8 - CGFloat(index) * 0.2).cgColor\n        ringView.layer.cornerRadius = size / 2\n        ringView.backgroundColor = .clear\n        \n        // Rotation animation\n        let rotationAnimation = CABasicAnimation(keyPath: \"transform.rotation\")\n        rotationAnimation.duration = 1.5 + Double(index) * 0.5\n        rotationAnimation.fromValue = 0\n        rotationAnimation.toValue = 2 * Double.pi\n        rotationAnimation.repeatCount = .infinity\n        rotationAnimation.timingFunction = CAMediaTimingFunction(name: .linear)\n        \n        // Scale animation\n        let scaleAnimation = CABasicAnimation(keyPath: \"transform.scale\")\n        scaleAnimation.duration = 2.0\n        scaleAnimation.fromValue = 1.0\n        scaleAnimation.toValue = 1.1\n        scaleAnimation.autoreverses = true\n        scaleAnimation.repeatCount = .infinity\n        scaleAnimation.timeOffset = Double(index) * 0.3\n        \n        ringView.layer.add(rotationAnimation, forKey: \"rotation\")\n        ringView.layer.add(scaleAnimation, forKey: \"scale\")\n        \n        return ringView\n    }\n    \n    // MARK: - Empty State\n    \n    private func showEmptyState(type: EmptyStateType, animated: Bool) {\n        guard let parentView = parentView else { return }\n        \n        let emptyStateView = NoDataView()\n        currentEmptyStateView = emptyStateView\n        \n        let (artStyle, title, message, buttonTitle, buttonAction) = getEmptyStateConfig(for: type)\n        \n        emptyStateView.configure(\n            artStyle: artStyle,\n            title: title,\n            message: message,\n            buttonTitle: buttonTitle,\n            buttonAction: buttonAction\n        )\n        \n        parentView.addSubview(emptyStateView)\n        emptyStateView.translatesAutoresizingMaskIntoConstraints = false\n        \n        NSLayoutConstraint.activate([\n            emptyStateView.topAnchor.constraint(equalTo: parentView.topAnchor),\n            emptyStateView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),\n            emptyStateView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor),\n            emptyStateView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor)\n        ])\n        \n        emptyStateView.show(animated: animated)\n    }\n    \n    private func getEmptyStateConfig(for type: EmptyStateType) -> (NoDataView.ArtStyle, String, String, String?, (() -> Void)?) {\n        switch type {\n        case .noProjects:\n            return (.noProjects, \"No Projects Yet\", \"Create your first project to get started with Claude Code\", \"Create Project\", nil)\n            \n        case .noSessions:\n            return (.noSessions, \"No Sessions\", \"Start a new session to begin chatting with Claude\", \"New Session\", nil)\n            \n        case .noMessages:\n            return (.noMessages, \"No Messages\", \"Send a message to start the conversation\", nil, nil)\n            \n        case .noFiles:\n            return (.noFiles, \"No Files\", \"This directory is empty\", \"Browse Files\", nil)\n            \n        case .noSearchResults:\n            return (.noResults, \"No Results Found\", \"Try adjusting your search terms or filters\", \"Clear Search\", nil)\n            \n        case .noConnection:\n            return (.noConnection, \"No Connection\", \"Check your internet connection and try again\", \"Retry\", nil)\n            \n        case .generic(let title, let message):\n            return (.noData, title, message, nil, nil)\n        }\n    }\n    \n    // MARK: - Error State\n    \n    private func showErrorState(message: String, retryAction: (() -> Void)?, animated: Bool) {\n        guard let parentView = parentView else { return }\n        \n        let errorView = NoDataView()\n        currentEmptyStateView = errorView\n        \n        errorView.configure(\n            artStyle: .error,\n            title: \"Something Went Wrong\",\n            message: message,\n            buttonTitle: retryAction != nil ? \"Try Again\" : nil,\n            buttonAction: retryAction\n        )\n        \n        parentView.addSubview(errorView)\n        errorView.translatesAutoresizingMaskIntoConstraints = false\n        \n        NSLayoutConstraint.activate([\n            errorView.topAnchor.constraint(equalTo: parentView.topAnchor),\n            errorView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),\n            errorView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor),\n            errorView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor)\n        ])\n        \n        errorView.show(animated: animated)\n    }\n    \n    // MARK: - Skeleton State\n    \n    private func showSkeletonState(count: Int, animated: Bool) {\n        guard let parentView = parentView else { return }\n        \n        let skeletonContainer = SkeletonContainerView()\n        currentSkeletonView = skeletonContainer\n        \n        // Create multiple skeleton items\n        let stackView = UIStackView()\n        stackView.axis = .vertical\n        stackView.spacing = 12\n        stackView.translatesAutoresizingMaskIntoConstraints = false\n        \n        for _ in 0..<count {\n            let skeletonItem = SkeletonContainerView()\n            skeletonItem.setupListItemSkeleton()\n            skeletonItem.translatesAutoresizingMaskIntoConstraints = false\n            stackView.addArrangedSubview(skeletonItem)\n            \n            NSLayoutConstraint.activate([\n                skeletonItem.heightAnchor.constraint(equalToConstant: 80)\n            ])\n        }\n        \n        skeletonContainer.addSubview(stackView)\n        parentView.addSubview(skeletonContainer)\n        skeletonContainer.translatesAutoresizingMaskIntoConstraints = false\n        \n        NSLayoutConstraint.activate([\n            skeletonContainer.topAnchor.constraint(equalTo: parentView.topAnchor),\n            skeletonContainer.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),\n            skeletonContainer.trailingAnchor.constraint(equalTo: parentView.trailingAnchor),\n            skeletonContainer.bottomAnchor.constraint(equalTo: parentView.bottomAnchor),\n            \n            stackView.topAnchor.constraint(equalTo: skeletonContainer.topAnchor, constant: 16),\n            stackView.leadingAnchor.constraint(equalTo: skeletonContainer.leadingAnchor, constant: 16),\n            stackView.trailingAnchor.constraint(equalTo: skeletonContainer.trailingAnchor, constant: -16)\n        ])\n        \n        if animated {\n            skeletonContainer.alpha = 0\n            UIView.animate(withDuration: 0.3) {\n                skeletonContainer.alpha = 1\n            }\n        }\n        \n        skeletonContainer.startAnimating()\n    }\n    \n    // MARK: - Convenience Methods\n    \n    public func showLoading(message: String? = nil) {\n        setState(.loading(message: message))\n    }\n    \n    public func showSkeleton(count: Int = 5) {\n        setState(.skeleton(count: count))\n    }\n    \n    public func showEmpty(type: EmptyStateType) {\n        setState(.empty(type: type))\n    }\n    \n    public func showError(_ message: String, retryAction: (() -> Void)? = nil) {\n        setState(.error(message: message, retryAction: retryAction))\n    }\n    \n    public func showSuccess() {\n        setState(.success)\n    }\n    \n    public func hide() {\n        clearCurrentState(animated: true)\n    }\n}\n\n// MARK: - UIView Extension\n\nextension UIView {\n    private static var loadingStateManagerKey: UInt8 = 0\n    \n    public var loadingStateManager: LoadingStateManager {\n        if let manager = objc_getAssociatedObject(self, &UIView.loadingStateManagerKey) as? LoadingStateManager {\n            return manager\n        }\n        \n        let manager = LoadingStateManager(parentView: self)\n        objc_setAssociatedObject(self, &UIView.loadingStateManagerKey, manager, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)\n        return manager\n    }\n}\n
+        ])
+        
+        if animated {
+            loadingView.alpha = 0
+            loadingView.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+            
+            UIView.animate(
+                withDuration: 0.4,
+                delay: 0,
+                usingSpringWithDamping: 0.8,
+                initialSpringVelocity: 0.5,
+                options: .curveEaseOut,
+                animations: {
+                    loadingView.alpha = 1
+                    loadingView.transform = .identity
+                }
+            )
+        }
+    }
+    
+    private func createCyberpunkLoadingView(message: String?) -> UIView {
+        let containerView = UIView()
+        containerView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.95)
+        containerView.layer.cornerRadius = 20
+        containerView.layer.borderWidth = 1
+        containerView.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.5).cgColor
+        
+        // Add glow effect
+        containerView.layer.shadowColor = CyberpunkTheme.primaryCyan.cgColor
+        containerView.layer.shadowRadius = 12
+        containerView.layer.shadowOpacity = 0.3
+        containerView.layer.shadowOffset = .zero
+        
+        // Create animated rings
+        let ringsContainer = UIView()
+        ringsContainer.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(ringsContainer)
+        
+        for i in 0..<3 {
+            let ring = createAnimatedRing(index: i)
+            ringsContainer.addSubview(ring)
+        }
+        
+        // Loading text
+        let messageLabel = UILabel()
+        messageLabel.text = message ?? "Loading..."
+        messageLabel.font = CyberpunkTheme.bodyFont
+        messageLabel.textColor = CyberpunkTheme.primaryText
+        messageLabel.textAlignment = .center
+        messageLabel.numberOfLines = 0
+        messageLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(messageLabel)
+        
+        NSLayoutConstraint.activate([
+            // Rings container
+            ringsContainer.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 30),
+            ringsContainer.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            ringsContainer.widthAnchor.constraint(equalToConstant: 80),
+            ringsContainer.heightAnchor.constraint(equalToConstant: 80),
+            
+            // Message label
+            messageLabel.topAnchor.constraint(equalTo: ringsContainer.bottomAnchor, constant: 20),
+            messageLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 24),
+            messageLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),
+            messageLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -30)
+        ])
+        
+        return containerView
+    }
+    
+    private func createAnimatedRing(index: Int) -> UIView {
+        let ringView = UIView()
+        let size: CGFloat = 60 - CGFloat(index * 15)
+        
+        ringView.frame = CGRect(x: (80 - size) / 2, y: (80 - size) / 2, width: size, height: size)
+        ringView.layer.borderWidth = 2
+        ringView.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.8 - CGFloat(index) * 0.2).cgColor
+        ringView.layer.cornerRadius = size / 2
+        ringView.backgroundColor = .clear
+        
+        // Rotation animation
+        let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
+        rotationAnimation.duration = 1.5 + Double(index) * 0.5
+        rotationAnimation.fromValue = 0
+        rotationAnimation.toValue = 2 * Double.pi
+        rotationAnimation.repeatCount = .infinity
+        rotationAnimation.timingFunction = CAMediaTimingFunction(name: .linear)
+        
+        // Scale animation
+        let scaleAnimation = CABasicAnimation(keyPath: "transform.scale")
+        scaleAnimation.duration = 2.0
+        scaleAnimation.fromValue = 1.0
+        scaleAnimation.toValue = 1.1
+        scaleAnimation.autoreverses = true
+        scaleAnimation.repeatCount = .infinity
+        scaleAnimation.timeOffset = Double(index) * 0.3
+        
+        ringView.layer.add(rotationAnimation, forKey: "rotation")
+        ringView.layer.add(scaleAnimation, forKey: "scale")
+        
+        return ringView
+    }
+    
+    // MARK: - Empty State
+    
+    private func showEmptyState(type: EmptyStateType, animated: Bool) {
+        guard let parentView = parentView else { return }
+        
+        let emptyStateView = NoDataView(type: type)
+        currentEmptyStateView = emptyStateView
+        
+        parentView.addSubview(emptyStateView)
+        emptyStateView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            emptyStateView.topAnchor.constraint(equalTo: parentView.topAnchor),
+            emptyStateView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),
+            emptyStateView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor),
+            emptyStateView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor)
+        ])
+        
+        if animated {
+            emptyStateView.alpha = 0
+            UIView.animate(withDuration: 0.3) {
+                emptyStateView.alpha = 1
+            }
+        }
+    }
+    
+    // MARK: - Error State
+    
+    private func showErrorState(message: String, retryAction: (() -> Void)?, animated: Bool) {
+        guard let parentView = parentView else { return }
+        
+        let errorView = NoDataView(type: .error(nil), action: retryAction)
+        currentEmptyStateView = errorView
+        
+        parentView.addSubview(errorView)
+        errorView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            errorView.topAnchor.constraint(equalTo: parentView.topAnchor),
+            errorView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),
+            errorView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor),
+            errorView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor)
+        ])
+        
+        if animated {
+            errorView.alpha = 0
+            UIView.animate(withDuration: 0.3) {
+                errorView.alpha = 1
+            }
+        }
+    }
+    
+    // MARK: - Skeleton State
+    
+    private func showSkeletonState(count: Int, animated: Bool) {
+        guard let parentView = parentView else { return }
+        
+        // Create a container view for the skeleton items
+        let containerView = UIView()
+        containerView.backgroundColor = CyberpunkTheme.surface.withAlphaComponent(0.95)
+        currentSkeletonView = containerView
+        
+        // Create multiple skeleton items
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = 12
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        for _ in 0..<count {
+            // Create a skeleton row using SkeletonView factory methods
+            let rowContainer = UIView()
+            rowContainer.translatesAutoresizingMaskIntoConstraints = false
+            
+            // Create avatar skeleton
+            let avatar = SkeletonView.createCircle(diameter: 44)
+            avatar.shimmerColor = CyberpunkTheme.primaryCyan
+            rowContainer.addSubview(avatar)
+            
+            // Create title skeleton
+            let title = SkeletonView.createLine(width: 200, height: 18)
+            title.shimmerColor = CyberpunkTheme.primaryCyan
+            rowContainer.addSubview(title)
+            
+            // Create subtitle skeleton
+            let subtitle = SkeletonView.createLine(width: 150, height: 14)
+            subtitle.shimmerColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.6)
+            rowContainer.addSubview(subtitle)
+            
+            // Layout constraints for skeleton row
+            NSLayoutConstraint.activate([
+                avatar.leadingAnchor.constraint(equalTo: rowContainer.leadingAnchor),
+                avatar.centerYAnchor.constraint(equalTo: rowContainer.centerYAnchor),
+                
+                title.leadingAnchor.constraint(equalTo: avatar.trailingAnchor, constant: 12),
+                title.topAnchor.constraint(equalTo: rowContainer.topAnchor, constant: 10),
+                
+                subtitle.leadingAnchor.constraint(equalTo: title.leadingAnchor),
+                subtitle.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 4),
+                
+                rowContainer.heightAnchor.constraint(equalToConstant: 80)
+            ])
+            
+            // Start shimmer animation
+            avatar.startShimmering()
+            title.startShimmering()
+            subtitle.startShimmering()
+            
+            stackView.addArrangedSubview(rowContainer)
+        }
+        
+        containerView.addSubview(stackView)
+        parentView.addSubview(containerView)
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            containerView.topAnchor.constraint(equalTo: parentView.topAnchor),
+            containerView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor),
+            containerView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor),
+            
+            stackView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            stackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16)
+        ])
+        
+        if animated {
+            containerView.alpha = 0
+            UIView.animate(withDuration: 0.3) {
+                containerView.alpha = 1
+            }
+        }
+    }
+    
+    // MARK: - Convenience Methods
+    
+    public func showLoading(message: String? = nil) {
+        setState(.loading(message: message))
+    }
+    
+    public func showSkeleton(count: Int = 5) {
+        setState(.skeleton(count: count))
+    }
+    
+    public func showEmpty(type: EmptyStateType) {
+        setState(.empty(type: type))
+    }
+    
+    public func showError(_ message: String, retryAction: (() -> Void)? = nil) {
+        setState(.error(message: message, retryAction: retryAction))
+    }
+    
+    public func showSuccess() {
+        setState(.success)
+    }
+    
+    public func hide() {
+        clearCurrentState(animated: true)
+    }
+}
+
+// MARK: - UIView Extension
+
+extension UIView {
+    private static var loadingStateManagerKey: UInt8 = 0
+    
+    public var loadingStateManager: LoadingStateManager {
+        if let manager = objc_getAssociatedObject(self, &UIView.loadingStateManagerKey) as? LoadingStateManager {
+            return manager
+        }
+        
+        let manager = LoadingStateManager(parentView: self)
+        objc_setAssociatedObject(self, &UIView.loadingStateManagerKey, manager, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return manager
+    }
+}
