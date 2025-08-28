@@ -914,6 +914,7 @@ The app follows best practices with MVVM architecture, has a solid foundation, a
 
 Last Generated: January 21, 2025 - Complete analysis of CLAUDE.md requirements
 Todo #5 Status: ✅ COMPLETED - 550 todos generated from consolidated requirements
+Full List Available: See TODOS_COMPLETE.md for all 550 todos with detailed breakdown
 
 ### 🔴 PRIORITY 0: CRITICAL FIXES [25 todos] - MUST FIX IMMEDIATELY
 
@@ -968,52 +969,110 @@ Todo #5 Status: ✅ COMPLETED - 550 todos generated from consolidated requiremen
     - Success: Backend confirms message delivery
     - Dependencies: Backend API support
 
-### 🟠 PRIORITY 1: HIGH-PRIORITY FIXES [THIS WEEK]
+#### WebSocket & Connection Issues (10)
+11. **P0-WS-001**: Fix WebSocket auto-reconnection with exponential backoff
+    - File: WebSocketManager.swift
+    - Success: Reconnects within 3 seconds, max 30 second delay
+    - Dependencies: Network reachability
 
-#### Message Flow Improvements
-5. **Add Message Status Updates**
-   - Implement proper status callbacks from backend
-   - Update UI when message confirmed delivered
-   - Add retry mechanism for failed messages
+12. **P0-WS-002**: Implement WebSocket heartbeat/ping-pong
+    - File: WebSocketManager.swift
+    - Success: Keeps connection alive during idle periods
+    - Dependencies: Backend ping/pong support
 
-6. **Implement Assistant Response Handling**
-   - Parse Claude response format correctly
-   - Display assistant messages with proper styling
-   - Handle streaming responses
+13. **P0-WS-003**: Fix WebSocket message ordering
+    - File: WebSocketManager.swift
+    - Success: Messages arrive in correct sequence
+    - Dependencies: Message ID tracking
 
-7. **Add Loading States**
-   - Show typing indicator when Claude is responding
-   - Add message sending spinner
-   - Implement skeleton loading for messages
+14. **P0-WS-004**: Handle WebSocket connection timeout
+    - File: WebSocketManager.swift
+    - Success: Times out after 120 seconds for long operations
+    - Dependencies: Timeout configuration
 
-#### Terminal WebSocket (Already Mostly Complete)
-8. **Verify Terminal WebSocket Connection**
-   - ShellWebSocketManager already implemented
-   - ANSIColorParser complete
-   - Just needs connection testing
+15. **P0-WS-005**: Fix JWT token refresh for WebSocket
+    - File: AuthenticationManager.swift
+    - Success: Refreshes token before expiry
+    - Dependencies: Token expiry handling
 
-### 🟡 PRIORITY 2: UI/UX POLISH [MEDIUM]
+16. **P0-WS-006**: Add WebSocket connection state UI
+    - File: ChatViewController.swift
+    - Success: Shows connecting/connected/disconnected states
+    - Dependencies: UI state management
 
-#### Essential UI Fixes
-9. **Pull-to-Refresh for Chat View**
-   - Add UIRefreshControl to ChatViewController
-   - Refresh should reload messages
-   - Test with cyberpunk theme
+17. **P0-WS-007**: Implement WebSocket error recovery
+    - File: WebSocketManager.swift
+    - Success: Recovers from network errors gracefully
+    - Dependencies: Error handling strategy
 
-10. **Empty States**
-    - "No messages yet" for empty chat
-    - "No sessions" for project view
-    - Add action buttons to create new items
+18. **P0-WS-008**: Fix WebSocket memory leaks
+    - File: WebSocketManager.swift
+    - Success: No retain cycles, proper cleanup
+    - Dependencies: Weak references
 
-11. **Swipe Actions**
-    - Swipe to delete messages
-    - Swipe to retry failed messages
-    - Add haptic feedback
+19. **P0-WS-009**: Add WebSocket message compression
+    - File: WebSocketManager.swift
+    - Success: Reduces bandwidth usage by 30%
+    - Dependencies: Compression library
 
-12. **Error Handling UI**
-    - Show clear error messages when WebSocket fails
-    - Add retry buttons
-    - Display connection status indicator
+20. **P0-WS-010**: Implement WebSocket connection pooling
+    - File: WebSocketManager.swift
+    - Success: Reuses connections efficiently
+    - Dependencies: Connection management
+
+#### MCP Server UI Access (5)
+21. **P0-MCP-001**: Fix MCP tab visibility in tab bar
+    - File: MainTabBarController.swift
+    - Success: MCP tab appears at position 4
+    - Dependencies: Tab bar configuration
+
+22. **P0-MCP-002**: Implement MCP server list view
+    - File: MCPServerListViewController.swift
+    - Success: Shows all configured MCP servers
+    - Dependencies: APIClient MCP endpoints
+
+23. **P0-MCP-003**: Add MCP server connection testing
+    - File: MCPServerViewModel.swift
+    - Success: Tests connection and shows status
+    - Dependencies: Backend MCP test endpoint
+
+24. **P0-MCP-004**: Create MCP server add/edit form
+    - File: MCPServerFormViewController.swift
+    - Success: Can add and modify MCP servers
+    - Dependencies: Form validation
+
+25. **P0-MCP-005**: Fix MCP CLI command execution
+    - File: MCPServerViewModel.swift
+    - Success: Executes CLI commands successfully
+    - Dependencies: Backend CLI endpoint
+
+### 🟠 PRIORITY 1: HIGH PRIORITY [100 todos] - THIS WEEK
+
+#### Terminal WebSocket Implementation (15)
+26. **P1-TERM-001**: Verify terminal WebSocket connection
+    - File: ShellWebSocketManager.swift
+    - Success: Connects to ws://192.168.0.43:3004/shell
+    - Dependencies: WebSocket configuration
+
+27. **P1-TERM-002**: Test command execution flow
+    - File: TerminalViewController.swift
+    - Success: Commands execute and return output
+    - Dependencies: Shell WebSocket messages
+
+28. **P1-TERM-003**: Validate ANSI color parsing
+    - File: ANSIColorParser.swift
+    - Success: All 256 colors render correctly
+    - Dependencies: NSAttributedString
+
+29. **P1-TERM-004**: Implement command history
+    - File: TerminalViewController.swift
+    - Success: Up/down arrows navigate history
+    - Dependencies: Local storage
+
+30. **P1-TERM-005**: Add terminal auto-complete
+    - File: TerminalViewController.swift
+    - Success: Tab completion for commands
+    - Dependencies: Command parsing
 
 #### Terminal Testing (10)
 41. Create TerminalWebSocketTests unit tests

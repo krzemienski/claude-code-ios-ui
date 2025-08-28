@@ -56,6 +56,9 @@ class SearchViewModel: ObservableObject {
     @Published var searchTime: Double = 0
     @Published var errorMessage: String?
     @Published var recentSearches: [String] = []
+    @Published var regexEnabled: Bool = false
+    @Published var caseSensitive: Bool = false
+    @Published var wholeWord: Bool = false
     
     private var searchTask: Task<Void, Never>?
     private let maxRecentSearches = 10

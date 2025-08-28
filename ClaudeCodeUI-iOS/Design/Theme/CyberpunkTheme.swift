@@ -33,6 +33,7 @@ struct CyberpunkTheme {
     // MARK: - Additional UI Colors
     static let primaryText = textPrimary // Alias for consistency
     static let secondaryText = textSecondary // Alias for consistency
+    static let tertiaryText = textTertiary // Alias for consistency
     static let border = UIColor(hex: "#2A2A40")! // Border color
     static let primaryColor = primaryCyan // Alias for primary brand color
     static let secondaryColor = accentPink // Alias for secondary brand color

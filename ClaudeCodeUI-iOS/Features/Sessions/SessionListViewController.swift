@@ -559,8 +559,8 @@ extension SessionListViewController: UISearchResultsUpdating {
         }
         
         filteredSessions = sessions.filter { session in
-            session.title.localizedCaseInsensitiveContains(searchText) ||
-            (session.lastMessage?.localizedCaseInsensitiveContains(searchText) ?? false)
+            session.displaySummary.localizedCaseInsensitiveContains(searchText) ||
+            (session.summary?.localizedCaseInsensitiveContains(searchText) ?? false)
         }
         
         tableView.reloadData()
@@ -613,7 +613,7 @@ extension SessionListViewController {
         impactFeedback.impactOccurred()
         
         // Archive implementation would go here
-        print("Archiving session: \(session.title)")
+        print("Archiving session: \(session.displaySummary)")
         completion(true)
     }
     
@@ -624,7 +624,7 @@ extension SessionListViewController {
         impactFeedback.impactOccurred()
         
         // Duplicate implementation would go here
-        print("Duplicating session: \(session.title)")
+        print("Duplicating session: \(session.displaySummary)")
         completion(true)
     }
 }

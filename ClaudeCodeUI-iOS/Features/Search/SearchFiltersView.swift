@@ -7,6 +7,26 @@
 
 import SwiftUI
 
+// MARK: - File Type Enum
+enum FileType: String, CaseIterable {
+    case swift = "Swift"
+    case objectiveC = "Obj-C"
+    case javascript = "JS"
+    case typescript = "TS"
+    case json = "JSON"
+    case markdown = "MD"
+    case xml = "XML"
+    case yaml = "YAML"
+    case html = "HTML"
+    case css = "CSS"
+    case python = "Python"
+    case ruby = "Ruby"
+    case go = "Go"
+    case rust = "Rust"
+    case java = "Java"
+    case kotlin = "Kotlin"
+}
+
 // MARK: - Search History Item
 struct SearchHistoryItem {
     let query: String
