@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "ClaudeCodeUI",
     platforms: [
-        .iOS(.v16)  // iOS 16 is supported by Swift 5.7
+        .iOS(.v17)  // Match the Xcode project deployment target
     ],
     products: [
         .library(
@@ -25,16 +25,20 @@ let package = Package(
             ],
             path: ".",
             exclude: [
-                "Info.plist",
                 "ClaudeCodeUI.xcodeproj",
-                "Documentation",
-                "Assets.xcassets",
-                "Base.lproj",
-                "Preview Content",
                 "Dockerfile",
-                "build-linux.sh",
+                "build-linux.sh", 
                 "compile-check.sh",
-                "Sources"  // Exclude the duplicate Sources folder
+                "Sources",
+                "Tests",
+                "ClaudeCodeUIIntegrationTests",
+                "ClaudeCodeUIUITests",
+                "App",
+                "Models", 
+                "Resources",
+                "Core/Data/ClaudeCodeOffline.xcdatamodeld",
+                "Core/Network/REFRACTORING_PROPOSALS.md",
+                "UI/README.md"
             ],
             sources: [
                 "Core",

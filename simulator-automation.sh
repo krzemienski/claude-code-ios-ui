@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Claude Code iOS - Simulator Automation Script
-# iPhone 16 Pro Max (iOS 18.6) Build, Log, and Launch Automation
+# iPhone 16 Pro (iOS 26.0) Build, Log, and Launch Automation
 
 set -e  # Exit on error
 
@@ -9,8 +9,8 @@ set -e  # Exit on error
 # CONFIGURATION
 # ============================================================================
 
-# Persistent Simulator UUID for iPhone 16 Pro Max (iOS 18.6)
-readonly SIMULATOR_UUID="6520A438-0B1F-485B-9037-F346837B6D14"
+# Persistent Simulator UUID for iPhone 16 Pro (iOS 26.0)
+readonly SIMULATOR_UUID="058A3C12-3207-436C-96D4-A92F1D5697DF"
 readonly APP_BUNDLE_ID="com.claudecode.ui"
 readonly SCHEME_NAME="ClaudeCodeUI"
 readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -73,7 +73,7 @@ check_simulator() {
     else
         log_error "Simulator not found: $SIMULATOR_UUID"
         log_info "Available simulators:"
-        xcrun simctl list devices | grep "iPhone 16 Pro Max"
+        xcrun simctl list devices | grep "iPhone 16 Pro"
         exit 1
     fi
 }
@@ -108,7 +108,7 @@ start_log_capture() {
 build_app() {
     log_info "Building app..."
     log_info "Scheme: $SCHEME_NAME"
-    log_info "Destination: iPhone 16 Pro Max (iOS 18.6)"
+    log_info "Destination: iPhone 16 Pro (iOS 26.0)"
     
     # Check if xcodeproj exists
     if [ ! -d "${PROJECT_ROOT}/ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj" ]; then
@@ -205,7 +205,7 @@ cleanup() {
 main() {
     echo "=========================================="
     echo "Claude Code iOS - Simulator Automation"
-    echo "iPhone 16 Pro Max (iOS 18.6)"
+    echo "iPhone 16 Pro (iOS 26.0)"
     echo "UUID: $SIMULATOR_UUID"
     echo "=========================================="
     echo
