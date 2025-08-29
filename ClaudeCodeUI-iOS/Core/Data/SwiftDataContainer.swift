@@ -10,10 +10,36 @@ import Foundation
 
 @MainActor
 class SwiftDataContainer {
-    static let shared = try! SwiftDataContainer()
+    private static var _shared: SwiftDataContainer?
+    
+    static var shared: SwiftDataContainer {
+        if let existing = _shared {
+            return existing
+        }
+        
+        do {
+            let container = try SwiftDataContainer()
+            _shared = container
+            return container
+        } catch {
+            // Log error and create fallback in-memory container
+            print("⚠️ Failed to create SwiftDataContainer: \(error)")
+            print("📦 Creating fallback in-memory container")
+            
+            // Try to create an in-memory only container as fallback
+            if let fallbackContainer = try? SwiftDataContainer(inMemoryOnly: true) {
+                _shared = fallbackContainer
+                return fallbackContainer
+            }
+            
+            // If even in-memory fails, fatal error with useful information
+            fatalError("❌ Critical: Cannot create SwiftDataContainer even in-memory mode. Error: \(error)")
+        }
+    }
+    
     let container: ModelContainer
     
-    public init() throws {
+    public init(inMemoryOnly: Bool = false) throws {
         let schema = Schema([
             Project.self,
             Session.self,
@@ -23,7 +49,7 @@ class SwiftDataContainer {
         
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false,
+            isStoredInMemoryOnly: inMemoryOnly,
             allowsSave: true
             // groupContainer: .identifier("group.com.claudecodeui.ios") // Disabled for testing
         )

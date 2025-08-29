@@ -113,14 +113,15 @@ public class MainTabBarController: UITabBarController {
             selectedImage: createTabIcon(systemName: "gearshape.2.fill")
         )
         
-        // Set initial view controllers - 5 tabs: Projects, Terminal, Search, MCP, Settings
-        viewControllers = [projectsNav, terminalNav, searchNav, mcpNav, settingsNav]
+        // Set initial view controllers - Reordered for MCP visibility
+        // 4 main tabs + Settings in More menu: Projects, Terminal, MCP, Search, Settings
+        viewControllers = [projectsNav, terminalNav, mcpNav, searchNav, settingsNav]
         
         // Debug: Log tab count
         print("🔵 DEBUG: Set up \(viewControllers?.count ?? 0) tabs in tab bar")
         
         // Configure navigation bars
-        [projectsNav, terminalNav, searchNav, mcpNav, settingsNav].forEach { nav in
+        [projectsNav, terminalNav, mcpNav, searchNav, settingsNav].forEach { nav in
             nav.navigationBar.prefersLargeTitles = true
             nav.navigationBar.isTranslucent = false
             nav.navigationBar.backgroundColor = CyberpunkTheme.background
@@ -217,11 +218,11 @@ public class MainTabBarController: UITabBarController {
     }
     
     func switchToMCP() {
-        selectedIndex = 2  // MCP is at index 2 (after removing Search)
+        selectedIndex = 2  // MCP is now at index 2 for direct access
     }
     
     func switchToSettings() {
-        selectedIndex = 3  // Settings is at index 3 (after removing Search)
+        selectedIndex = 4  // Settings is at index 4 (moved to More menu)
     }
     
     func switchToGit() {

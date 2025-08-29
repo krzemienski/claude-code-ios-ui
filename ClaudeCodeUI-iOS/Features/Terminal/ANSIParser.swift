@@ -14,24 +14,24 @@ public class ANSIParser {
     
     /// Standard 16 ANSI colors
     private static let standardColors: [Int: UIColor] = [
-        30: UIColor(hex: "#000000")!,  // Black
-        31: UIColor(hex: "#CD3131")!,  // Red
-        32: UIColor(hex: "#0DBC79")!,  // Green
-        33: UIColor(hex: "#E5E510")!,  // Yellow
-        34: UIColor(hex: "#2472C8")!,  // Blue
-        35: UIColor(hex: "#BC3FBC")!,  // Magenta
-        36: UIColor(hex: "#11A8CD")!,  // Cyan
-        37: UIColor(hex: "#E5E5E5")!,  // White
+        30: UIColor(hex: "#000000") ?? UIColor.black,  // Black
+        31: UIColor(hex: "#CD3131") ?? UIColor(red: 0.8, green: 0.19, blue: 0.19, alpha: 1.0),  // Red
+        32: UIColor(hex: "#0DBC79") ?? UIColor(red: 0.05, green: 0.74, blue: 0.47, alpha: 1.0),  // Green
+        33: UIColor(hex: "#E5E510") ?? UIColor(red: 0.9, green: 0.9, blue: 0.06, alpha: 1.0),  // Yellow
+        34: UIColor(hex: "#2472C8") ?? UIColor(red: 0.14, green: 0.45, blue: 0.78, alpha: 1.0),  // Blue
+        35: UIColor(hex: "#BC3FBC") ?? UIColor(red: 0.74, green: 0.25, blue: 0.74, alpha: 1.0),  // Magenta
+        36: UIColor(hex: "#11A8CD") ?? UIColor(red: 0.07, green: 0.66, blue: 0.8, alpha: 1.0),  // Cyan
+        37: UIColor(hex: "#E5E5E5") ?? UIColor(white: 0.9, alpha: 1.0),  // White
         
         // Bright colors (90-97)
-        90: UIColor(hex: "#666666")!,  // Bright Black
-        91: UIColor(hex: "#F14C4C")!,  // Bright Red
-        92: UIColor(hex: "#23D18B")!,  // Bright Green
-        93: UIColor(hex: "#F5F543")!,  // Bright Yellow
-        94: UIColor(hex: "#3B8EEA")!,  // Bright Blue
-        95: UIColor(hex: "#D670D6")!,  // Bright Magenta
-        96: UIColor(hex: "#29B8DB")!,  // Bright Cyan
-        97: UIColor(hex: "#FFFFFF")!   // Bright White
+        90: UIColor(hex: "#666666") ?? UIColor(white: 0.4, alpha: 1.0),  // Bright Black
+        91: UIColor(hex: "#F14C4C") ?? UIColor(red: 0.95, green: 0.3, blue: 0.3, alpha: 1.0),  // Bright Red
+        92: UIColor(hex: "#23D18B") ?? UIColor(red: 0.14, green: 0.82, blue: 0.55, alpha: 1.0),  // Bright Green
+        93: UIColor(hex: "#F5F543") ?? UIColor(red: 0.96, green: 0.96, blue: 0.26, alpha: 1.0),  // Bright Yellow
+        94: UIColor(hex: "#3B8EEA") ?? UIColor(red: 0.23, green: 0.56, blue: 0.92, alpha: 1.0),  // Bright Blue
+        95: UIColor(hex: "#D670D6") ?? UIColor(red: 0.84, green: 0.44, blue: 0.84, alpha: 1.0),  // Bright Magenta
+        96: UIColor(hex: "#29B8DB") ?? UIColor(red: 0.16, green: 0.72, blue: 0.86, alpha: 1.0),  // Bright Cyan
+        97: UIColor(hex: "#FFFFFF") ?? UIColor.white   // Bright White
     ]
     
     /// Background color codes (add 10 to foreground codes)
@@ -129,7 +129,11 @@ public class ANSIParser {
         
         // Regular expression to match ANSI escape sequences
         let pattern = #"\x1B\[([0-9;]+)?m"#
-        let regex = try! NSRegularExpression(pattern: pattern, options: [])
+        
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            // If regex fails, return plain text
+            return NSAttributedString(string: text, attributes: currentAttributes.toNSAttributes(font: font))
+        }
         
         var lastEndIndex = text.startIndex
         let nsString = text as NSString
@@ -375,7 +379,9 @@ public class ANSIParser {
     /// Tests if text contains ANSI escape codes
     public static func containsANSICodes(_ text: String) -> Bool {
         let pattern = #"\x1B\[[0-9;]*m"#
-        let regex = try! NSRegularExpression(pattern: pattern, options: [])
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return false
+        }
         let range = NSRange(location: 0, length: (text as NSString).length)
         return regex.firstMatch(in: text, options: [], range: range) != nil
     }

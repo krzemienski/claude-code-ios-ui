@@ -147,10 +147,11 @@ class LoginViewController: BaseViewController {
     
     // MARK: - Initialization
     
-    init(errorHandler: ErrorHandlingService = DIContainer.shared.errorHandler,
-         dataContainer: SwiftDataContainer? = SwiftDataContainer.shared) {
-        self.errorHandler = errorHandler
-        self.dataContainer = dataContainer
+    @MainActor
+    init(errorHandler: ErrorHandlingService? = nil,
+         dataContainer: SwiftDataContainer? = nil) {
+        self.errorHandler = errorHandler ?? DIContainer.shared.errorHandler
+        self.dataContainer = dataContainer ?? DIContainer.shared.dataContainer
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -298,7 +299,7 @@ class LoginViewController: BaseViewController {
                 
                 // Save to settings
                 if let dataContainer = dataContainer {
-                    var settings = try await dataContainer.fetchSettings() ?? Settings()
+                    let settings = try await dataContainer.fetchSettings()
                     settings.authToken = token
                     // Username is not stored in settings - could be added if needed
                     try await dataContainer.updateSettings(settings)
@@ -357,7 +358,7 @@ class LoginViewController: BaseViewController {
             
             // Save to settings
             if let dataContainer = dataContainer {
-                if var settings = try? await dataContainer.fetchSettings() ?? Settings() {
+                if let settings = try? await dataContainer.fetchSettings() {
                     settings.authToken = fakeToken
                     // Username is not stored in settings - could be added if needed
                     try? await dataContainer.updateSettings(settings)

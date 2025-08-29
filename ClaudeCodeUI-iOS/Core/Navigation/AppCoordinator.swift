@@ -67,6 +67,7 @@ protocol Coordinator: AnyObject {
 }
 
 // MARK: - App Coordinator
+@MainActor
 class AppCoordinator: NSObject, Coordinator {
     
     // MARK: - Properties
@@ -93,7 +94,7 @@ class AppCoordinator: NSObject, Coordinator {
         Task {
             do {
                 // Check if we have a saved auth token
-                let dataContainer = SwiftDataContainer.shared
+                guard let dataContainer = await DIContainer.shared.dataContainer else { return }
                 let settings = try await dataContainer.fetchSettings()
                 
                 if let token = settings.authToken, !token.isEmpty {
@@ -201,6 +202,7 @@ class AppCoordinator: NSObject, Coordinator {
     
     // MARK: - View Controller Creation
     
+    @MainActor
     private func createProjectsViewController() -> UIViewController {
         // FIX: Use the actual ProjectsViewController from Features folder instead of ProjectsListViewController
         let projectsVC = ProjectsViewController()

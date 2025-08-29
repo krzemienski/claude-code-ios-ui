@@ -44,6 +44,7 @@ import authRoutes from './routes/auth.js';
 import mcpRoutes from './routes/mcp.js';
 import mcpRestRoutes from './routes/mcp-rest.js';
 import cursorRoutes from './routes/cursor.js';
+import searchRoutes from './routes/search.js';
 import { initializeDatabase } from './database/db.js';
 import { validateApiKey, authenticateToken, authenticateWebSocket } from './middleware/auth.js';
 
@@ -184,6 +185,9 @@ app.use('/api/mcp', mcpRoutes);      // Keep CLI routes for compatibility
 
 // Cursor API Routes (protected)
 app.use('/api/cursor', cursorRoutes);
+
+// Search API Routes (protected) 
+app.use('/api/projects', searchRoutes);
 
 // Static files served after API routes
 app.use(express.static(path.join(__dirname, '../dist')));

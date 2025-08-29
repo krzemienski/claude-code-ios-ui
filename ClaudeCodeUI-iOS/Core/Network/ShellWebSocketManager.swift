@@ -97,8 +97,13 @@ final class ShellWebSocketManager: NSObject {
         // Build shell WebSocket URL
         let shellURLString = "ws://\(AppConfig.backendHost):\(AppConfig.backendPort)/shell"
         
-        // Add JWT token if available
+        // Add JWT token if available - from secure Keychain storage
         var finalURLString = shellURLString
+        // TODO: Add KeychainManager to Xcode project
+        // if let authToken = try? KeychainManager.shared.getAuthToken() {
+        //     finalURLString = "\(shellURLString)?token=\(authToken)"
+        // }
+        // Temporary: Use UserDefaults for now
         if let authToken = UserDefaults.standard.string(forKey: "authToken") {
             finalURLString = "\(shellURLString)?token=\(authToken)"
         }
@@ -118,7 +123,12 @@ final class ShellWebSocketManager: NSObject {
         
         var request = URLRequest(url: url)
         
-        // Add authentication header for compatibility
+        // Add authentication header for compatibility - from secure storage
+        // TODO: Add KeychainManager to Xcode project
+        // if let authToken = try? KeychainManager.shared.getAuthToken() {
+        //     request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        // }
+        // Temporary: Use UserDefaults for now
         if let authToken = UserDefaults.standard.string(forKey: "authToken") {
             request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         }

@@ -9,6 +9,7 @@ import Foundation
 import UIKit
 
 /// Dependency Injection Container for managing app-wide services
+@MainActor
 final class DIContainer {
     
     // MARK: - Singleton
@@ -159,7 +160,7 @@ final class SettingsManager {
         cachedSettings = settings
         
         // Update services with new settings
-        DIContainer.shared.updateServicesWithSettings(settings)
+        await DIContainer.shared.updateServicesWithSettings(settings)
     }
     
     func clearCache() {

@@ -50,11 +50,12 @@ public class ProjectsViewController: BaseViewController {
     
     // MARK: - Initialization
     
-    init(dataContainer: SwiftDataContainer? = SwiftDataContainer.shared,
-         errorHandler: ErrorHandlingService = DIContainer.shared.errorHandler) {
+    @MainActor
+    init(dataContainer: SwiftDataContainer? = nil,
+         errorHandler: ErrorHandlingService? = nil) {
         print("🚨🚨🚨 ProjectsViewController.init() CALLED!")
-        self.dataContainer = dataContainer
-        self.errorHandler = errorHandler
+        self.dataContainer = dataContainer ?? DIContainer.shared.dataContainer
+        self.errorHandler = errorHandler ?? DIContainer.shared.errorHandler
         super.init(nibName: nil, bundle: nil)
         print("🚨🚨🚨 ProjectsViewController.init() COMPLETED!")
     }

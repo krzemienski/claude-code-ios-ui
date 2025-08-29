@@ -422,8 +422,10 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
         if let projectId = userInfo["projectId"] as? String,
            let projectPath = userInfo["projectPath"] as? String {
             // Cast to WebSocketManager to access sendMessage method
-            if let wsManager = DIContainer.shared.webSocketManager as? WebSocketManager {
-                wsManager.sendMessage(text, projectId: projectId, projectPath: projectPath)
+            Task { @MainActor in
+                if let wsManager = DIContainer.shared.webSocketManager as? WebSocketManager {
+                    wsManager.sendMessage(text, projectId: projectId, projectPath: projectPath)
+                }
             }
         }
     }

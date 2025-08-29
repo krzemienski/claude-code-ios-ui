@@ -9,42 +9,42 @@ import UIKit
 
 struct CyberpunkTheme {
     // MARK: - Primary Colors (from design system)
-    static let background = UIColor(hex: "#0A0A0F")! // Near black
-    static let surface = UIColor(hex: "#1A1A2E")! // Dark blue-gray
-    static let surfacePrimary = UIColor(hex: "#1A1A2E")! // Primary surface color
-    static let surfaceSecondary = UIColor(hex: "#252540")! // Secondary surface color
-    static let primaryCyan = UIColor(hex: "#00D9FF")! // Bright cyan (main brand color)
-    static let accentPink = UIColor(hex: "#FF006E")! // Hot pink accent
-    static let gradientBlue = UIColor(hex: "#0066FF")! // Gradient start
-    static let gradientPurple = UIColor(hex: "#9933FF")! // Gradient end
+    static let background = UIColor(hex: "#0A0A0F") ?? UIColor(red: 0.04, green: 0.04, blue: 0.06, alpha: 1.0) // Near black
+    static let surface = UIColor(hex: "#1A1A2E") ?? UIColor(red: 0.10, green: 0.10, blue: 0.18, alpha: 1.0) // Dark blue-gray
+    static let surfacePrimary = UIColor(hex: "#1A1A2E") ?? UIColor(red: 0.10, green: 0.10, blue: 0.18, alpha: 1.0) // Primary surface color
+    static let surfaceSecondary = UIColor(hex: "#252540") ?? UIColor(red: 0.15, green: 0.15, blue: 0.25, alpha: 1.0) // Secondary surface color
+    static let primaryCyan = UIColor(hex: "#00D9FF") ?? UIColor(red: 0.0, green: 0.85, blue: 1.0, alpha: 1.0) // Bright cyan (main brand color)
+    static let accentPink = UIColor(hex: "#FF006E") ?? UIColor(red: 1.0, green: 0.0, blue: 0.43, alpha: 1.0) // Hot pink accent
+    static let gradientBlue = UIColor(hex: "#0066FF") ?? UIColor(red: 0.0, green: 0.4, blue: 1.0, alpha: 1.0) // Gradient start
+    static let gradientPurple = UIColor(hex: "#9933FF") ?? UIColor(red: 0.6, green: 0.2, blue: 1.0, alpha: 1.0) // Gradient end
     
     // MARK: - Text Colors
-    static let textPrimary = UIColor(hex: "#FFFFFF")! // Pure white for headers
-    static let textSecondary = UIColor(hex: "#E0E0E0")! // Light gray for body
-    static let textTertiary = UIColor(hex: "#A0A0A0")! // Medium gray for captions
-    static let textCyan = UIColor(hex: "#00D9FF")! // Cyan for interactive text
+    static let textPrimary = UIColor(hex: "#FFFFFF") ?? UIColor.white // Pure white for headers
+    static let textSecondary = UIColor(hex: "#E0E0E0") ?? UIColor(white: 0.88, alpha: 1.0) // Light gray for body
+    static let textTertiary = UIColor(hex: "#A0A0A0") ?? UIColor(white: 0.63, alpha: 1.0) // Medium gray for captions
+    static let textCyan = UIColor(hex: "#00D9FF") ?? UIColor(red: 0.0, green: 0.85, blue: 1.0, alpha: 1.0) // Cyan for interactive text
     
     // MARK: - Semantic Colors
-    static let warning = UIColor(hex: "#FFB800")! // Amber/yellow for warnings
-    static let success = UIColor(hex: "#00FF88")! // Green for success
-    static let error = UIColor(hex: "#FF3366")! // Red for errors
-    static let info = UIColor(hex: "#00B8FF")! // Blue for info
+    static let warning = UIColor(hex: "#FFB800") ?? UIColor(red: 1.0, green: 0.72, blue: 0.0, alpha: 1.0) // Amber/yellow for warnings
+    static let success = UIColor(hex: "#00FF88") ?? UIColor(red: 0.0, green: 1.0, blue: 0.53, alpha: 1.0) // Green for success
+    static let error = UIColor(hex: "#FF3366") ?? UIColor(red: 1.0, green: 0.2, blue: 0.4, alpha: 1.0) // Red for errors
+    static let info = UIColor(hex: "#00B8FF") ?? UIColor(red: 0.0, green: 0.72, blue: 1.0, alpha: 1.0) // Blue for info
     
     // MARK: - Additional UI Colors
     static let primaryText = textPrimary // Alias for consistency
     static let secondaryText = textSecondary // Alias for consistency
     static let tertiaryText = textTertiary // Alias for consistency
-    static let border = UIColor(hex: "#2A2A40")! // Border color
+    static let border = UIColor(hex: "#2A2A40") ?? UIColor(red: 0.16, green: 0.16, blue: 0.25, alpha: 1.0) // Border color
     static let primaryColor = primaryCyan // Alias for primary brand color
     static let secondaryColor = accentPink // Alias for secondary brand color
     
     // MARK: - Icon Colors
-    static let iconCyan = UIColor(hex: "#00D9FF")! // Primary icon color
-    static let iconPink = UIColor(hex: "#FF006E")! // Accent icon color
+    static let iconCyan = UIColor(hex: "#00D9FF") ?? UIColor(red: 0.0, green: 0.85, blue: 1.0, alpha: 1.0) // Primary icon color
+    static let iconPink = UIColor(hex: "#FF006E") ?? UIColor(red: 1.0, green: 0.0, blue: 0.43, alpha: 1.0) // Accent icon color
     
     // MARK: - Effects
-    static let glowColor = UIColor(hex: "#00D9FF")!.withAlphaComponent(0.6)
-    static let gridLineColor = UIColor(hex: "#1A1A2E")!.withAlphaComponent(0.5)
+    static let glowColor = (UIColor(hex: "#00D9FF") ?? UIColor(red: 0.0, green: 0.85, blue: 1.0, alpha: 1.0)).withAlphaComponent(0.6)
+    static let gridLineColor = (UIColor(hex: "#1A1A2E") ?? UIColor(red: 0.10, green: 0.10, blue: 0.18, alpha: 1.0)).withAlphaComponent(0.5)
     static let borderRadius: CGFloat = 16.0
     static let glowIntensity: CGFloat = 0.8
     static let animationDuration: TimeInterval = 0.3

@@ -295,38 +295,117 @@ class AnalyticsDashboardViewController: UIViewController {
     // MARK: - Data Loading
     
     private func loadAnalyticsData() {
-        // Load analytics data from local storage
-        // This is placeholder - in production, load from the LocalAnalyticsProvider
-        
-        // Simulate loading
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.updateUI(with: self?.generateMockData() ?? AnalyticsData())
+        // Load real analytics data from AnalyticsManager
+        Task {
+            let data = await getAnalyticsDataFromManager()
+            await MainActor.run {
+                self.updateUI(with: data)
+            }
         }
     }
     
-    private func generateMockData() -> AnalyticsData {
+    private func getAnalyticsDataFromManager() async -> AnalyticsData {
+        // Get real data from AnalyticsManager and API
+        let sessionCount = await getSessionCount()
+        let projectCount = await getProjectCount()
+        let messageCount = await getMessageCount()
+        let fileCount = await getFileCount()
+        let activityData = await getWeeklyActivity()
+        let topFeatures = await getTopFeatures()
+        
         return AnalyticsData(
-            totalSessions: 42,
-            totalProjects: 8,
-            totalMessages: 156,
-            totalFiles: 234,
-            activityData: [
-                ("Mon", 12),
-                ("Tue", 18),
-                ("Wed", 25),
-                ("Thu", 20),
-                ("Fri", 30),
-                ("Sat", 8),
-                ("Sun", 5)
-            ],
-            topFeatures: [
-                ("Chat", 156),
-                ("File Explorer", 89),
-                ("Terminal", 67),
-                ("Search", 45),
-                ("Git", 32)
-            ]
+            totalSessions: sessionCount,
+            totalProjects: projectCount,
+            totalMessages: messageCount,
+            totalFiles: fileCount,
+            activityData: activityData,
+            topFeatures: topFeatures
         )
+    }
+    
+    private func getSessionCount() async -> Int {
+        // Get from UserDefaults or API
+        if let projects = try? await APIClient.shared.fetchProjects() {
+            // Use actualSessionCount property from Project model
+            return projects.reduce(0) { $0 + $1.actualSessionCount }
+        }
+        return UserDefaults.standard.integer(forKey: "totalSessions")
+    }
+    
+    private func getProjectCount() async -> Int {
+        if let projects = try? await APIClient.shared.fetchProjects() {
+            return projects.count
+        }
+        return UserDefaults.standard.integer(forKey: "totalProjects")
+    }
+    
+    private func getMessageCount() async -> Int {
+        // Track from WebSocket messages sent/received
+        return UserDefaults.standard.integer(forKey: "totalMessages")
+    }
+    
+    private func getFileCount() async -> Int {
+        // Track from file operations
+        return UserDefaults.standard.integer(forKey: "totalFiles")
+    }
+    
+    private func getWeeklyActivity() async -> [(String, Int)] {
+        // Get activity data from stored analytics
+        let calendar = Calendar.current
+        var activityData: [(String, Int)] = []
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "EEE"
+        
+        for i in (0..<7).reversed() {
+            if let date = calendar.date(byAdding: .day, value: -i, to: Date()) {
+                let dayName = dateFormatter.string(from: date)
+                let dayKey = "activity_\(dateFormatter.string(from: date))"
+                let count = UserDefaults.standard.integer(forKey: dayKey)
+                activityData.append((dayName, count))
+            }
+        }
+        
+        // If no data, return empty activity
+        if activityData.allSatisfy({ $0.1 == 0 }) {
+            return [("Mon", 0), ("Tue", 0), ("Wed", 0), ("Thu", 0), ("Fri", 0), ("Sat", 0), ("Sun", 0)]
+        }
+        
+        return activityData
+    }
+    
+    private func getTopFeatures() async -> [(String, Int)] {
+        // Get feature usage from AnalyticsManager
+        var features: [(String, Int)] = []
+        
+        features.append(("Chat", UserDefaults.standard.integer(forKey: "feature_usage_chat")))
+        features.append(("File Explorer", UserDefaults.standard.integer(forKey: "feature_usage_files")))
+        features.append(("Terminal", UserDefaults.standard.integer(forKey: "feature_usage_terminal")))
+        features.append(("Search", UserDefaults.standard.integer(forKey: "feature_usage_search")))
+        features.append(("Git", UserDefaults.standard.integer(forKey: "feature_usage_git")))
+        
+        // Sort by usage and filter out zeros
+        return features.filter { $0.1 > 0 }.sorted { $0.1 > $1.1 }
+    }
+    
+    private func showAnalyticsError(_ message: String) {
+        let alert = UIAlertController(
+            title: "Analytics Error",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+        
+        // Load empty data to show UI properly
+        updateUI(with: AnalyticsData(
+            totalSessions: 0,
+            totalProjects: 0,
+            totalMessages: 0,
+            totalFiles: 0,
+            activityData: [],
+            topFeatures: []
+        ))
     }
     
     private func updateUI(with data: AnalyticsData) {

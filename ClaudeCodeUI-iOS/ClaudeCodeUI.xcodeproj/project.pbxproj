@@ -54,6 +54,7 @@
 		51AEB00536CEDFCE1C42FF52 /* ImageCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59F74847FA8B7C75FF38EED1 /* ImageCacheManager.swift */; };
 		526357FB46233B077E18B097 /* UIComponentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42C32DEAC120C34C8C9C8107 /* UIComponentTests.swift */; };
 		5346660074E624118481F710 /* ChatAnimationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59F059CACF01619A470D3358 /* ChatAnimationManager.swift */; };
+		54C82A1BAB8DC77AD458F0E1 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77AC5EFE6AB8E6FB7C34C915 /* KeychainManager.swift */; };
 		5565892ECF110252525EB7C8 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239C54B689DE212BB6F5D05A /* SearchViewController.swift */; };
 		55B609CC07657D3B8DEFC067 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827FD17C6234BC16F9B8EC67 /* SceneDelegate.swift */; };
 		5692662F912D06321BC70CB8 /* WebSocketTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EB0A852238E3FC28695212C /* WebSocketTests.swift */; };
@@ -250,6 +251,7 @@
 		75892EC1FF4053CF09E60403 /* AppTourManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTourManager.swift; sourceTree = "<group>"; };
 		75911BA49AEA5CA6D82C2C3C /* FileExplorerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileExplorerViewController.swift; sourceTree = "<group>"; };
 		75EA9A4CB8A2A7424C0BAF8B /* BaseViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewController.swift; sourceTree = "<group>"; };
+		77AC5EFE6AB8E6FB7C34C915 /* KeychainManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		782586589CE2FFEC65143532 /* LoadingStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingStateView.swift; sourceTree = "<group>"; };
 		78F03DA61C525FF8DC85617F /* MessageStatusManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageStatusManager.swift; sourceTree = "<group>"; };
 		7E14EF9304753DE546BD4E43 /* CacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
@@ -719,6 +721,7 @@
 			isa = PBXGroup;
 			children = (
 				5D9BA315FF0B70DBBDBB242A /* BiometricAuthManager.swift */,
+				77AC5EFE6AB8E6FB7C34C915 /* KeychainManager.swift */,
 			);
 			path = Security;
 			sourceTree = "<group>";
@@ -1264,6 +1267,7 @@
 				418F7432434426BBD33D4F7C /* WebSocketProtocol.swift in Sources */,
 				8882E9C8F3AE0E513E8885CD /* WebSocketReconnection.swift in Sources */,
 				5565892ECF110252525EB7C8 /* SearchViewController.swift in Sources */,
+				54C82A1BAB8DC77AD458F0E1 /* KeychainManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

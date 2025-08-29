@@ -26,7 +26,10 @@ extension UIViewController {
         hostingController.view.backgroundColor = .clear
         
         // Add to container or main view
-        let targetView = containerView ?? view!
+        guard let targetView = containerView ?? view else {
+            // Warning: Unable to get target view for SwiftUI embedding
+            return hostingController
+        }
         targetView.addSubview(hostingController.view)
         
         // Setup constraints

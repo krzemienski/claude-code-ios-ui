@@ -21,11 +21,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Initialize analytics
         AnalyticsInitializer.initialize()
         
-        // Initialize app coordinator
-        appCoordinator = AppCoordinator(window: window!)
+        // Initialize app coordinator with safe unwrapping
+        guard let window = window else {
+            print("⚠️ Warning: Window is nil in scene delegate")
+            return
+        }
+        
+        appCoordinator = AppCoordinator(window: window)
         appCoordinator?.start()
         
-        window?.makeKeyAndVisible()
+        window.makeKeyAndVisible()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

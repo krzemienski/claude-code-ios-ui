@@ -110,9 +110,6 @@ public class BaseViewController: UIViewController {
     
     // MARK: - Public Loading Methods
     public func showLoading(message: String? = nil) {
-        print("🔵 DEBUG: showLoading called with message: \(message ?? "nil")")
-        print("🔵 DEBUG: Current thread: \(Thread.isMainThread ? "Main" : "Background")")
-        
         // Cancel any pending hide timer
         pendingHideTimer?.invalidate()
         pendingHideTimer = nil
@@ -126,9 +123,6 @@ public class BaseViewController: UIViewController {
     }
     
     public func hideLoading() {
-        print("🔴 DEBUG: hideLoading called")
-        print("🔴 DEBUG: Current thread: \(Thread.isMainThread ? "Main" : "Background")")
-        
         // Calculate how long the loading has been displayed
         guard let startTime = loadingStartTime else {
             // If no start time, just hide immediately
@@ -140,15 +134,10 @@ public class BaseViewController: UIViewController {
         let displayedDuration = Date().timeIntervalSince(startTime)
         let remainingTime = minimumLoadingDisplayTime - displayedDuration
         
-        print("⏱️ DEBUG: Loading displayed for \(displayedDuration)s, minimum is \(minimumLoadingDisplayTime)s")
-        
         if remainingTime > 0 {
             // Need to wait before hiding
-            print("⏳ DEBUG: Waiting \(remainingTime)s before hiding loading indicator")
-            
             // Schedule hide after remaining time
             pendingHideTimer = Timer.scheduledTimer(withTimeInterval: remainingTime, repeats: false) { [weak self] _ in
-                print("⏰ DEBUG: Timer fired, hiding loading indicator now")
                 self?.isLoading = false
                 self?.hideLoadingView()
                 self?.loadingStartTime = nil
@@ -156,7 +145,6 @@ public class BaseViewController: UIViewController {
             }
         } else {
             // Has been displayed long enough, hide immediately
-            print("✅ DEBUG: Loading displayed long enough, hiding immediately")
             isLoading = false
             hideLoadingView()
             loadingStartTime = nil
@@ -165,11 +153,6 @@ public class BaseViewController: UIViewController {
     
     // MARK: - Private Loading Methods
     private func showLoadingWithMessage(_ message: String?) {
-        print("🟢 DEBUG: showLoadingWithMessage called")
-        print("🟢 DEBUG: loadingView.isHidden = \(loadingView.isHidden)")
-        print("🟢 DEBUG: loadingView.alpha = \(loadingView.alpha)")
-        print("🟢 DEBUG: loadingView.superview = \(loadingView.superview != nil ? "exists" : "nil")")
-        
         // Ensure we're on main thread
         guard Thread.isMainThread else {
             DispatchQueue.main.async { [weak self] in
@@ -208,10 +191,6 @@ public class BaseViewController: UIViewController {
         // CRITICAL: Bring loading view to front
         view.bringSubviewToFront(loadingView)
         
-        print("🟡 DEBUG: About to show loading view")
-        print("🟡 DEBUG: loadingView.frame = \(loadingView.frame)")
-        print("🟡 DEBUG: cyberpunkLoader.frame = \(cyberpunkLoader.frame)")
-        
         // Animate appearance with haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
@@ -221,11 +200,7 @@ public class BaseViewController: UIViewController {
         
         UIView.animate(withDuration: 0.3, animations: {
             self.loadingView.alpha = 1.0
-        }) { completed in
-            print("✅ DEBUG: Loading animation completed = \(completed)")
-            print("✅ DEBUG: Final loadingView.isHidden = \(self.loadingView.isHidden)")
-            print("✅ DEBUG: Final loadingView.alpha = \(self.loadingView.alpha)")
-        }
+        })
     }
     
     private func hideLoadingView() {

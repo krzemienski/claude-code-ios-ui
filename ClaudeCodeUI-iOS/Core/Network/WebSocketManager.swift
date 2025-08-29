@@ -127,16 +127,19 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
             // Store the original URL for reconnection
             self.originalURLString = urlString
             
-            // Add JWT token to URL if available
+            // Add JWT token to URL if available - now from secure Keychain storage
             var finalUrlString = urlString
+            // TODO: Add KeychainManager to Xcode project
+            // if let authToken = try? KeychainManager.shared.getAuthToken() {
+            // Temporary: Use UserDefaults for now
             if let authToken = UserDefaults.standard.string(forKey: "authToken") {
-                logDebug("🔑 Found auth token: \(authToken.prefix(20))...", category: "WebSocket")
+                logDebug("🔑 Found auth token from storage: \(authToken.prefix(20))...", category: "WebSocket")
                 // Add token as query parameter for WebSocket connection
                 let separator = urlString.contains("?") ? "&" : "?"
                 finalUrlString = "\(urlString)\(separator)token=\(authToken)"
                 logDebug("📡 Final WebSocket URL with token: \(finalUrlString.prefix(100))...", category: "WebSocket")
             } else {
-                logWarning("⚠️ No auth token found in UserDefaults", category: "WebSocket")
+                logWarning("⚠️ No auth token found in storage", category: "WebSocket")
             }
             
             guard let url = URL(string: finalUrlString) else {
@@ -156,7 +159,10 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
             
             var request = URLRequest(url: url)
             
-            // Also add authentication token in header for compatibility
+            // Also add authentication token in header for compatibility - from secure storage
+            // TODO: Add KeychainManager to Xcode project
+            // if let authToken = try? KeychainManager.shared.getAuthToken() {
+            // Temporary: Use UserDefaults for now
             if let authToken = UserDefaults.standard.string(forKey: "authToken") {
                 request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
             }

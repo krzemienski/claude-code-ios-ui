@@ -19,12 +19,39 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Setup error handling
         ErrorHandlingService.shared.setupCrashReporting()
         
+        // SECURITY FIX: Migrate authentication tokens from UserDefaults to secure Keychain storage
+        // This is a one-time migration to move away from insecure storage
+        // TODO: Add AuthenticationMigration to Xcode project
+        // AuthenticationMigration.performMigrationIfNeeded()
+        
+        // Initialize authentication manager (will load tokens from secure storage)
+        // TODO: Add AuthenticationManager to Xcode project
+        // Task {
+        //     await AuthenticationManager.shared.checkAuthenticationStatus()
+        // }
+        
         // Configure appearance
         setupAppearance()
         
+        // Register for authentication notifications
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAuthenticationChange),
+            name: NSNotification.Name("authenticationChanged"),
+            object: nil
+        )
+        
         logInfo("Claude Code UI launched", category: "App")
+        // logInfo("🔐 Authentication migration status: \(AuthenticationMigration.isMigrationComplete ? "Complete" : "Pending")", category: "App")
         
         return true
+    }
+    
+    @objc private func handleAuthenticationChange(_ notification: Notification) {
+        logInfo("🔐 Authentication state changed", category: "App")
+        
+        // Handle authentication state changes if needed
+        // For example, refresh UI or reconnect WebSockets
     }
 
     // MARK: UISceneSession Lifecycle

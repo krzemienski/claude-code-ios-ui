@@ -152,10 +152,11 @@ class AuthenticationViewController: BaseViewController {
     
     // MARK: - Initialization
     
-    init(errorHandler: ErrorHandlingService = DIContainer.shared.errorHandler,
-         dataContainer: SwiftDataContainer? = SwiftDataContainer.shared) {
-        self.errorHandler = errorHandler
-        self.dataContainer = dataContainer
+    @MainActor
+    init(errorHandler: ErrorHandlingService? = nil,
+         dataContainer: SwiftDataContainer? = nil) {
+        self.errorHandler = errorHandler ?? DIContainer.shared.errorHandler
+        self.dataContainer = dataContainer ?? DIContainer.shared.dataContainer
         super.init(nibName: nil, bundle: nil)
     }
     

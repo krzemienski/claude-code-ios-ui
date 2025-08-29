@@ -395,69 +395,9 @@ class GitViewModel: ObservableObject {
     }
 }
 
-// MARK: - Mock Data for Testing
+// MARK: - Error Recovery
 
 extension GitViewModel {
-    func loadMockData() {
-        // Mock status
-        statusSections = [
-            GitStatusSection(
-                title: "Staged Changes",
-                files: [
-                    GitFile(path: "README.md", status: "modified", isStaged: true),
-                    GitFile(path: "src/main.swift", status: "added", isStaged: true)
-                ]
-            ),
-            GitStatusSection(
-                title: "Changes",
-                files: [
-                    GitFile(path: "Package.swift", status: "modified", isStaged: false),
-                    GitFile(path: "Tests/test.swift", status: "deleted", isStaged: false)
-                ]
-            ),
-            GitStatusSection(
-                title: "Untracked Files",
-                files: [
-                    GitFile(path: ".env.local", status: "untracked", isStaged: false),
-                    GitFile(path: "docs/notes.txt", status: "untracked", isStaged: false)
-                ]
-            )
-        ]
-        
-        // Mock branches
-        branches = [
-            GitBranch(name: "main", isRemote: false, lastCommit: "abc123"),
-            GitBranch(name: "feature/new-ui", isRemote: false, lastCommit: "def456"),
-            GitBranch(name: "bugfix/crash-fix", isRemote: false, lastCommit: "ghi789"),
-            GitBranch(name: "origin/main", isRemote: true, lastCommit: "abc123"),
-            GitBranch(name: "origin/develop", isRemote: true, lastCommit: "jkl012")
-        ]
-        
-        // Mock commits
-        commits = [
-            GitCommit(
-                sha: "abc1234567890",
-                message: "Add new feature for Git integration",
-                author: "John Doe",
-                date: "Jan 16, 2025 at 10:30 AM"
-            ),
-            GitCommit(
-                sha: "def0987654321",
-                message: "Fix crash in chat view controller",
-                author: "Jane Smith",
-                date: "Jan 15, 2025 at 3:45 PM"
-            ),
-            GitCommit(
-                sha: "ghi1357924680",
-                message: "Update documentation and clean up code",
-                author: "Bob Johnson",
-                date: "Jan 14, 2025 at 9:15 AM"
-            )
-        ]
-        
-        currentBranch = "main"
-        onStatusUpdate?()
-        onBranchesUpdate?()
-        onCommitsUpdate?()
-    }
+    // Removed mock data generation - all data now comes from API
+    // If API fails, we show proper error messages instead of mock data
 }

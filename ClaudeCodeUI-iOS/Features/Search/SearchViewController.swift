@@ -129,41 +129,105 @@ class SearchViewController: UIViewController {
         isSearching = true
         activityIndicator.startAnimating()
         
-        // For now, we'll use mock data since backend doesn't have search yet
-        // TODO: Replace with actual API call when backend implements search endpoint
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            self?.searchResults = self?.generateMockResults(for: query) ?? []
-            self?.isSearching = false
-            self?.activityIndicator.stopAnimating()
-            self?.tableView.reloadData()
+        // Get current project from navigation context
+        guard let projectName = getCurrentProjectName() else {
+            showSearchError("No project selected. Please select a project first.")
+            return
+        }
+        
+        // Call the real API
+        Task {
+            do {
+                print("🔍 Searching for '\(query)' in project: \(projectName)")
+                
+                // Call the search API
+                let response = try await APIClient.shared.searchProject(
+                    projectName: projectName,
+                    query: query,
+                    fileTypes: [],  // No filter for now
+                    caseSensitive: false,
+                    useRegex: false
+                )
+                
+                print("✅ Search completed: \(response.totalCount) results in \(response.searchTime)s")
+                
+                // Update UI on main thread
+                await MainActor.run {
+                    self.activityIndicator.stopAnimating()
+                    self.isSearching = false
+                    
+                    // Convert API results to local SearchResult format
+                    self.searchResults = response.results.map { apiResult in
+                        SearchResult(
+                            fileName: apiResult.fileName,
+                            filePath: apiResult.filePath,
+                            lineNumber: apiResult.lineNumber,
+                            lineContent: apiResult.lineContent.trimmingCharacters(in: .whitespacesAndNewlines),
+                            projectName: apiResult.projectName
+                        )
+                    }
+                    
+                    self.tableView.reloadData()
+                    
+                    // Show message if no results
+                    if self.searchResults.isEmpty {
+                        self.showNoResults(for: query)
+                    }
+                }
+            } catch {
+                print("❌ Search failed: \(error)")
+                await MainActor.run {
+                    self.activityIndicator.stopAnimating()
+                    self.isSearching = false
+                    self.showSearchError("Search failed: \(error.localizedDescription)")
+                }
+            }
         }
     }
     
-    private func generateMockResults(for query: String) -> [SearchResult] {
-        // Generate some mock search results for testing
-        return [
-            SearchResult(
-                fileName: "AppDelegate.swift",
-                filePath: "/MyProject/AppDelegate.swift",
-                lineNumber: 42,
-                lineContent: "func application(_ application: UIApplication, didFinishLaunchingWithOptions...",
-                projectName: "MyProject"
-            ),
-            SearchResult(
-                fileName: "ViewController.swift",
-                filePath: "/MyProject/ViewController.swift",
-                lineNumber: 15,
-                lineContent: "class ViewController: UIViewController {",
-                projectName: "MyProject"
-            ),
-            SearchResult(
-                fileName: "NetworkManager.swift",
-                filePath: "/MyProject/Managers/NetworkManager.swift",
-                lineNumber: 78,
-                lineContent: "func fetchData(from url: URL) async throws -> Data {",
-                projectName: "MyProject"
-            )
-        ]
+    private func showNoResults(for query: String) {
+        // Create a simple no results view
+        let noResultsLabel = UILabel()
+        noResultsLabel.text = "No results found for '\(query)'"
+        noResultsLabel.textColor = CyberpunkTheme.textSecondary
+        noResultsLabel.textAlignment = .center
+        noResultsLabel.font = .systemFont(ofSize: 16)
+        
+        // Add as table background view
+        tableView.backgroundView = noResultsLabel
+    }
+    
+    // MARK: - Helper Methods
+    private func getCurrentProjectName() -> String? {
+        // The backend uses path-based project naming:
+        // /Users/nick/Documents/claude-code-ios-ui becomes -Users-nick-Documents-claude-code-ios-ui
+        // TODO: Get actual project path from navigation context
+        
+        // For now, use the hardcoded project path for this app
+        let projectPath = "/Users/nick/Documents/claude-code-ios-ui"
+        let projectName = projectPath.replacingOccurrences(of: "/", with: "-")
+        
+        // Check if user has selected a different project
+        if let savedProject = UserDefaults.standard.string(forKey: "lastSelectedProject") {
+            return savedProject
+        }
+        
+        return projectName
+    }
+    
+    private func showSearchError(_ message: String) {
+        let alert = UIAlertController(
+            title: "Search Error",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+        
+        activityIndicator.stopAnimating()
+        isSearching = false
+        searchResults = []
+        tableView.reloadData()
     }
 }
 
