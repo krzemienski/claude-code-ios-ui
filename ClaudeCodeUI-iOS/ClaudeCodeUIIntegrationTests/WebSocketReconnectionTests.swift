@@ -267,23 +267,28 @@ class MockWebSocketDelegate: WebSocketManagerDelegate {
     
     var onConnected: (() -> Void)?
     var onDisconnected: ((Error?) -> Void)?
-    var onMessageReceived: (([String: Any]) -> Void)?
-    var onError: ((Error) -> Void)?
+    var onMessageReceived: ((WebSocketMessage) -> Void)?
+    var onDataReceived: ((Data) -> Void)?
+    var onStateChanged: ((WebSocketConnectionState) -> Void)?
     
-    func webSocketDidConnect() {
+    func webSocketDidConnect(_ manager: any WebSocketProtocol) {
         onConnected?()
     }
     
-    func webSocketDidDisconnect(error: Error?) {
+    func webSocketDidDisconnect(_ manager: any WebSocketProtocol, error: Error?) {
         onDisconnected?(error)
     }
     
-    func webSocketDidReceiveMessage(_ message: [String: Any]) {
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveMessage message: WebSocketMessage) {
         onMessageReceived?(message)
     }
     
-    func webSocketDidEncounterError(_ error: Error) {
-        onError?(error)
+    func webSocket(_ manager: any WebSocketProtocol, didReceiveData data: Data) {
+        onDataReceived?(data)
+    }
+    
+    func webSocketConnectionStateChanged(_ state: WebSocketConnectionState) {
+        onStateChanged?(state)
     }
 }
 

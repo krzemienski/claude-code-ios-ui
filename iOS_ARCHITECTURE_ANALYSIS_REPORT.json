@@ -1,0 +1,465 @@
+{
+  "project_analysis": {
+    "project_name": "ClaudeCodeUI",
+    "bundle_identifier": "com.claudecode.ui",
+    "version": "1.0.0",
+    "build_number": "1",
+    "project_path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS",
+    "total_swift_files": 214,
+    "last_analyzed": "2025-01-21T10:00:00Z"
+  },
+  
+  "project_structure": {
+    "targets": [
+      {
+        "name": "ClaudeCodeUI",
+        "type": "iOS Application",
+        "identifier": "44002753B54D5E162107E5DE"
+      },
+      {
+        "name": "ClaudeCodeUITests",
+        "type": "Unit Test Bundle",
+        "identifier": "948D15999DE9E1D790571424"
+      },
+      {
+        "name": "ClaudeCodeUIUITests",
+        "type": "UI Test Bundle", 
+        "identifier": "90E461F2C654B3463AA10A49"
+      },
+      {
+        "name": "ClaudeCodeUIIntegrationTests",
+        "type": "Integration Test Bundle",
+        "identifier": "DFB30758FBB8EEF8B16714CC"
+      }
+    ],
+    
+    "schemes": [
+      {
+        "name": "ClaudeCodeUI",
+        "configurations": ["Debug", "Release"],
+        "test_targets": [
+          "ClaudeCodeUITests",
+          "ClaudeCodeUIUITests",
+          "ClaudeCodeUIIntegrationTests"
+        ]
+      }
+    ],
+    
+    "module_hierarchy": {
+      "App": {
+        "description": "Application entry points",
+        "files": ["AppDelegate.swift", "SceneDelegate.swift", "Info.plist"]
+      },
+      "Core": {
+        "description": "Core infrastructure and services",
+        "submodules": {
+          "Config": ["AppConfig.swift", "AppConstants.swift", "FeatureFlags.swift"],
+          "Navigation": ["AppCoordinator.swift", "MainTabBarController.swift", "ViewControllers.swift", "AllViewControllers.swift"],
+          "Network": ["APIClient.swift", "WebSocketManager.swift", "ShellWebSocketManager.swift", "StarscreamWebSocketManager.swift", "TranscriptionService.swift"],
+          "Services": ["AuthenticationManager.swift", "CacheManager.swift", "DIContainer.swift", "ErrorHandlingService.swift", "Logger.swift", "MessagePersistenceService.swift", "NotificationManager.swift", "OfflineDataStore.swift", "OfflineManager.swift", "PushNotificationManager.swift", "SessionPersistenceService.swift", "SettingsExportManager.swift"],
+          "Data": ["SwiftDataContainer.swift", "Models/FileNode.swift", "Models/GitModels.swift", "Models/MCPModels.swift", "Models/Project.swift", "Models/Settings.swift", "Models/TerminalOutput.swift"],
+          "Security": ["AuthenticationMigration.swift", "BiometricAuthManager.swift", "KeychainManager.swift"],
+          "Accessibility": ["AccessibilityManager.swift"],
+          "Analytics": ["AnalyticsIntegration.swift", "AnalyticsManager.swift"],
+          "Cache": ["ImageCacheManager.swift"],
+          "Performance": ["MemoryManager.swift"],
+          "Protocols": ["WebSocketProtocol.swift"],
+          "Utils": ["HapticFeedback.swift"]
+        }
+      },
+      "Features": {
+        "description": "Feature modules",
+        "submodules": {
+          "Chat": {
+            "files": ["ChatViewController.swift", "ChatViewController_New.swift", "ChatViewController_Refactored.swift", "ChatViewModel.swift", "ChatAnimationManager.swift", "ChatInputHandler.swift", "ChatTableViewHandler.swift", "ChatViewSetup.swift", "ChatWebSocketCoordinator.swift", "EnhancedMessageCell.swift", "MessageAnimator.swift", "MessageCells.swift", "MessageStatusManager.swift", "MessageTypes.swift", "StreamingMessageHandler.swift"],
+            "components": ["TypingIndicatorCell.swift", "TypingIndicatorView.swift"],
+            "structure": ["Coordinators", "Extensions", "Handlers", "Managers", "Processors", "Tests", "ViewModels", "Views"]
+          },
+          "Projects": ["ProjectsViewController.swift", "Views/SkeletonCollectionViewCell.swift"],
+          "Sessions": ["SessionListViewController.swift", "SessionTableViewCell.swift", "SessionsViewController.swift"],
+          "FileExplorer": ["FileExplorerViewController.swift", "FilePreviewViewController.swift", "FileTreeViewController.swift", "FileViewerViewController.swift"],
+          "Terminal": ["TerminalViewController.swift", "ANSIParser.swift", "TerminalOutputParser.swift", "TerminalWebSocketTests.swift"],
+          "Git": ["GitViewController.swift", "GitViewModel.swift"],
+          "MCP": ["MCPServerDetailView.swift", "MCPServerListView.swift", "MCPServerListViewController.swift", "MCPServerViewModel.swift"],
+          "Settings": ["SettingsView.swift", "SettingsViewController.swift", "SettingsViewModel.swift"],
+          "Search": ["SearchViewController.swift"],
+          "Authentication": ["AuthenticationViewController.swift", "LoginViewController.swift"],
+          "Transcription": ["TranscriptionViewController.swift"],
+          "Analytics": ["AnalyticsDashboardViewController.swift"],
+          "Feedback": ["FeedbackViewController.swift"],
+          "Onboarding": ["OnboardingViewController.swift"],
+          "Launch": ["LaunchViewController.swift"],
+          "Security": ["AppLockViewController.swift"],
+          "AppTour": ["AppTourManager.swift"],
+          "Demo": ["SwiftUIShowcaseViewController.swift"],
+          "Common": ["OfflineIndicatorView.swift"],
+          "PlaceholderViewControllers": ["PlaceholderViewControllers.swift"]
+        }
+      },
+      "Design": {
+        "description": "UI design system",
+        "submodules": {
+          "Theme": ["CyberpunkTheme.swift"],
+          "Effects": ["GlowEffects.swift"],
+          "Animations": ["AnimationManager.swift", "CustomTransitions.swift"],
+          "Components": ["AnimatedComponents.swift", "ConnectionStatusView.swift", "GradientBlock.swift", "GridBackgroundView.swift", "LoadingAnimations.swift", "LoadingSkeletonView.swift", "NeonButton.swift", "NoDataView.swift", "ProgressIndicatorView.swift", "RefreshableScrollView.swift", "SkeletonView.swift", "SuccessNotificationView.swift"]
+        }
+      },
+      "UI": {
+        "description": "UI components layer",
+        "submodules": {
+          "Base": ["BaseViewController.swift"],
+          "Components": ["CyberpunkButton.swift", "CyberpunkLoadingIndicator.swift", "ErrorAlertView.swift", "LoadingComponents.swift", "LoadingStateManager.swift", "MessageBubble.swift", "ProjectCard.swift"],
+          "SwiftUI": ["ContextMenuView.swift", "EmptyStateView.swift", "LoadingStateView.swift", "LoadingViews.swift", "MessageBubbleView.swift", "SessionListView.swift", "SwiftUIIntegration.swift"]
+        }
+      },
+      "Models": {
+        "description": "Data models",
+        "files": ["Message.swift", "Session.swift"]
+      },
+      "Tests": {
+        "description": "Test suites",
+        "submodules": {
+          "UnitTests": ["APIClientTests.swift", "ClaudeCodeUITests.swift", "ModelValidationTests.swift", "StarscreamWebSocketTests.swift", "ViewModelTests.swift", "WebSocketManagerTests.swift", "SearchViewControllerTests.swift"],
+          "IntegrationTests": ["APIIntegrationTests.swift", "AuthenticationIntegrationTests.swift", "DataPersistenceIntegrationTests.swift", "EdgeCaseIntegrationTests.swift", "Enhanced5PhaseIntegrationTests.swift", "MasterTestRunner.swift", "PerformanceIntegrationTests.swift", "SessionFlowE2ETests.swift", "UIFeaturesIntegrationTests.swift", "UIFlowIntegrationTests.swift", "WebSocketIntegrationTests.swift", "WebSocketReconnectionTests.swift"],
+          "UITests": ["ClaudeCodeUIUITests.swift", "PerformanceTests.swift", "WebSocketTests.swift"],
+          "Other": ["KeychainManagerTests.swift", "MCPServerTests.swift", "NavigationTests.swift", "SettingsTests.swift", "TerminalWebSocketTests.swift", "TestRunnerViewController.swift", "UIComponentTests.swift", "WebSocketStreamingTest.swift"]
+        }
+      }
+    }
+  },
+  
+  "architecture_patterns": {
+    "primary_pattern": "MVVM + Coordinators",
+    "data_flow_patterns": [
+      {
+        "pattern": "Unidirectional Data Flow",
+        "implementation": "ViewModels observe data changes and update Views"
+      },
+      {
+        "pattern": "Dependency Injection",
+        "implementation": "DIContainer provides services to ViewControllers"
+      },
+      {
+        "pattern": "Repository Pattern",
+        "implementation": "APIClient abstracts backend communication"
+      }
+    ],
+    "navigation_structure": {
+      "type": "Coordinator-based",
+      "main_coordinator": "AppCoordinator",
+      "tab_bar_controller": "MainTabBarController",
+      "navigation_flow": "Window -> AppCoordinator -> MainTabBarController -> Feature ViewControllers"
+    },
+    "design_patterns": [
+      {
+        "pattern": "Singleton",
+        "implementations": ["DIContainer.shared", "APIClient.shared", "WebSocketManager.shared"]
+      },
+      {
+        "pattern": "Observer",
+        "implementations": ["WebSocket notifications", "SwiftData observations"]
+      },
+      {
+        "pattern": "Factory",
+        "implementations": ["ViewController creation in AppCoordinator"]
+      },
+      {
+        "pattern": "Adapter",
+        "implementations": ["WebSocketAdapter for protocol abstraction"]
+      },
+      {
+        "pattern": "Strategy",
+        "implementations": ["Different WebSocket implementations (Native/Starscream)"]
+      }
+    ]
+  },
+  
+  "feature_inventory": {
+    "implemented_features": [
+      {
+        "name": "Chat",
+        "status": "Complete",
+        "description": "Real-time chat with WebSocket, streaming messages, typing indicators",
+        "components": ["ChatViewController", "ChatViewModel", "WebSocketManager", "StreamingMessageHandler"]
+      },
+      {
+        "name": "Projects Management",
+        "status": "Complete",
+        "description": "CRUD operations for projects with backend integration",
+        "components": ["ProjectsViewController", "APIClient project endpoints"]
+      },
+      {
+        "name": "Sessions",
+        "status": "Complete",
+        "description": "Session management with message history",
+        "components": ["SessionListViewController", "SessionsViewController", "SessionPersistenceService"]
+      },
+      {
+        "name": "File Explorer",
+        "status": "Partial",
+        "description": "File browsing, preview, and tree navigation",
+        "components": ["FileExplorerViewController", "FileTreeViewController", "FilePreviewViewController", "FileViewerViewController"]
+      },
+      {
+        "name": "Terminal",
+        "status": "Complete",
+        "description": "Terminal emulator with ANSI color support and WebSocket",
+        "components": ["TerminalViewController", "ShellWebSocketManager", "ANSIParser", "TerminalOutputParser"]
+      },
+      {
+        "name": "Git Integration",
+        "status": "Partial",
+        "description": "Git operations through backend API",
+        "components": ["GitViewController", "GitViewModel", "GitModels"]
+      },
+      {
+        "name": "MCP Server Management",
+        "status": "Complete",
+        "description": "MCP server configuration and management",
+        "components": ["MCPServerListViewController", "MCPServerDetailView", "MCPServerViewModel"]
+      },
+      {
+        "name": "Settings",
+        "status": "Complete",
+        "description": "App settings with export/import functionality",
+        "components": ["SettingsViewController", "SettingsViewModel", "SettingsExportManager"]
+      },
+      {
+        "name": "Search",
+        "status": "Partial",
+        "description": "Global search functionality",
+        "components": ["SearchViewController"]
+      },
+      {
+        "name": "Authentication",
+        "status": "Complete",
+        "description": "JWT-based authentication with biometric support",
+        "components": ["AuthenticationViewController", "LoginViewController", "AuthenticationManager", "BiometricAuthManager"]
+      },
+      {
+        "name": "Transcription",
+        "status": "Stub",
+        "description": "Audio transcription service",
+        "components": ["TranscriptionViewController", "TranscriptionService"]
+      },
+      {
+        "name": "Analytics",
+        "status": "Partial",
+        "description": "Analytics tracking and dashboard",
+        "components": ["AnalyticsDashboardViewController", "AnalyticsManager", "AnalyticsIntegration"]
+      },
+      {
+        "name": "Onboarding",
+        "status": "Complete",
+        "description": "User onboarding flow",
+        "components": ["OnboardingViewController", "AppTourManager"]
+      },
+      {
+        "name": "Offline Support",
+        "status": "Partial",
+        "description": "Offline data persistence and sync",
+        "components": ["OfflineManager", "OfflineDataStore", "SwiftDataContainer"]
+      }
+    ],
+    "stub_implementations": [
+      "PlaceholderViewControllers",
+      "Some features in TranscriptionViewController",
+      "Parts of FileExplorer functionality"
+    ],
+    "feature_dependencies": {
+      "Chat": ["WebSocketManager", "APIClient", "MessagePersistenceService"],
+      "Projects": ["APIClient", "DIContainer"],
+      "Sessions": ["APIClient", "SessionPersistenceService"],
+      "Terminal": ["ShellWebSocketManager"],
+      "Authentication": ["KeychainManager", "BiometricAuthManager"]
+    }
+  },
+  
+  "technical_stack": {
+    "platform": {
+      "ios_deployment_target": "17.0",
+      "supported_devices": ["iPhone", "iPad"],
+      "supported_orientations": {
+        "iphone": ["Portrait", "LandscapeLeft", "LandscapeRight"],
+        "ipad": ["Portrait", "PortraitUpsideDown", "LandscapeLeft", "LandscapeRight"]
+      }
+    },
+    "swift_configuration": {
+      "swift_version": "5.7",
+      "language_features": [
+        "@available(iOS 17.0, *)",
+        "async/await",
+        "SwiftData",
+        "Observation framework",
+        "Macros"
+      ]
+    },
+    "third_party_libraries": [
+      {
+        "name": "Starscream",
+        "version": "4.0.6",
+        "purpose": "WebSocket client library for improved reliability",
+        "integration": "Swift Package Manager"
+      }
+    ],
+    "backend_integration": {
+      "type": "Node.js Express Server",
+      "base_url": "http://192.168.0.43:3004",
+      "websocket_endpoints": {
+        "chat": "ws://192.168.0.43:3004/ws",
+        "terminal": "ws://192.168.0.43:3004/shell"
+      },
+      "api_endpoints": {
+        "authentication": ["/api/auth/register", "/api/auth/login", "/api/auth/status", "/api/auth/user", "/api/auth/logout"],
+        "projects": ["/api/projects", "/api/projects/create", "/api/projects/{name}/rename", "/api/projects/{name}"],
+        "sessions": ["/api/projects/{name}/sessions", "/api/projects/{name}/sessions/{id}/messages"],
+        "git": ["Multiple Git endpoints"],
+        "mcp": ["MCP server management endpoints"],
+        "files": ["File operations endpoints"]
+      }
+    },
+    "frameworks_used": [
+      "UIKit",
+      "SwiftUI",
+      "Foundation",
+      "CoreGraphics",
+      "SwiftData",
+      "Combine",
+      "CoreData",
+      "LocalAuthentication"
+    ]
+  },
+  
+  "build_configuration": {
+    "build_settings": {
+      "product_name": "ClaudeCodeUI",
+      "product_bundle_identifier": "com.claudecode.ui",
+      "development_language": "en",
+      "executable_name": "$(EXECUTABLE_NAME)",
+      "info_plist": "App/Info.plist"
+    },
+    "code_signing": {
+      "status": "Not configured in project",
+      "requirements": "Manual configuration needed for distribution"
+    },
+    "capabilities": {
+      "configured": [],
+      "required_for_features": [
+        "Push Notifications (for NotificationManager)",
+        "Background Modes (for WebSocket persistence)",
+        "Keychain Sharing (for secure storage)"
+      ]
+    },
+    "entitlements": {
+      "status": "Not found in project",
+      "needed": "Entitlements file needed for App Store distribution"
+    },
+    "app_transport_security": {
+      "allows_arbitrary_loads": true,
+      "exception_domains": ["192.168.0.43", "localhost"],
+      "note": "Configured for local development only"
+    }
+  },
+  
+  "ui_architecture": {
+    "design_system": "Cyberpunk Theme",
+    "primary_colors": {
+      "cyan": "#00D9FF",
+      "pink": "#FF006E",
+      "background": "Dark theme based"
+    },
+    "ui_frameworks": {
+      "primary": "UIKit",
+      "secondary": "SwiftUI",
+      "integration": "SwiftUI views embedded in UIKit ViewControllers"
+    },
+    "components": {
+      "custom_components": [
+        "CyberpunkButton",
+        "CyberpunkLoadingIndicator",
+        "NeonButton",
+        "GlowEffects",
+        "GridBackgroundView",
+        "SkeletonView"
+      ],
+      "animation_system": [
+        "AnimationManager",
+        "CustomTransitions",
+        "AnimatedComponents",
+        "LoadingAnimations"
+      ],
+      "state_management": [
+        "LoadingStateManager",
+        "MessageStatusManager",
+        "ChatStateManager"
+      ]
+    }
+  },
+  
+  "testing_architecture": {
+    "test_coverage": {
+      "unit_tests": "Partial - Key components tested",
+      "integration_tests": "Comprehensive - Full flow testing",
+      "ui_tests": "Basic - Main flows covered"
+    },
+    "test_suites": {
+      "unit": {
+        "count": 8,
+        "focus": ["APIClient", "WebSocketManager", "ViewModels", "Models"]
+      },
+      "integration": {
+        "count": 12,
+        "focus": ["End-to-end flows", "WebSocket reconnection", "Session management", "Authentication"]
+      },
+      "ui": {
+        "count": 3,
+        "focus": ["Performance", "WebSocket UI", "Main flows"]
+      }
+    },
+    "testing_tools": [
+      "XCTest",
+      "XCTestCase",
+      "XCUITest"
+    ]
+  },
+  
+  "project_metrics": {
+    "total_files": 214,
+    "lines_of_code_estimate": 25000,
+    "test_files": 35,
+    "view_controllers": 22,
+    "view_models": 4,
+    "services": 15,
+    "ui_components": 25
+  },
+  
+  "recommendations": {
+    "architecture": [
+      "Consider migrating more UIKit views to SwiftUI for consistency",
+      "Implement proper error handling protocols across all ViewModels",
+      "Add more unit tests for critical business logic"
+    ],
+    "code_organization": [
+      "Remove duplicate/backup files (ChatViewController variants)",
+      "Consolidate navigation files (ViewControllers.swift, AllViewControllers.swift)",
+      "Clean up PlaceholderViewControllers once all features are implemented"
+    ],
+    "build_configuration": [
+      "Add proper code signing configuration",
+      "Create entitlements file for capabilities",
+      "Configure push notification certificates",
+      "Update App Transport Security for production"
+    ],
+    "performance": [
+      "Implement lazy loading for large data sets",
+      "Add image caching for better performance",
+      "Optimize WebSocket reconnection strategy"
+    ],
+    "security": [
+      "Remove NSAllowsArbitraryLoads for production",
+      "Implement certificate pinning for API calls",
+      "Add proper keychain access groups"
+    ]
+  }
+}

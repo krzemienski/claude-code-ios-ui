@@ -50,6 +50,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private let connectionIndicatorView = UIView()
     private var connectionStatusHeightConstraint: NSLayoutConstraint!
     
+    // Component Integrator - NEW: Manages all 9 refactored components
+    private var componentsIntegrator: ChatComponentsIntegrator?
+    
     private let project: Project
     private var currentSession: Session?
     private var messages: [EnhancedChatMessage] = []
@@ -233,6 +236,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         setupNavigationBar()
         setupKeyboardObservers()
         
+        // Initialize the component integrator with all necessary dependencies
+        setupComponentIntegrator()
+        
         // CM-CHAT-03: Load persisted messages from SwiftData
         loadPersistedMessages()
         
@@ -250,16 +256,23 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             object: nil
         )
         
-        print("🔌 Calling connectWebSocket()...")
-        connectWebSocket()
-        print("📦 Loading initial messages...")
-        loadInitialMessages()
+        // Start the integrated components instead of direct WebSocket connection
+        print("🔌 Starting component integrator...")
+        componentsIntegrator?.start()
+        
+        // Load messages through integrator
+        if let sessionId = currentSession?.id {
+            print("📦 Loading messages for session: \(sessionId)")
+            componentsIntegrator?.loadMessages(for: sessionId)
+        }
+        
         print("✅ ChatViewController.viewDidLoad() completed")
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        webSocketManager.disconnect()
+        // Stop the component integrator which handles cleanup
+        componentsIntegrator?.stop()
     }
     
     deinit {
@@ -273,6 +286,30 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         
         // Clean up streaming handler
         streamingHandler.reset()
+    }
+    
+    // MARK: - Component Integration
+    
+    private func setupComponentIntegrator() {
+        // Create adapter for existing UI components to work with ChatInputBar protocol
+        let inputBarAdapter = ChatInputBarAdapter(
+            containerView: inputContainerView,
+            inputTextView: inputTextView,
+            sendButton: sendButton,
+            attachButton: attachButton,
+            placeholderLabel: placeholderLabel
+        )
+        
+        // Initialize the component integrator with all dependencies
+        componentsIntegrator = ChatComponentsIntegrator(
+            viewController: self,
+            tableView: tableView,
+            inputBar: inputBarAdapter,
+            webSocketManager: webSocketManager,
+            project: project
+        )
+        
+        print("✅ Component integrator initialized with all 9 components")
     }
     
     // MARK: - UI Setup
@@ -666,27 +703,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     // MARK: - WebSocket
     
-    private func connectWebSocket() {
-        print("🔌🔌🔌 connectWebSocket() called")
-        webSocketManager.delegate = self
-        print("🎯 WebSocket delegate set to self")
-        
-        // Use correct WebSocket path from AppConfig
-        let wsURL = AppConfig.websocketURL
-        print("🌐 WebSocket URL from config: \(wsURL)")
-        
-        // Connect with token parameter (WebSocketProtocol requires both parameters)
-        let token = UserDefaults.standard.string(forKey: "authToken")
-        if let token = token {
-            print("🔑 Found auth token: \(token.prefix(20))...")
-        } else {
-            print("⚠️ No auth token found, connecting without token")
-        }
-        
-        print("🚀 Calling webSocketManager.connect()...")
-        webSocketManager.connect(to: wsURL, with: token)
-        print("✅ connectWebSocket() completed")
-    }
+    // WebSocket connection is now handled by ChatComponentsIntegrator
+    // which is initialized in setupComponentIntegrator() and started in viewDidLoad()
     
     // MARK: - Data Loading
     
@@ -1236,43 +1254,15 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         inputTextViewHeightConstraint.constant = 44
         view.layoutIfNeeded()
         
-        // CRITICAL FIX: Send the message with CORRECT format
-        // Backend expects 'content' field at top level, not nested in options
-        let sessionId = currentSessionId ?? UserDefaults.standard.string(forKey: "currentSessionId_\(project.id)")
-        Logger.shared.info("   Session ID: \(sessionId ?? "nil")", category: "ChatVC")
+        // Use component integrator to send the message
+        // The integrator handles WebSocket communication, message formatting, and coordination
+        print("📡 [SEND_MESSAGE] Sending via component integrator at \(Date().ISO8601Format())")
+        componentsIntegrator?.sendMessage(text)
         
-        let messageData: [String: Any] = [
-            "type": "claude-command",
-            "command": text,  // ✅ FIXED: Using 'command' as backend expects
-            "projectPath": project.path,  // ✅ FIXED: At top level, not nested
-            "sessionId": sessionId as Any  // ✅ FIXED: At top level, not nested
-        ]
-        
-        Logger.shared.info("📡📡📡 [ChatVC] Preparing WebSocket message:", category: "ChatVC")
+        Logger.shared.info("✅ [ChatVC] Message sent through component integrator", category: "ChatVC")
         Logger.shared.info("   Original text: \(text)", category: "ChatVC")
         Logger.shared.info("   Text length: \(text.count) chars", category: "ChatVC")
         Logger.shared.info("   Project path: \(project.path)", category: "ChatVC")
-        Logger.shared.info("   Session ID: \(sessionId ?? "nil")", category: "ChatVC")
-        
-        if let jsonData = try? JSONSerialization.data(withJSONObject: messageData, options: .prettyPrinted),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            Logger.shared.info("📨 JSON payload created successfully:", category: "ChatVC")
-            Logger.shared.info(jsonString, category: "ChatVC")
-            
-            // Verify content field is present and correct
-            if let parsedBack = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-               let contentInJSON = parsedBack["content"] as? String {
-                Logger.shared.info("✅ Verified content field: \(contentInJSON)", category: "ChatVC")
-            }
-            
-            Logger.shared.info("🌐 [SEND_MESSAGE] Sending via WebSocket at \(Date().ISO8601Format())", category: "ChatVC")
-            Logger.shared.info("🚀 Calling webSocketManager.send()...", category: "ChatVC")
-            webSocketManager.send(jsonString)
-            Logger.shared.info("✉️ [SEND_MESSAGE] WebSocket send initiated at \(Date().ISO8601Format())", category: "ChatVC")
-            Logger.shared.info("✅✅✅ Message sent to WebSocketManager", category: "ChatVC")
-        } else {
-            Logger.shared.error("❌❌❌ Failed to serialize message data!", category: "ChatVC")
-        }
         
         // Show typing indicator after a brief delay (Claude is processing)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in

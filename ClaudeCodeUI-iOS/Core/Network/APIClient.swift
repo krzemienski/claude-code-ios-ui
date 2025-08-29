@@ -62,23 +62,25 @@ actor APIClient: APIClientProtocol {
     // MARK: - Private Methods
     private func loadAuthenticationToken() async {
         // Try to get token from KeychainManager (secure storage)
-        // TODO: Add KeychainManager to Xcode project
-        // do {
-        //     if let token = try KeychainManager.shared.getAuthToken() {
-        //         self.authToken = token
-        //         print("🔐 [APIClient] Loaded authentication token from secure storage")
-        //     } else {
-        //         print("🔓 [APIClient] No authentication token found in secure storage")
-        //     }
-        // } catch {
-        //     print("⚠️ [APIClient] Failed to load authentication token: \(error)")
-        // }
-        // Temporary: Use UserDefaults for now
-        if let token = UserDefaults.standard.string(forKey: "authToken") {
-            self.authToken = token
-            print("🔐 [APIClient] Loaded authentication token from storage")
-        } else {
-            print("🔓 [APIClient] No authentication token found in storage")
+        // Load saved token from secure Keychain storage
+        do {
+            if let token = try KeychainManager.shared.getAuthToken() {
+                self.authToken = token
+                print("🔐 [APIClient] Loaded authentication token from secure storage")
+            } else {
+                print("🔓 [APIClient] No authentication token found in secure storage")
+            }
+        } catch {
+            print("⚠️ [APIClient] Failed to load authentication token: \(error)")
+            // Fallback: Try to migrate from UserDefaults if exists
+            if let oldToken = UserDefaults.standard.string(forKey: "authToken") {
+                self.authToken = oldToken
+                // Migrate to Keychain
+                try? KeychainManager.shared.saveAuthToken(oldToken)
+                // Remove from insecure storage
+                UserDefaults.standard.removeObject(forKey: "authToken")
+                print("🔄 [APIClient] Migrated authentication token to secure storage")
+            }
         }
     }
     
@@ -88,13 +90,11 @@ actor APIClient: APIClientProtocol {
         
         // Store token securely in Keychain instead of UserDefaults
         Task {
-            // do { // Removed do-try-catch since no throwing code
+            do {
                 if let token = token {
-                    // TODO: Add KeychainManager to Xcode project
-                    // try KeychainManager.shared.saveAuthToken(token)
-                    // Temporary: Use UserDefaults for now
-                    UserDefaults.standard.set(token, forKey: "authToken")
-                    print("🔐 [APIClient] Saved authentication token to storage")
+                    // Save to secure Keychain storage
+                    try KeychainManager.shared.saveAuthToken(token)
+                    print("🔐 [APIClient] Saved authentication token to secure storage")
                     
                     // Also notify other components about token change
                     await MainActor.run {
@@ -105,11 +105,9 @@ actor APIClient: APIClientProtocol {
                         )
                     }
                 } else {
-                    // TODO: Add KeychainManager to Xcode project
-                    // try KeychainManager.shared.delete(key: .authToken)
-                    // Temporary: Use UserDefaults for now
-                    UserDefaults.standard.removeObject(forKey: "authToken")
-                    print("🔓 [APIClient] Removed authentication token from storage")
+                    // Remove token from secure storage
+                    try KeychainManager.shared.delete(key: .authToken)
+                    print("🔓 [APIClient] Removed authentication token from secure storage")
                     
                     // Notify about logout
                     await MainActor.run {
@@ -120,9 +118,9 @@ actor APIClient: APIClientProtocol {
                         )
                     }
                 }
-            // } catch { // Removed catch since no throwing code
-            //     print("⚠️ [APIClient] Failed to update authentication token: \(error)")
-            // }
+            } catch {
+                print("⚠️ [APIClient] Failed to update authentication token: \(error)")
+            }
         }
     }
     

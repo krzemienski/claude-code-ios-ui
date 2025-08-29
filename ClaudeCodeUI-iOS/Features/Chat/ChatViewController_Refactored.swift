@@ -388,3 +388,304 @@ extension ChatViewController: ChatWebSocketCoordinatorDelegate {
         updateConnectionStatusUI(status: .reconnecting)
     }
 }
+
+// MARK: - Connection Status UI
+
+extension ChatViewController {
+    
+    private func updateConnectionStatusUI(status: ChatViewModel.ConnectionStatus) {
+        switch status {
+        case .connected:
+            connectionStatusLabel.text = "Connected"
+            connectionIndicatorView.backgroundColor = .systemGreen
+            hideConnectionStatus()
+            
+        case .connecting:
+            connectionStatusLabel.text = "Connecting..."
+            connectionIndicatorView.backgroundColor = .systemOrange
+            showConnectionStatus()
+            
+        case .disconnected:
+            connectionStatusLabel.text = "Disconnected"
+            connectionIndicatorView.backgroundColor = .systemRed
+            showConnectionStatus()
+            
+        case .reconnecting:
+            connectionStatusLabel.text = "Reconnecting..."
+            connectionIndicatorView.backgroundColor = .systemOrange
+            showConnectionStatus()
+            
+        case .error(let message):
+            connectionStatusLabel.text = "Error: \(message)"
+            connectionIndicatorView.backgroundColor = .systemRed
+            showConnectionStatus()
+        }
+    }
+    
+    private func showConnectionStatus() {
+        guard connectionStatusView.alpha == 0 else { return }
+        
+        UIView.animate(withDuration: 0.3) {
+            self.connectionStatusHeightConstraint.constant = 30
+            self.connectionStatusView.alpha = 1
+            self.view.layoutIfNeeded()
+        }
+    }
+    
+    private func hideConnectionStatus() {
+        guard connectionStatusView.alpha == 1 else { return }
+        
+        UIView.animate(withDuration: 0.3, delay: 2.0, options: [], animations: {
+            self.connectionStatusHeightConstraint.constant = 0
+            self.connectionStatusView.alpha = 0
+            self.view.layoutIfNeeded()
+        }, completion: nil)
+    }
+}
+
+// MARK: - Factory Methods for UI Components
+
+extension ChatViewController {
+    
+    private func createTableView() -> UITableView {
+        let tableView = UITableView(frame: .zero, style: .plain)
+        tableView.backgroundColor = CyberpunkTheme.background
+        tableView.separatorStyle = .none
+        tableView.keyboardDismissMode = .interactive
+        tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        return tableView
+    }
+    
+    private func createInputContainerView() -> UIView {
+        let view = UIView()
+        view.backgroundColor = CyberpunkTheme.surface
+        view.layer.borderWidth = 1
+        view.layer.borderColor = CyberpunkTheme.border.cgColor
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }
+    
+    private func createInputTextView() -> UITextView {
+        let textView = UITextView()
+        textView.backgroundColor = .clear
+        textView.font = .systemFont(ofSize: 16)
+        textView.textColor = CyberpunkTheme.textPrimary
+        textView.isScrollEnabled = false
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        return textView
+    }
+    
+    private func createSendButton() -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "paperplane.fill"), for: .normal)
+        button.tintColor = CyberpunkTheme.primaryCyan
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }
+    
+    private func createAttachButton() -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "paperclip"), for: .normal)
+        button.tintColor = CyberpunkTheme.textSecondary
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }
+    
+    private func createPlaceholderLabel() -> UILabel {
+        let label = UILabel()
+        label.text = "Type a message..."
+        label.font = .systemFont(ofSize: 16)
+        label.textColor = CyberpunkTheme.textSecondary
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }
+    
+    private func createConnectionStatusView() -> UIView {
+        let view = UIView()
+        view.backgroundColor = CyberpunkTheme.surface
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.alpha = 0
+        return view
+    }
+    
+    private func createConnectionStatusLabel() -> UILabel {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = CyberpunkTheme.textSecondary
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }
+    
+    private func createConnectionIndicatorView() -> UIView {
+        let view = UIView()
+        view.layer.cornerRadius = 4
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }
+    
+    private func createTypingIndicator() -> UIView {
+        let view = UIView()
+        view.backgroundColor = CyberpunkTheme.surface
+        view.layer.cornerRadius = 12
+        view.isHidden = true
+        view.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Add typing dots
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.spacing = 4
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        for _ in 0..<3 {
+            let dot = UIView()
+            dot.backgroundColor = CyberpunkTheme.accentPink
+            dot.layer.cornerRadius = 3
+            dot.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                dot.widthAnchor.constraint(equalToConstant: 6),
+                dot.heightAnchor.constraint(equalToConstant: 6)
+            ])
+            stackView.addArrangedSubview(dot)
+        }
+        
+        view.addSubview(stackView)
+        NSLayoutConstraint.activate([
+            stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+        
+        return view
+    }
+}
+
+// MARK: - Layout Setup
+
+extension ChatViewController {
+    
+    private func setupMainLayout() {
+        view.backgroundColor = CyberpunkTheme.background
+        
+        // Add all subviews
+        view.addSubview(tableView)
+        view.addSubview(inputContainerView)
+        view.addSubview(connectionStatusView)
+        view.addSubview(emptyStateView)
+        view.addSubview(typingIndicator)
+        
+        // Add input components to container
+        inputContainerView.addSubview(attachButton)
+        inputContainerView.addSubview(inputTextView)
+        inputContainerView.addSubview(sendButton)
+        inputContainerView.addSubview(placeholderLabel)
+        
+        // Add connection status components
+        connectionStatusView.addSubview(connectionIndicatorView)
+        connectionStatusView.addSubview(connectionStatusLabel)
+    }
+    
+    private func setupConstraints() {
+        // Create constraints
+        inputContainerBottomConstraint = inputContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        inputTextViewHeightConstraint = inputTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 36)
+        connectionStatusHeightConstraint = connectionStatusView.heightAnchor.constraint(equalToConstant: 0)
+        
+        NSLayoutConstraint.activate([
+            // Table view
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: inputContainerView.topAnchor),
+            
+            // Input container
+            inputContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            inputContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            inputContainerBottomConstraint,
+            
+            // Connection status
+            connectionStatusView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            connectionStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            connectionStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            connectionStatusHeightConstraint,
+            
+            // Connection indicator
+            connectionIndicatorView.leadingAnchor.constraint(equalTo: connectionStatusView.leadingAnchor, constant: 12),
+            connectionIndicatorView.centerYAnchor.constraint(equalTo: connectionStatusView.centerYAnchor),
+            connectionIndicatorView.widthAnchor.constraint(equalToConstant: 8),
+            connectionIndicatorView.heightAnchor.constraint(equalToConstant: 8),
+            
+            // Connection label
+            connectionStatusLabel.leadingAnchor.constraint(equalTo: connectionIndicatorView.trailingAnchor, constant: 8),
+            connectionStatusLabel.centerYAnchor.constraint(equalTo: connectionStatusView.centerYAnchor),
+            
+            // Input components
+            attachButton.leadingAnchor.constraint(equalTo: inputContainerView.leadingAnchor, constant: 12),
+            attachButton.bottomAnchor.constraint(equalTo: inputContainerView.bottomAnchor, constant: -12),
+            attachButton.widthAnchor.constraint(equalToConstant: 32),
+            attachButton.heightAnchor.constraint(equalToConstant: 32),
+            
+            inputTextView.leadingAnchor.constraint(equalTo: attachButton.trailingAnchor, constant: 8),
+            inputTextView.topAnchor.constraint(equalTo: inputContainerView.topAnchor, constant: 8),
+            inputTextView.bottomAnchor.constraint(equalTo: inputContainerView.bottomAnchor, constant: -8),
+            inputTextViewHeightConstraint,
+            
+            sendButton.leadingAnchor.constraint(equalTo: inputTextView.trailingAnchor, constant: 8),
+            sendButton.trailingAnchor.constraint(equalTo: inputContainerView.trailingAnchor, constant: -12),
+            sendButton.bottomAnchor.constraint(equalTo: inputContainerView.bottomAnchor, constant: -12),
+            sendButton.widthAnchor.constraint(equalToConstant: 32),
+            sendButton.heightAnchor.constraint(equalToConstant: 32),
+            
+            // Placeholder
+            placeholderLabel.leadingAnchor.constraint(equalTo: inputTextView.leadingAnchor, constant: 5),
+            placeholderLabel.topAnchor.constraint(equalTo: inputTextView.topAnchor, constant: 8),
+            
+            // Empty state
+            emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            emptyStateView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
+            emptyStateView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
+            
+            // Typing indicator
+            typingIndicator.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            typingIndicator.bottomAnchor.constraint(equalTo: inputContainerView.topAnchor, constant: -8),
+            typingIndicator.widthAnchor.constraint(equalToConstant: 60),
+            typingIndicator.heightAnchor.constraint(equalToConstant: 28)
+        ])
+    }
+    
+    private func setupNavigationItems() {
+        title = project.name
+        
+        // Right bar buttons
+        let fileButton = UIBarButtonItem(
+            image: UIImage(systemName: "folder"),
+            style: .plain,
+            target: self,
+            action: #selector(showFileExplorer)
+        )
+        
+        let terminalButton = UIBarButtonItem(
+            image: UIImage(systemName: "terminal"),
+            style: .plain,
+            target: self,
+            action: #selector(showTerminal)
+        )
+        
+        let abortButton = UIBarButtonItem(
+            image: UIImage(systemName: "xmark.circle"),
+            style: .plain,
+            target: self,
+            action: #selector(abortSession)
+        )
+        abortButton.tintColor = CyberpunkTheme.error
+        
+        navigationItem.rightBarButtonItems = [abortButton, terminalButton, fileButton]
+    }
+    
+    private func setupRefreshControl() {
+        let refreshControl = UIRefreshControl()
+        refreshControl.tintColor = CyberpunkTheme.primaryCyan
+        refreshControl.addTarget(self, action: #selector(handlePullToRefresh), for: .valueChanged)
+        tableView.refreshControl = refreshControl
+    }
+}

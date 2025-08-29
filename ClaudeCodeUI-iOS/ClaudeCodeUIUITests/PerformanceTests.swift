@@ -98,7 +98,7 @@ final class PerformanceTests: XCTestCase {
         let projectsList = app.collectionViews.firstMatch
         XCTAssertTrue(projectsList.waitForExistence(timeout: 5))
         
-        measure(metrics: [XCTOSSignpostMetric.scrollDecelerationMetric()]) {
+        measure(metrics: [XCTOSSignpostMetric.scrollingAndDecelerationMetric]) {
             projectsList.swipeUp(velocity: .fast)
             projectsList.swipeDown(velocity: .fast)
         }
@@ -109,7 +109,7 @@ final class PerformanceTests: XCTestCase {
         
         let messagesTable = app.tables["MessagesTable"] ?? app.tables.firstMatch
         if messagesTable.waitForExistence(timeout: 5) {
-            measure(metrics: [XCTOSSignpostMetric.scrollDecelerationMetric()]) {
+            measure(metrics: [XCTOSSignpostMetric.scrollingAndDecelerationMetric]) {
                 messagesTable.swipeUp(velocity: .fast)
                 messagesTable.swipeDown(velocity: .fast)
             }
@@ -159,7 +159,7 @@ final class PerformanceTests: XCTestCase {
     // MARK: - Animation Performance
     
     func testTabSwitchingAnimation() throws {
-        measure(metrics: [XCTOSSignpostMetric.animationDurationMetric()]) {
+        measure(metrics: [XCTOSSignpostMetric.customSignpostMetric]) {
             let tabBar = app.tabBars.firstMatch
             
             tabBar.buttons["Projects"].tap()
@@ -175,7 +175,7 @@ final class PerformanceTests: XCTestCase {
         let projectsList = app.collectionViews.firstMatch
         XCTAssertTrue(projectsList.waitForExistence(timeout: 5))
         
-        measure(metrics: [XCTOSSignpostMetric.animationDurationMetric()]) {
+        measure(metrics: [XCTOSSignpostMetric.customSignpostMetric]) {
             if projectsList.cells.count > 0 {
                 // Push animation
                 projectsList.cells.element(boundBy: 0).tap()
