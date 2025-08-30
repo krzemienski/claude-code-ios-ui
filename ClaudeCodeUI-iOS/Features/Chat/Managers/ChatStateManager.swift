@@ -2,7 +2,7 @@
 //  ChatStateManager.swift
 //  ClaudeCodeUI
 //
-//  Component 6: State management and coordination
+//  Component 6: ChatState management and coordination
 //
 
 import Foundation
@@ -15,7 +15,7 @@ final class ChatStateManager: ObservableObject {
     
     // MARK: - State
     
-    enum State {
+    enum ChatState {
         case idle
         case loading
         case ready
@@ -27,7 +27,7 @@ final class ChatStateManager: ObservableObject {
     
     // MARK: - Published Properties
     
-    @Published private(set) var currentState: State = .idle
+    @Published private(set) var currentState: ChatState = .idle
     @Published private(set) var isTypingIndicatorVisible = false
     @Published private(set) var isInputEnabled = true
     @Published private(set) var isRefreshing = false
@@ -36,7 +36,7 @@ final class ChatStateManager: ObservableObject {
     
     // MARK: - Properties
     
-    private var stateHistory: [State] = []
+    private var stateHistory: [ChatState] = []
     private let maxHistorySize = 10
     private var cancellables = Set<AnyCancellable>()
     
@@ -58,7 +58,7 @@ final class ChatStateManager: ObservableObject {
     // MARK: - Public Methods
     
     /// Update the current state
-    func updateState(_ newState: State) {
+    func updateState(_ newState: ChatState) {
         // Store previous state
         stateHistory.append(currentState)
         if stateHistory.count > maxHistorySize {
@@ -157,7 +157,7 @@ final class ChatStateManager: ObservableObject {
             .store(in: &cancellables)
     }
     
-    private func updateUIStates(for state: State) {
+    private func updateUIStates(for state: ChatState) {
         switch state {
         case .idle:
             isInputEnabled = true
@@ -189,7 +189,7 @@ final class ChatStateManager: ObservableObject {
         }
     }
     
-    private func handleStateChange(_ state: State) {
+    private func handleStateChange(_ state: ChatState) {
         print("📊 State changed to: \(state)")
         
         // Log state transitions for debugging
@@ -201,7 +201,7 @@ final class ChatStateManager: ObservableObject {
     // MARK: - State Validation
     
     /// Validate state transition
-    func canTransition(from: State, to: State) -> Bool {
+    func canTransition(from: ChatState, to: ChatState) -> Bool {
         // Define valid state transitions
         switch (from, to) {
         case (.idle, .loading), (.idle, .ready):
@@ -226,8 +226,8 @@ final class ChatStateManager: ObservableObject {
 
 // MARK: - State Extensions
 
-extension ChatStateManager.State: Equatable {
-    static func == (lhs: ChatStateManager.State, rhs: ChatStateManager.State) -> Bool {
+extension ChatStateManager.ChatState: Equatable {
+    static func == (lhs: Self, rhs: Self) -> Bool {
         switch (lhs, rhs) {
         case (.idle, .idle), (.loading, .loading), (.ready, .ready),
              (.typing, .typing), (.sending, .sending), (.receiving, .receiving):

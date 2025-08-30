@@ -13,6 +13,10 @@ import UIKit
 /// Custom cell for displaying chat messages with cyberpunk styling
 final class ChatMessageCell: UITableViewCell {
     
+    // MARK: - Static Properties
+    
+    static let identifier = "ChatMessageCell"
+    
     // MARK: - UI Components
     
     private let bubbleView = UIView()
@@ -149,8 +153,8 @@ final class ChatMessageCell: UITableViewCell {
     func configure(with message: ChatMessage) {
         self.message = message
         
-        // Apply theme based on role
-        applyTheme(for: message.role)
+        // Apply theme based on isUser
+        applyTheme(isUser: message.isUser)
         
         // Set message content
         if let attributedContent = parseMarkdown(message.content) {
@@ -168,45 +172,35 @@ final class ChatMessageCell: UITableViewCell {
         // Handle code blocks
         handleCodeBlocks(in: message.content)
         
-        // Update constraints based on role
-        updateConstraints(for: message.role)
+        // Update constraints based on isUser
+        updateConstraints(isUser: message.isUser)
         
         // Show/hide retry button for failed messages
         retryButton.isHidden = message.status != .failed
     }
     
-    private func applyTheme(for role: ChatMessage.Role) {
-        switch role {
-        case .user:
+    private func applyTheme(isUser: Bool) {
+        if isUser {
             bubbleView.backgroundColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.1)
             bubbleView.layer.borderWidth = 1
             bubbleView.layer.borderColor = CyberpunkTheme.primaryCyan.cgColor
             messageLabel.textColor = CyberpunkTheme.textPrimary
             avatarImageView.image = UIImage(systemName: "person.circle.fill")
             avatarImageView.tintColor = CyberpunkTheme.primaryCyan
-            
-        case .assistant:
+        } else {
             bubbleView.backgroundColor = CyberpunkTheme.surface
             bubbleView.layer.borderWidth = 1
             bubbleView.layer.borderColor = CyberpunkTheme.accentPink.cgColor
             messageLabel.textColor = CyberpunkTheme.textPrimary
             avatarImageView.image = UIImage(systemName: "cpu")
             avatarImageView.tintColor = CyberpunkTheme.accentPink
-            
-        case .system:
-            bubbleView.backgroundColor = CyberpunkTheme.warning.withAlphaComponent(0.1)
-            bubbleView.layer.borderWidth = 1
-            bubbleView.layer.borderColor = CyberpunkTheme.warning.cgColor
-            messageLabel.textColor = CyberpunkTheme.textSecondary
-            avatarImageView.image = UIImage(systemName: "gear")
-            avatarImageView.tintColor = CyberpunkTheme.warning
         }
         
         // Add glow effect
         addGlowEffect(to: bubbleView, color: bubbleView.layer.borderColor ?? CyberpunkTheme.primaryCyan.cgColor)
     }
     
-    private func updateStatus(_ status: ChatMessage.Status) {
+    private func updateStatus(_ status: MessageStatus) {
         switch status {
         case .sending:
             statusImageView.image = UIImage(systemName: "clock")
@@ -223,10 +217,14 @@ final class ChatMessageCell: UITableViewCell {
         case .failed:
             statusImageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
             statusImageView.tintColor = CyberpunkTheme.error
+            
+        case .sent:
+            statusImageView.image = UIImage(systemName: "checkmark")
+            statusImageView.tintColor = .systemGray
         }
     }
     
-    private func updateConstraints(for role: ChatMessage.Role) {
+    private func updateConstraints(isUser: Bool) {
         // Remove existing constraints
         bubbleView.removeFromSuperview()
         contentView.addSubview(bubbleView)
@@ -242,8 +240,8 @@ final class ChatMessageCell: UITableViewCell {
             messageLabel.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: -bubbleInsets.bottom)
         ])
         
-        // Position based on role
-        if role == .user {
+        // Position based on isUser
+        if isUser {
             NSLayoutConstraint.activate([
                 bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
                 avatarImageView.trailingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: -8),

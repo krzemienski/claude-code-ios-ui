@@ -13,21 +13,7 @@ import SwiftData
 // Import types from MessageTypes.swift to avoid redeclaration
 // EnhancedMessageCell is defined in EnhancedMessageCell.swift
 
-// MARK: - Simple Chat Message Cell (for backward compatibility)
-
-class ChatMessageCell: UITableViewCell {
-    static let identifier = "ChatMessageCell"
-    
-    func configure(with message: EnhancedChatMessage) {
-        textLabel?.text = message.content
-        textLabel?.numberOfLines = 0
-        if !message.isUser {
-            self.accessibilityIdentifier = "assistantMessageCell"
-        } else {
-            self.accessibilityIdentifier = nil
-        }
-    }
-}
+// ChatMessageCell is defined in Views/ChatMessageCell.swift
 
 // MARK: - Chat View Controller
 
@@ -45,15 +31,15 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // IMPLEMENTATION: Listen to WebSocketManagerDelegate callbacks
     
     // Connection status UI
-    private let connectionStatusView = UIView()
-    private let connectionStatusLabel = UILabel()
-    private let connectionIndicatorView = UIView()
-    private var connectionStatusHeightConstraint: NSLayoutConstraint!
+    internal let connectionStatusView = UIView()
+    internal let connectionStatusLabel = UILabel()
+    internal let connectionIndicatorView = UIView()
+    internal var connectionStatusHeightConstraint: NSLayoutConstraint!
     
     // Component Integrator - NEW: Manages all 9 refactored components
     private var componentsIntegrator: ChatComponentsIntegrator?
     
-    private let project: Project
+    internal let project: Project
     private var currentSession: Session?
     private var messages: [EnhancedChatMessage] = []
     private let webSocketManager: any WebSocketProtocol
@@ -68,7 +54,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private var hasMoreMessages = true
     private let messagePageSize = 50
     private var currentSessionId: String?
-    private let emptyStateView = NoDataView(type: .noMessages)
+    internal let emptyStateView = NoDataView(type: .noMessages)
+    
+    // UI Components needed by ChatViewSetup - already declared above
     
     // TODO[CM-CHAT-03]: Implement message persistence with SwiftData
     // ISSUE: Messages not saved, lost on app restart
@@ -113,7 +101,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         return AnimationManager.shared.createTypingIndicator()
     }()
     
-    private lazy var tableView: UITableView = {
+    internal lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.backgroundColor = .clear
@@ -143,7 +131,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         return tableView
     }()
     
-    private lazy var inputContainerView: UIView = {
+    internal lazy var inputContainerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = CyberpunkTheme.surface
@@ -163,7 +151,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         return view
     }()
     
-    private lazy var inputTextView: UITextView = {
+    internal lazy var inputTextView: UITextView = {
         let textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.backgroundColor = CyberpunkTheme.background
@@ -180,7 +168,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         return textView
     }()
     
-    private lazy var placeholderLabel: UILabel = {
+    internal lazy var placeholderLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.text = "Type a message..."
@@ -189,7 +177,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         return label
     }()
     
-    private lazy var sendButton: UIButton = {
+    internal lazy var sendButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(UIImage(systemName: "arrow.up.circle.fill"), for: .normal)
@@ -202,7 +190,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         return button
     }()
     
-    private lazy var attachButton: UIButton = {
+    internal lazy var attachButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(UIImage(systemName: "paperclip"), for: .normal)
@@ -211,8 +199,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         return button
     }()
     
-    private var inputContainerBottomConstraint: NSLayoutConstraint!
-    private var inputTextViewHeightConstraint: NSLayoutConstraint!
+    internal var inputContainerBottomConstraint: NSLayoutConstraint!
+    internal var inputTextViewHeightConstraint: NSLayoutConstraint!
     
     // MARK: - Initialization
     
@@ -263,7 +251,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // Load messages through integrator
         if let sessionId = currentSession?.id {
             print("📦 Loading messages for session: \(sessionId)")
-            componentsIntegrator?.loadMessages(for: sessionId)
+            Task {
+                await componentsIntegrator?.loadMessages()
+            }
         }
         
         print("✅ ChatViewController.viewDidLoad() completed")
@@ -285,7 +275,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         messageStatusTimers.removeAll()
         
         // Clean up streaming handler
-        streamingHandler.reset()
+        Task { @MainActor in
+            streamingHandler.reset()
+        }
     }
     
     // MARK: - Component Integration
@@ -475,7 +467,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         tableView.alwaysBounceVertical = true
     }
     
-    @objc private func handlePullToRefresh() {
+    @objc internal func handlePullToRefresh() {
         // Haptic feedback when pull-to-refresh triggers
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.prepare()
@@ -1309,19 +1301,19 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         present(actionSheet, animated: true)
     }
     
-    @objc private func showFileExplorer() {
+    @objc internal func showFileExplorer() {
         // Navigate to file explorer
         let fileExplorerVC = FileExplorerViewController(project: project)
         navigationController?.pushViewController(fileExplorerVC, animated: true)
     }
     
-    @objc private func showTerminal() {
+    @objc internal func showTerminal() {
         // Navigate to terminal
         let terminalVC = TerminalViewController(project: project)
         navigationController?.pushViewController(terminalVC, animated: true)
     }
     
-    @objc private func abortSession() {
+    @objc internal func abortSession() {
         // Show confirmation alert
         let alert = UIAlertController(
             title: "Abort Session?",
@@ -1392,8 +1384,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     // MARK: - Message Status Handling
     
     private func handleSuccessfulMessageDelivery(messageId: String) {
-        if let message = messages.first(where: { $0.id == messageId && $0.status == .sending }) {
-            message.status = .delivered
+        if let message = messages.first(where: { $0.id == messageId && $0.status == MessageStatus.sending }) {
+            message.status = MessageStatus.delivered
             if let index = messages.firstIndex(where: { $0.id == messageId }) {
                 let indexPath = IndexPath(row: index, section: 0)
                 if let cell = tableView.cellForRow(at: indexPath) as? BaseMessageCell {
@@ -1473,12 +1465,18 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         print("   Manager: \(type(of: manager))")
         updateConnectionStatus("Connected", color: UIColor.systemGreen)
         
+        // FIX #3 (CM-CHAT-05): Update connection status UI immediately
         // Update connection status view
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            // Update connection status bar
+            // Update connection status bar with proper state
+            self.connectionStatusLabel.text = "Connected"
+            self.connectionIndicatorView.backgroundColor = UIColor.systemGreen
             self.showConnectionStatus("Connected", isConnected: true)
+            
+            // Update navigation bar indicator
+            self.updateNavigationStatusIndicator(isConnected: true, isConnecting: false)
             
             // Hide the status bar after 3 seconds if connected
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
@@ -1488,6 +1486,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             // Remove any connection error messages
             self.messages.removeAll { $0.id == "connection-status" || $0.id == "websocket-warning" }
             self.tableView.reloadData()
+            
+            // Load persisted messages when connection is established
+            self.loadPersistedMessages()
         }
     }
     
@@ -1498,12 +1499,18 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         print("   Manager: \(type(of: manager))")
         updateConnectionStatus("Disconnected: \(errorMessage)", color: UIColor.systemRed)
         
+        // FIX #3 (CM-CHAT-05): Update connection status UI immediately
         // Update connection status view
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            // Show persistent disconnection status bar
+            // Update connection status bar with proper state
+            self.connectionStatusLabel.text = "Disconnected - Reconnecting..."
+            self.connectionIndicatorView.backgroundColor = UIColor.systemRed
             self.showConnectionStatus("Disconnected - Reconnecting...", isConnected: false)
+            
+            // Update navigation bar indicator
+            self.updateNavigationStatusIndicator(isConnected: false, isConnecting: false)
             
             // Show disconnection status as a message
             let disconnectionMessage = EnhancedChatMessage(
@@ -1543,6 +1550,23 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 print("   Content preview: \(preview)...")
             }
             print("   Payload keys: \(payload.keys.joined(separator: ", "))")
+            
+            // FIX #1 (CM-CHAT-01): Update message status to delivered when response received
+            // Check if this is a response to our last sent message
+            if let messageId = payload["replyToMessageId"] as? String ?? lastSentMessageId,
+               !messageId.isEmpty {
+                print("✅ [WS_RECEIVE] Updating message \(messageId) status to delivered")
+                updateMessageStatus(messageId: messageId, to: .delivered)
+                // Clear last sent message ID
+                if messageId == lastSentMessageId {
+                    lastSentMessageId = nil
+                }
+                
+                // Update to read after a short delay (simulating the message being viewed)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.updateMessageStatus(messageId: messageId, to: .read)
+                }
+            }
         }
         
         // Handle the message based on its type
@@ -1580,25 +1604,48 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         print("🔄🔄🔄 WebSocketConnectionStateChanged called!")
         print("   New state: \(state)")
         
-        // Log state transition for debugging
-        switch state {
-        case .disconnected:
-            print("   📵 State = DISCONNECTED")
-            updateNavigationStatusIndicator(isConnected: false, isConnecting: false)
-        case .connecting:
-            print("   🔄 State = CONNECTING...")
-            updateNavigationStatusIndicator(isConnected: false, isConnecting: true)
-        case .connected:
-            print("   ✅ State = CONNECTED")
-            updateNavigationStatusIndicator(isConnected: true, isConnecting: false)
-        case .reconnecting:
-            print("   🔁 State = RECONNECTING...")
-            updateNavigationStatusIndicator(isConnected: false, isConnecting: true)
-        case .failed:
-            print("   ❌ State = FAILED")
-            updateNavigationStatusIndicator(isConnected: false, isConnecting: false)
+        // FIX #3 (CM-CHAT-05): Update connection status UI for all state changes
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Log state transition for debugging
+            switch state {
+            case .disconnected:
+                print("   📵 State = DISCONNECTED")
+                self.connectionStatusLabel.text = "Disconnected"
+                self.connectionIndicatorView.backgroundColor = UIColor.systemRed
+                self.showConnectionStatus("Disconnected", isConnected: false)
+                self.updateNavigationStatusIndicator(isConnected: false, isConnecting: false)
+            case .connecting:
+                print("   🔄 State = CONNECTING...")
+                self.connectionStatusLabel.text = "Connecting..."
+                self.connectionIndicatorView.backgroundColor = UIColor.systemOrange
+                self.showConnectionStatus("Connecting...", isConnected: false)
+                self.updateNavigationStatusIndicator(isConnected: false, isConnecting: true)
+            case .connected:
+                print("   ✅ State = CONNECTED")
+                self.connectionStatusLabel.text = "Connected"
+                self.connectionIndicatorView.backgroundColor = UIColor.systemGreen
+                self.showConnectionStatus("Connected", isConnected: true)
+                self.updateNavigationStatusIndicator(isConnected: true, isConnecting: false)
+                // Hide after 3 seconds when connected
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+                    self?.hideConnectionStatus()
+                }
+            case .reconnecting:
+                print("   🔁 State = RECONNECTING...")
+                self.connectionStatusLabel.text = "Reconnecting..."
+                self.connectionIndicatorView.backgroundColor = UIColor.systemOrange
+                self.showConnectionStatus("Reconnecting...", isConnected: false)
+                self.updateNavigationStatusIndicator(isConnected: false, isConnecting: true)
+            case .failed:
+                print("   ❌ State = FAILED")
+                self.connectionStatusLabel.text = "Connection Failed"
+                self.connectionIndicatorView.backgroundColor = UIColor.systemRed
+                self.showConnectionStatus("Connection Failed", isConnected: false)
+                self.updateNavigationStatusIndicator(isConnected: false, isConnecting: false)
+            }
         }
-        // Status updates will be handled in the individual connection methods
     }
     
     // CM-CHAT-03: Load persisted messages from SwiftData
@@ -2060,34 +2107,40 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         
         // Process through streaming handler
         print("🔄 [STREAMING_OUTPUT] Processing through handler at \(Date().ISO8601Format())")
-        if let data = content.data(using: .utf8),
-           let result = streamingHandler.processStreamingChunk(data) {
+        let streamingMessageId = activeStreamingMessageId ?? UUID().uuidString
+        if activeStreamingMessageId == nil {
+            activeStreamingMessageId = streamingMessageId
+        }
+        // Process the streaming chunk (void function)
+        streamingHandler.processStreamingChunk(content, for: streamingMessageId)
+        
+        print("🔄 [STREAMING_OUTPUT] Processing chunk at \(Date().ISO8601Format())")
+        print("   📊 Message ID: \(streamingMessageId)")
+        print("   📝 Content length: \(content.count) chars")
+        
+        // Find or create message
+        print("🔍 [STREAMING_OUTPUT] Looking for existing message at \(Date().ISO8601Format())")
+        if let existingIndex = messages.firstIndex(where: { $0.id == streamingMessageId }) {
+            print("✅ [STREAMING_OUTPUT] Found existing message at index \(existingIndex) at \(Date().ISO8601Format())")
+            // Update existing message
+            let message = messages[existingIndex]
+            print("📝 [STREAMING_OUTPUT] Appending content to message")
+            message.content += content
             
-            print("🔄 [STREAMING_OUTPUT] Handler result at \(Date().ISO8601Format())")
-            print("   📊 Message ID: \(result.messageId)")
-            print("   ✅ Is complete: \(result.isComplete)")
-            print("   📝 Content length: \(result.content.count) chars")
+            // Detect and update message type
+            let structured = streamingHandler.extractStructuredContent(from: message.content)
+            // For now, keep message type as text - we'd need additional logic to detect specific types
+            message.messageType = .text
             
-            // Find or create message
-            print("🔍 [STREAMING_OUTPUT] Looking for existing message at \(Date().ISO8601Format())")
-            if let existingIndex = messages.firstIndex(where: { $0.id == result.messageId }) {
-                print("✅ [STREAMING_OUTPUT] Found existing message at index \(existingIndex) at \(Date().ISO8601Format())")
-                // Update existing message
-                let message = messages[existingIndex]
-                print("📝 [STREAMING_OUTPUT] Updating content from \(message.content.count) to \(result.content.count) chars")
-                message.content = result.content
-                
-                // Detect and update message type
-                let structured = streamingHandler.extractStructuredContent(from: result.content)
-                message.messageType = structured.type
-                
-                if result.isComplete {
-                    print("✅ [STREAMING_OUTPUT] Stream complete, marking delivered at \(Date().ISO8601Format())")
-                    message.status = .delivered
-                    activeStreamingMessageId = nil
-                    print("🔄 [STREAMING_OUTPUT] Hiding typing indicator at \(Date().ISO8601Format())")
-                    hideTypingIndicator()
-                }
+            // Check for completion markers in the content
+            let isComplete = content.contains("[DONE]") || content.contains("</response>")
+            if isComplete {
+                print("✅ [STREAMING_OUTPUT] Stream complete, marking delivered at \(Date().ISO8601Format())")
+                message.status = MessageStatus.delivered
+                activeStreamingMessageId = nil
+                print("🔄 [STREAMING_OUTPUT] Hiding typing indicator at \(Date().ISO8601Format())")
+                hideTypingIndicator()
+            }
                 
                 // Update cell
                 let indexPath = IndexPath(row: existingIndex, section: 0)
@@ -2097,44 +2150,43 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                     } else if let systemCell = cell as? SystemMessageCell {
                         systemCell.configure(with: message)
                     }
-                }
-            } else {
-                print("🆕 [STREAMING_OUTPUT] Creating new streaming message at \(Date().ISO8601Format())")
-                // Create new streaming message
-                print("🔄 [STREAMING_OUTPUT] Showing typing indicator at \(Date().ISO8601Format())")
-                showTypingIndicator()
-                let chatMessage = EnhancedChatMessage(
-                    id: result.messageId,
-                    content: result.content,
-                    isUser: false,
-                    timestamp: Date(),
-                    status: result.isComplete ? .delivered : .sending
-                )
-                
-                // Set message type
-                let structured = streamingHandler.extractStructuredContent(from: result.content)
-                chatMessage.messageType = structured.type
-                
-                messages.append(chatMessage)
-                activeStreamingMessageId = result.messageId
-                
-                // Insert with animation
-                let indexPath = IndexPath(row: messages.count - 1, section: 0)
-                tableView.insertRows(at: [indexPath], with: .fade)
-                
-                if result.isComplete {
-                    activeStreamingMessageId = nil
-                    hideTypingIndicator()
-                }
-                
-                // Auto-scroll only if user is near bottom
-                if shouldAutoScroll() {
-                    scrollToBottomDebounced(animated: false)
-                }
             }
         } else {
-            // Fallback to simple text appending
-            handleClaudeStreamingOutputLegacy(content: content)
+            print("🆕 [STREAMING_OUTPUT] Creating new streaming message at \(Date().ISO8601Format())")
+            // Create new streaming message
+            print("🔄 [STREAMING_OUTPUT] Showing typing indicator at \(Date().ISO8601Format())")
+            showTypingIndicator()
+            let chatMessage = EnhancedChatMessage(
+                id: streamingMessageId,
+                content: content,
+                isUser: false,
+                timestamp: Date(),
+                status: .sending
+            )
+            
+            // Set message type
+            let structured = streamingHandler.extractStructuredContent(from: content)
+            // For now, keep message type as text - we'd need additional logic to detect specific types
+            chatMessage.messageType = .text
+            
+            messages.append(chatMessage)
+            activeStreamingMessageId = streamingMessageId
+            
+            // Insert with animation
+            let indexPath = IndexPath(row: messages.count - 1, section: 0)
+            tableView.insertRows(at: [indexPath], with: .fade)
+            
+            // Check for completion markers
+            let isComplete = content.contains("[DONE]") || content.contains("</response>")
+            if isComplete {
+                activeStreamingMessageId = nil
+                hideTypingIndicator()
+            }
+            
+            // Auto-scroll only if user is near bottom
+            if shouldAutoScroll() {
+                scrollToBottomDebounced(animated: false)
+            }
         }
     }
     
@@ -2474,7 +2526,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             
             // Only mark as failed if it's been sending for too long
             if now.timeIntervalSince(message.timestamp) > timeoutInterval {
-                message.status = .failed
+                message.status = MessageStatus.failed
                 print("⚠️ [ChatVC] Marking message as failed due to timeout: \(message.id)")
             }
         }
@@ -2701,7 +2753,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         logInfo("🔄 Retrying failed message: \(message.id)", category: "Retry")
         
         // Reset message status to sending
-        message.status = .sending
+        message.status = MessageStatus.sending
         
         // Update the cell
         if let cell = tableView.cellForRow(at: indexPath) as? BaseMessageCell {

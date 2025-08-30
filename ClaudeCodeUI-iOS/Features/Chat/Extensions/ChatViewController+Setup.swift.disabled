@@ -1,0 +1,611 @@
+//
+//  ChatViewController+Setup.swift
+//  ClaudeCodeUI
+//
+//  Created by Claude Code on 2025-01-30.
+//  UI setup and configuration extensions for ChatViewController
+//
+
+import UIKit
+import Combine
+
+// MARK: - Setup Extensions
+
+extension ChatViewController {
+    
+    // MARK: - Main Setup
+    
+    // Note: setupUI() is defined in the main ChatViewController class
+    // This extension provides supporting setup methods only
+    
+    // MARK: - View Setup
+    
+//     private func setupViews() {
+//         view.backgroundColor = .systemBackground
+//         
+        // Configure navigation
+//         setupNavigationBar()
+//         
+        // Configure table view
+//         setupTableView()
+//         
+        // Configure input bar
+//         setupInputBar()
+//         
+        // Configure connection indicator
+//         setupConnectionIndicator()
+//         
+        // Add loading overlay if needed
+//         setupLoadingOverlay()
+//     }
+//     
+//     private func setupNavigationBar() {
+        // Title configuration
+//         navigationItem.title = viewModel?.session?.name ?? "Chat"
+//         navigationItem.largeTitleDisplayMode = .never
+//         
+        // Right bar button items
+//         let moreButton = UIBarButtonItem(
+//             image: UIImage(systemName: "ellipsis.circle"),
+//             style: .plain,
+//             target: self,
+//             action: #selector(showMoreOptions)
+//         )
+//         
+//         let infoButton = UIBarButtonItem(
+//             image: UIImage(systemName: "info.circle"),
+//             style: .plain,
+//             target: self,
+//             action: #selector(showSessionInfo)
+//         )
+//         
+//         navigationItem.rightBarButtonItems = [moreButton, infoButton]
+//         
+        // Custom back button
+//         let backButton = UIBarButtonItem(
+//             title: "Back",
+//             style: .plain,
+//             target: self,
+//             action: #selector(handleBackButton)
+//         )
+//         navigationItem.leftBarButtonItem = backButton
+//     }
+//     
+//     private func setupTableView() {
+//         tableView = UITableView(frame: .zero, style: .plain)
+//         tableView.translatesAutoresizingMaskIntoConstraints = false
+//         
+        // Table view configuration
+//         tableView.backgroundColor = .systemBackground
+//         tableView.separatorStyle = .none
+//         tableView.keyboardDismissMode = .interactive
+//         tableView.contentInsetAdjustmentBehavior = .automatic
+//         tableView.estimatedRowHeight = 80
+//         tableView.rowHeight = UITableView.automaticDimension
+//         
+        // Add to view hierarchy
+//         view.addSubview(tableView)
+//         
+        // Setup handler
+//         tableViewHandler = ChatTableViewHandler(
+//             tableView: tableView,
+//             viewModel: viewModel ?? ChatViewModel()
+//         )
+//     }
+//     
+//     private func setupInputBar() {
+//         inputBar = ChatInputBar(frame: .zero)
+//         inputBar.translatesAutoresizingMaskIntoConstraints = false
+//         
+        // Add to view hierarchy
+//         view.addSubview(inputBar)
+//         
+        // Setup handler
+//         inputHandler = ChatInputHandler(
+//             inputBar: inputBar,
+//             viewModel: viewModel ?? ChatViewModel()
+//         )
+//         inputHandler?.presentingViewController = self
+//     }
+//     
+//     private func setupConnectionIndicator() {
+//         connectionIndicatorView = UIView()
+//         connectionIndicatorView.translatesAutoresizingMaskIntoConstraints = false
+//         connectionIndicatorView.backgroundColor = .systemGreen
+//         connectionIndicatorView.layer.cornerRadius = 4
+//         connectionIndicatorView.isHidden = true
+//         
+//         view.addSubview(connectionIndicatorView)
+//     }
+//     
+//     private func setupLoadingOverlay() {
+//         loadingOverlay = UIView()
+//         loadingOverlay.translatesAutoresizingMaskIntoConstraints = false
+//         loadingOverlay.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+//         loadingOverlay.isHidden = true
+//         
+//         let activityIndicator = UIActivityIndicatorView(style: .large)
+//         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+//         activityIndicator.startAnimating()
+//         
+//         loadingOverlay.addSubview(activityIndicator)
+//         view.addSubview(loadingOverlay)
+//         
+//         NSLayoutConstraint.activate([
+//             activityIndicator.centerXAnchor.constraint(equalTo: loadingOverlay.centerXAnchor),
+//             activityIndicator.centerYAnchor.constraint(equalTo: loadingOverlay.centerYAnchor)
+//         ])
+//     }
+//     
+    // MARK: - Constraints
+//     
+//     private func setupConstraints() {
+        // Input bar bottom constraint (will be adjusted for keyboard)
+//         inputBarBottomConstraint = inputBar.bottomAnchor.constraint(
+//             equalTo: view.safeAreaLayoutGuide.bottomAnchor
+//         )
+//         
+//         NSLayoutConstraint.activate([
+            // Table view
+//             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+//             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+//             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+//             tableView.bottomAnchor.constraint(equalTo: inputBar.topAnchor),
+//             
+            // Input bar
+//             inputBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+//             inputBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+//             inputBarBottomConstraint,
+//             inputBar.heightAnchor.constraint(greaterThanOrEqualToConstant: 50),
+//             
+            // Connection indicator
+//             connectionIndicatorView.topAnchor.constraint(
+//                 equalTo: view.safeAreaLayoutGuide.topAnchor,
+//                 constant: 8
+//             ),
+//             connectionIndicatorView.trailingAnchor.constraint(
+//                 equalTo: view.trailingAnchor,
+//                 constant: -16
+//             ),
+//             connectionIndicatorView.widthAnchor.constraint(equalToConstant: 8),
+//             connectionIndicatorView.heightAnchor.constraint(equalToConstant: 8),
+//             
+            // Loading overlay
+//             loadingOverlay.topAnchor.constraint(equalTo: view.topAnchor),
+//             loadingOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+//             loadingOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+//             loadingOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+//         ])
+//     }
+    
+    // MARK: - Bindings
+    
+//     private func setupBindings() {
+//         guard let viewModel = viewModel else { return }
+//         
+        // Connection status binding
+//         viewModel.$connectionStatus
+//             .receive(on: DispatchQueue.main)
+//             .sink { [weak self] status in
+//                 self?.updateConnectionIndicator(for: status)
+//             }
+//             .store(in: &cancellables)
+//         
+        // Loading state binding
+//         viewModel.$isLoading
+//             .receive(on: DispatchQueue.main)
+//             .sink { [weak self] isLoading in
+//                 self?.updateLoadingState(isLoading)
+//             }
+//             .store(in: &cancellables)
+//         
+        // Error binding
+//         viewModel.$lastError
+//             .receive(on: DispatchQueue.main)
+//             .compactMap { $0 }
+//             .sink { [weak self] error in
+//                 self?.showError(error)
+//             }
+//             .store(in: &cancellables)
+//         
+        // Title binding
+//         viewModel.$session
+//             .receive(on: DispatchQueue.main)
+//             .compactMap { $0?.name }
+//             .sink { [weak self] name in
+//                 self?.navigationItem.title = name
+//             }
+//             .store(in: &cancellables)
+//     }
+//     
+    // MARK: - Notifications
+    
+//     private func setupNotifications() {
+        // Keyboard notifications
+//         NotificationCenter.default.addObserver(
+//             self,
+//             selector: #selector(keyboardWillShow(_:)),
+//             name: UIResponder.keyboardWillShowNotification,
+//             object: nil
+//         )
+//         
+//         NotificationCenter.default.addObserver(
+//             self,
+//             selector: #selector(keyboardWillHide(_:)),
+//             name: UIResponder.keyboardWillHideNotification,
+//             object: nil
+//         )
+//         
+        // Input bar notifications
+//         NotificationCenter.default.addObserver(
+//             self,
+//             selector: #selector(inputBarHeightDidChange(_:)),
+//             name: .chatInputBarHeightDidChange,
+//             object: nil
+//         )
+//         
+//         NotificationCenter.default.addObserver(
+//             self,
+//             selector: #selector(inputDidBeginEditing(_:)),
+//             name: .chatInputDidBeginEditing,
+//             object: nil
+//         )
+//         
+        // App lifecycle notifications
+//         NotificationCenter.default.addObserver(
+//             self,
+//             selector: #selector(appWillEnterForeground(_:)),
+//             name: UIApplication.willEnterForegroundNotification,
+//             object: nil
+//         )
+//         
+//         NotificationCenter.default.addObserver(
+//             self,
+//             selector: #selector(appDidEnterBackground(_:)),
+//             name: UIApplication.didEnterBackgroundNotification,
+//             object: nil
+//         )
+//     }
+//     
+    // MARK: - Gestures
+    
+//     private func setupGestures() {
+        // Tap gesture to dismiss keyboard
+//         let tapGesture = UITapGestureRecognizer(
+//             target: self,
+//             action: #selector(handleTableViewTap(_:))
+//         )
+//         tapGesture.cancelsTouchesInView = false
+//         tableView.addGestureRecognizer(tapGesture)
+//         
+        // Long press gesture for context menu
+//         let longPressGesture = UILongPressGestureRecognizer(
+//             target: self,
+//             action: #selector(handleLongPress(_:))
+//         )
+//         longPressGesture.minimumPressDuration = 0.5
+//         tableView.addGestureRecognizer(longPressGesture)
+//         
+        // Swipe gesture for navigation
+//         let swipeGesture = UISwipeGestureRecognizer(
+//             target: self,
+//             action: #selector(handleSwipeBack(_:))
+//         )
+//         swipeGesture.direction = .right
+//         view.addGestureRecognizer(swipeGesture)
+//     }
+//     
+    // MARK: - Theme
+//     
+//     private func applyTheme() {
+        // Apply cyberpunk theme colors
+//         view.backgroundColor = CyberpunkTheme.background
+//         tableView.backgroundColor = CyberpunkTheme.background
+//         
+        // Navigation bar
+//         navigationController?.navigationBar.tintColor = CyberpunkTheme.primaryCyan
+//         
+        // Input bar theme
+//         inputBar.backgroundColor = CyberpunkTheme.surface
+//         inputBar.layer.borderColor = CyberpunkTheme.primaryCyan.withAlphaComponent(0.3).cgColor
+//         inputBar.layer.borderWidth = 1
+//         
+        // Add glow effect to connection indicator
+//         connectionIndicatorView.layer.shadowColor = UIColor.systemGreen.cgColor
+//         connectionIndicatorView.layer.shadowRadius = 4
+//         connectionIndicatorView.layer.shadowOpacity = 0.8
+//         connectionIndicatorView.layer.shadowOffset = .zero
+//     }
+//     
+    // MARK: - Update Methods
+//     
+//     private func updateConnectionIndicator(for status: ChatViewModel.ConnectionStatus) {
+//         connectionIndicatorView.isHidden = false
+//         
+//         switch status {
+//         case .connected:
+//             connectionIndicatorView.backgroundColor = .systemGreen
+//             connectionIndicatorView.layer.shadowColor = UIColor.systemGreen.cgColor
+//             
+//         case .connecting, .reconnecting:
+//             connectionIndicatorView.backgroundColor = .systemOrange
+//             connectionIndicatorView.layer.shadowColor = UIColor.systemOrange.cgColor
+//             
+            // Add pulsing animation
+//             UIView.animate(
+//                 withDuration: 0.5,
+//                 delay: 0,
+//                 options: [.repeat, .autoreverse],
+//                 animations: {
+//                     self.connectionIndicatorView.alpha = 0.3
+                }
+            )
+            
+        case .disconnected:
+            connectionIndicatorView.backgroundColor = .systemRed
+            connectionIndicatorView.layer.shadowColor = UIColor.systemRed.cgColor
+            connectionIndicatorView.layer.removeAllAnimations()
+            connectionIndicatorView.alpha = 1.0
+        }
+    }
+    
+    private func updateLoadingState(_ isLoading: Bool) {
+        loadingOverlay.isHidden = !isLoading
+        
+        if isLoading {
+            // Disable interactions
+            inputBar.isUserInteractionEnabled = false
+            navigationItem.rightBarButtonItems?.forEach { $0.isEnabled = false }
+        } else {
+            // Enable interactions
+            inputBar.isUserInteractionEnabled = true
+            navigationItem.rightBarButtonItems?.forEach { $0.isEnabled = true }
+        }
+    }
+    
+    // MARK: - Error Handling
+    
+    private func showError(_ error: Error) {
+        let alert = UIAlertController(
+            title: "Error",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        
+        // Add retry action for network errors
+        if error is URLError {
+            alert.addAction(UIAlertAction(title: "Retry", style: .default) { [weak self] _ in
+                self?.viewModel?.reconnectWebSocket()
+            })
+        }
+        
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - Keyboard Handling
+
+extension ChatViewController {
+    
+//     @objc func keyboardWillShow(_ notification: Notification) {
+//         guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+//               let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else {
+//             return
+//         }
+//         
+//         let keyboardHeight = keyboardFrame.height
+//         inputBarBottomConstraint?.constant = -keyboardHeight + view.safeAreaInsets.bottom
+//         
+//         UIView.animate(withDuration: duration) {
+//             self.view.layoutIfNeeded()
+//             
+            // Scroll to bottom if near bottom
+//             if self.tableViewHandler?.isNearBottom() ?? false {
+//                 self.tableViewHandler?.scrollToBottom(animated: true)
+//             }
+//         }
+//     }
+    
+//     @objc func keyboardWillHide(_ notification: Notification) {
+//         guard let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else {
+//             return
+//         }
+//         
+//         inputBarBottomConstraint?.constant = 0
+//         
+//         UIView.animate(withDuration: duration) {
+//             self.view.layoutIfNeeded()
+//         }
+//     }
+//     
+//     @objc func inputBarHeightDidChange(_ notification: Notification) {
+//         guard let height = notification.userInfo?["height"] as? CGFloat else { return }
+//         
+//         // Update input bar height constraint if needed
+//         UIView.animate(withDuration: 0.25) {
+//             self.view.layoutIfNeeded()
+//         }
+//     }
+    
+    @objc func inputDidBeginEditing(_ notification: Notification) {
+        // Scroll to bottom when starting to type
+        if tableViewHandler?.isNearBottom() ?? false {
+            tableViewHandler?.scrollToBottom(animated: true)
+        }
+    }
+}
+
+// MARK: - Gesture Handlers
+
+extension ChatViewController {
+    
+    @objc func handleTableViewTap(_ gesture: UITapGestureRecognizer) {
+        // Dismiss keyboard on tap outside
+        inputHandler?.dismissKeyboard()
+    }
+    
+    @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began else { return }
+        
+        let location = gesture.location(in: tableView)
+        guard let indexPath = tableView.indexPathForRow(at: location) else { return }
+        
+        // Trigger haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        // Show context menu through table view handler
+        tableView.selectRow(at: indexPath, animated: true, scrollPosition: .none)
+    }
+    
+    @objc func handleSwipeBack(_ gesture: UISwipeGestureRecognizer) {
+        navigationController?.popViewController(animated: true)
+    }
+}
+
+// MARK: - Navigation Actions
+
+extension ChatViewController {
+    
+    @objc func showMoreOptions() {
+        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        // Clear messages action
+        actionSheet.addAction(UIAlertAction(title: "Clear Messages", style: .destructive) { [weak self] _ in
+            self?.clearMessages()
+        })
+        
+        // Export chat action
+        actionSheet.addAction(UIAlertAction(title: "Export Chat", style: .default) { [weak self] _ in
+            self?.exportChat()
+        })
+        
+        // Settings action
+        actionSheet.addAction(UIAlertAction(title: "Chat Settings", style: .default) { [weak self] _ in
+            self?.showChatSettings()
+        })
+        
+        // Cancel action
+        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // iPad support
+        if let popover = actionSheet.popoverPresentationController {
+            popover.barButtonItem = navigationItem.rightBarButtonItems?.first
+        }
+        
+        present(actionSheet, animated: true)
+    }
+    
+    @objc func showSessionInfo() {
+        // Show session details
+        let infoVC = SessionInfoViewController()
+        infoVC.session = viewModel?.session
+        
+        let navController = UINavigationController(rootViewController: infoVC)
+        present(navController, animated: true)
+    }
+    
+    @objc func handleBackButton() {
+        // Save any pending state
+        viewModel?.saveState()
+        
+        // Disconnect WebSocket if needed
+        if viewModel?.shouldDisconnectOnExit ?? false {
+            webSocketCoordinator?.disconnect()
+        }
+        
+        navigationController?.popViewController(animated: true)
+    }
+    
+    private func clearMessages() {
+        let alert = UIAlertController(
+            title: "Clear Messages",
+            message: "Are you sure you want to clear all messages?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Clear", style: .destructive) { [weak self] _ in
+            Task {
+                await self?.viewModel?.clearMessages()
+            }
+        })
+        
+        present(alert, animated: true)
+    }
+    
+    private func exportChat() {
+        // Export chat messages
+        guard let messages = viewModel?.messages else { return }
+        
+        let formatter = ChatExportFormatter()
+        let exportText = formatter.format(messages)
+        
+        let activityVC = UIActivityViewController(
+            activityItems: [exportText],
+            applicationActivities: nil
+        )
+        
+        // iPad support
+        if let popover = activityVC.popoverPresentationController {
+            popover.barButtonItem = navigationItem.rightBarButtonItems?.first
+        }
+        
+        present(activityVC, animated: true)
+    }
+    
+    private func showChatSettings() {
+        // Show chat-specific settings
+        let settingsVC = ChatSettingsViewController()
+        settingsVC.delegate = self
+        
+        let navController = UINavigationController(rootViewController: settingsVC)
+        present(navController, animated: true)
+    }
+}
+
+// MARK: - App Lifecycle
+
+extension ChatViewController {
+    
+    @objc func appWillEnterForeground(_ notification: Notification) {
+        // Reconnect WebSocket if needed
+        if viewModel?.connectionStatus == .disconnected {
+            webSocketCoordinator?.connect(
+                to: URL(string: "ws://192.168.0.43:3004/ws")!,
+                with: UserDefaults.standard.string(forKey: "authToken")
+            )
+        }
+        
+        // Refresh UI
+        tableView.reloadData()
+    }
+    
+    @objc func appDidEnterBackground(_ notification: Notification) {
+        // Save state
+        viewModel?.saveState()
+        
+        // Optionally disconnect WebSocket to save battery
+        if UserDefaults.standard.bool(forKey: "disconnectOnBackground") {
+            webSocketCoordinator?.disconnect()
+        }
+    }
+}
+
+// MARK: - ChatSettingsDelegate (Placeholder)
+
+// TODO: Uncomment when ChatSettings types are implemented
+/*
+extension ChatViewController: ChatSettingsDelegate {
+    func chatSettingsDidChange(_ settings: ChatSettings) {
+        // Apply new settings
+        viewModel?.applySettings(settings)
+        
+        // Update UI if needed
+        applyTheme()
+        tableView.reloadData()
+    }
+}
+*/

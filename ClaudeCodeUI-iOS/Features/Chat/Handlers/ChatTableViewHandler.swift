@@ -36,7 +36,9 @@ final class ChatTableViewHandler: NSObject {
         super.init()
         
         setupTableView()
-        setupBindings()
+        Task { @MainActor in
+            setupBindings()
+        }
     }
     
     // MARK: - Setup
@@ -59,6 +61,7 @@ final class ChatTableViewHandler: NSObject {
         tableView?.contentInsetAdjustmentBehavior = .automatic
     }
     
+    @MainActor
     private func setupBindings() {
         // Bind to messages
         viewModel?.$messages
@@ -84,7 +87,7 @@ final class ChatTableViewHandler: NSObject {
               !messages.isEmpty else { return }
         
         let lastSection = numberOfSections(in: tableView) - 1
-        let lastRow = tableView(tableView, numberOfRowsInSection: lastSection) - 1
+        let lastRow = self.tableView(tableView, numberOfRowsInSection: lastSection) - 1
         
         guard lastSection >= 0, lastRow >= 0 else { return }
         
@@ -247,7 +250,7 @@ extension ChatTableViewHandler: UITableViewDelegate {
         let message = messages[indexPath.row]
         
         // Handle failed message retry
-        if message.status == .failed {
+        if message.status == MessageStatus.failed {
             Task {
                 await viewModel?.retryMessage(message.id)
             }
@@ -285,10 +288,10 @@ extension ChatTableViewHandler: UITableViewDelegate {
         guard indexPath.row < messages.count else { return }
         
         let message = messages[indexPath.row]
-        if message.role == .assistant && message.status != .read {
+        if !message.isUser && message.status != MessageStatus.read {
             // Update to read status after a short delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                self?.viewModel?.updateMessageStatus(message.id, to: .read)
+                self?.viewModel?.updateMessageStatus(message.id, to: MessageStatus.read)
             }
         }
     }
@@ -311,7 +314,7 @@ extension ChatTableViewHandler: UITableViewDelegate {
             actions.append(copyAction)
             
             // Retry action for failed messages
-            if message.status == .failed {
+            if message.status == MessageStatus.failed {
                 let retryAction = UIAction(
                     title: "Retry",
                     image: UIImage(systemName: "arrow.clockwise")
@@ -412,11 +415,3 @@ protocol ChatMessageCellDelegate: AnyObject {
     func chatMessageCell(_ cell: ChatMessageCell, didLongPress message: ChatMessage)
 }
 
-// MARK: - View Model Extension
-
-extension ChatViewModel {
-    func updateMessageStatus(_ messageId: String, to status: ChatMessage.Status) {
-        guard let index = messages.firstIndex(where: { $0.id == messageId }) else { return }
-        messages[index].status = status
-    }
-}

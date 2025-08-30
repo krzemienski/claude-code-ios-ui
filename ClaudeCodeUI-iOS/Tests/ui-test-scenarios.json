@@ -1,0 +1,359 @@
+{
+  "testSuites": [
+    {
+      "name": "Navigation Flow Tests",
+      "priority": "HIGH",
+      "scenarios": [
+        {
+          "id": "NAV-001",
+          "name": "App Launch to Projects List",
+          "steps": [
+            "Launch application",
+            "Verify splash screen appears",
+            "Wait for main tab bar to load",
+            "Verify Projects tab is selected by default",
+            "Check projects list is visible"
+          ],
+          "expectedResults": [
+            "App launches within 2 seconds",
+            "Tab bar shows 5 tabs",
+            "Projects list displays or shows empty state"
+          ],
+          "accessibility": true
+        },
+        {
+          "id": "NAV-002",
+          "name": "Projects to Sessions Navigation",
+          "steps": [
+            "Tap on a project card",
+            "Verify loading indicator",
+            "Wait for sessions list",
+            "Check back button functionality",
+            "Test swipe-back gesture"
+          ],
+          "expectedResults": [
+            "Smooth transition animation",
+            "Sessions load within 3 seconds",
+            "Back navigation preserves state"
+          ]
+        },
+        {
+          "id": "NAV-003",
+          "name": "Deep Link Navigation",
+          "steps": [
+            "Open app with deep link URL",
+            "Verify correct view loads",
+            "Test state restoration",
+            "Check navigation stack"
+          ],
+          "expectedResults": [
+            "Direct navigation to target view",
+            "Proper back stack created"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chat Interface Tests",
+      "priority": "HIGH",
+      "scenarios": [
+        {
+          "id": "CHAT-001",
+          "name": "Message Cell Display",
+          "steps": [
+            "Load chat with existing messages",
+            "Verify user message styling (right aligned, blue bubble)",
+            "Verify assistant message styling (left aligned, gray bubble)",
+            "Check timestamp display",
+            "Test long message text wrapping",
+            "Verify code block rendering"
+          ],
+          "expectedResults": [
+            "Messages display correctly",
+            "Proper bubble alignment",
+            "Readable text contrast",
+            "Code blocks have syntax highlighting"
+          ]
+        },
+        {
+          "id": "CHAT-002",
+          "name": "Message Input Functionality",
+          "steps": [
+            "Tap input field",
+            "Type message text",
+            "Verify send button enables",
+            "Test multiline expansion",
+            "Send message",
+            "Verify optimistic UI update"
+          ],
+          "expectedResults": [
+            "Keyboard appears smoothly",
+            "Input expands up to 5 lines",
+            "Send button state changes correctly",
+            "Message appears immediately"
+          ]
+        },
+        {
+          "id": "CHAT-003",
+          "name": "Streaming Message Updates",
+          "steps": [
+            "Send a message",
+            "Observe typing indicator",
+            "Watch streaming response",
+            "Verify smooth text updates",
+            "Check scroll behavior"
+          ],
+          "expectedResults": [
+            "Typing indicator appears",
+            "Text streams smoothly",
+            "Auto-scroll follows content",
+            "No UI freezing"
+          ]
+        },
+        {
+          "id": "CHAT-004",
+          "name": "Error Handling",
+          "steps": [
+            "Trigger network error",
+            "Verify error message display",
+            "Test retry functionality",
+            "Check offline mode"
+          ],
+          "expectedResults": [
+            "Clear error messages",
+            "Retry button appears",
+            "Graceful degradation"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SwiftUI Component Tests",
+      "priority": "MEDIUM",
+      "scenarios": [
+        {
+          "id": "SWIFTUI-001",
+          "name": "SessionListView Functionality",
+          "steps": [
+            "Load sessions list",
+            "Test pull-to-refresh",
+            "Use search bar",
+            "Change sort order",
+            "Test infinite scroll"
+          ],
+          "expectedResults": [
+            "Smooth animations",
+            "Search filters correctly",
+            "Sort options work",
+            "More sessions load on scroll"
+          ]
+        },
+        {
+          "id": "SWIFTUI-002",
+          "name": "Settings View",
+          "steps": [
+            "Navigate to settings",
+            "Toggle switches",
+            "Change text fields",
+            "Test form validation",
+            "Save settings"
+          ],
+          "expectedResults": [
+            "Settings persist",
+            "Validation messages appear",
+            "Changes apply immediately"
+          ]
+        },
+        {
+          "id": "SWIFTUI-003",
+          "name": "Loading States",
+          "steps": [
+            "Trigger loading state",
+            "Verify loading indicator",
+            "Test skeleton screens",
+            "Check timeout handling"
+          ],
+          "expectedResults": [
+            "Cyberpunk loading animation",
+            "Smooth transitions",
+            "Proper timeout messages"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Accessibility Tests",
+      "priority": "HIGH",
+      "scenarios": [
+        {
+          "id": "A11Y-001",
+          "name": "VoiceOver Navigation",
+          "steps": [
+            "Enable VoiceOver",
+            "Navigate through views",
+            "Test all interactive elements",
+            "Verify announcements",
+            "Check focus order"
+          ],
+          "expectedResults": [
+            "All elements accessible",
+            "Logical navigation order",
+            "Clear descriptions",
+            "Actions announced"
+          ]
+        },
+        {
+          "id": "A11Y-002",
+          "name": "Dynamic Type Support",
+          "steps": [
+            "Set largest text size",
+            "Check all text scales",
+            "Verify layout adjusts",
+            "Test readability"
+          ],
+          "expectedResults": [
+            "Text scales properly",
+            "No truncation",
+            "Layout remains usable"
+          ]
+        },
+        {
+          "id": "A11Y-003",
+          "name": "Color Contrast",
+          "steps": [
+            "Enable high contrast",
+            "Check all UI elements",
+            "Test in dark mode",
+            "Verify color blind modes"
+          ],
+          "expectedResults": [
+            "WCAG AA compliance",
+            "Readable in all modes",
+            "Distinct interactive elements"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Performance Tests",
+      "priority": "MEDIUM",
+      "scenarios": [
+        {
+          "id": "PERF-001",
+          "name": "Scroll Performance",
+          "steps": [
+            "Load 100+ messages",
+            "Scroll rapidly",
+            "Monitor FPS",
+            "Check memory usage"
+          ],
+          "expectedResults": [
+            "60 FPS maintained",
+            "No dropped frames",
+            "Memory stable"
+          ],
+          "metrics": {
+            "targetFPS": 60,
+            "maxMemory": "100MB",
+            "scrollJank": "<100ms"
+          }
+        },
+        {
+          "id": "PERF-002",
+          "name": "Large Data Sets",
+          "steps": [
+            "Load 1000+ sessions",
+            "Test search performance",
+            "Measure render time",
+            "Check pagination"
+          ],
+          "expectedResults": [
+            "Initial load <3s",
+            "Search responsive",
+            "Smooth pagination"
+          ]
+        },
+        {
+          "id": "PERF-003",
+          "name": "Memory Management",
+          "steps": [
+            "Navigate through all views",
+            "Monitor memory leaks",
+            "Test background/foreground",
+            "Check cache behavior"
+          ],
+          "expectedResults": [
+            "No memory leaks",
+            "Proper cleanup",
+            "Cache limits respected"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Edge Cases",
+      "priority": "LOW",
+      "scenarios": [
+        {
+          "id": "EDGE-001",
+          "name": "Network Interruptions",
+          "steps": [
+            "Start chat session",
+            "Disable network",
+            "Send message",
+            "Re-enable network",
+            "Verify sync"
+          ],
+          "expectedResults": [
+            "Offline mode activates",
+            "Messages queue",
+            "Automatic retry",
+            "Sync on reconnect"
+          ]
+        },
+        {
+          "id": "EDGE-002",
+          "name": "Concurrent Updates",
+          "steps": [
+            "Open same chat on two devices",
+            "Send messages from both",
+            "Verify sync",
+            "Test conflict resolution"
+          ],
+          "expectedResults": [
+            "Messages sync correctly",
+            "No duplicates",
+            "Proper ordering"
+          ]
+        }
+      ]
+    }
+  ],
+  "testConfiguration": {
+    "devices": [
+      "iPhone 15 Pro",
+      "iPhone 15 Pro Max",
+      "iPhone SE",
+      "iPad Pro 12.9",
+      "iPad mini"
+    ],
+    "iosVersions": ["17.0", "17.5", "18.0"],
+    "orientations": ["portrait", "landscape"],
+    "darkMode": [true, false],
+    "languages": ["en", "es", "fr", "de", "ja", "zh"],
+    "accessibility": {
+      "voiceOver": true,
+      "dynamicType": true,
+      "reduceMotion": true,
+      "increaseContrast": true
+    }
+  },
+  "automationTools": {
+    "framework": "XCUITest",
+    "ciIntegration": "GitHub Actions",
+    "reporting": "Allure",
+    "screenshots": true,
+    "videos": true,
+    "performanceMetrics": true
+  }
+}

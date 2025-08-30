@@ -1,0 +1,67 @@
+{
+  "workflow": {
+    "id": "ios-testing-workflow",
+    "created": "2025-08-29T15:05:00Z",
+    "status": "active",
+    "phases": {
+      "setup": {
+        "status": "in_progress",
+        "agents": ["context-manager"],
+        "completedTasks": [],
+        "pendingTasks": ["context-initialization", "memory-setup", "agent-coordination"]
+      },
+      "testing": {
+        "status": "pending",
+        "agents": ["ui-tester", "chat-tester", "terminal-tester", "integration-tester"],
+        "completedTasks": [],
+        "pendingTasks": []
+      },
+      "fixing": {
+        "status": "pending", 
+        "agents": ["bug-fixer", "performance-optimizer"],
+        "completedTasks": [],
+        "pendingTasks": []
+      },
+      "verification": {
+        "status": "pending",
+        "agents": ["verification-agent", "report-generator"],
+        "completedTasks": [],
+        "pendingTasks": []
+      }
+    }
+  },
+  "memoryKeys": {
+    "workflow": {
+      "state": "swarm/workflow/state",
+      "issues": "swarm/workflow/issues",
+      "results": "swarm/workflow/results",
+      "fixes": "swarm/workflow/fixes"
+    },
+    "agents": {
+      "ui-tester": "swarm/ui-tester/findings",
+      "chat-tester": "swarm/chat-tester/findings",
+      "terminal-tester": "swarm/terminal-tester/findings",
+      "integration-tester": "swarm/integration-tester/findings",
+      "bug-fixer": "swarm/bug-fixer/fixes",
+      "performance-optimizer": "swarm/performance-optimizer/improvements",
+      "verification-agent": "swarm/verification-agent/results"
+    }
+  },
+  "communication": {
+    "channels": {
+      "testing": "swarm/channel/testing",
+      "issues": "swarm/channel/issues",
+      "fixes": "swarm/channel/fixes",
+      "status": "swarm/channel/status"
+    },
+    "protocols": {
+      "issueReport": {
+        "format": "severity|component|description|steps",
+        "severity": ["critical", "high", "medium", "low"]
+      },
+      "statusUpdate": {
+        "format": "agent|phase|task|status|timestamp"
+      }
+    }
+  }
+}

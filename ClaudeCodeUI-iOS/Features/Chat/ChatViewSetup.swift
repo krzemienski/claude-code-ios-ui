@@ -274,7 +274,7 @@ extension ChatViewController {
         let shouldShow = status != .connected
         
         connectionStatusLabel.text = status.displayText
-        connectionIndicatorView.backgroundColor = status.statusColor
+        connectionIndicatorView.backgroundColor = status.color
         
         // Animate status bar visibility
         UIView.animate(withDuration: 0.3) { [weak self] in

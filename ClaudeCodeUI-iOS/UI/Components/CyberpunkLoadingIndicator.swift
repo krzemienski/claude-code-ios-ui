@@ -20,7 +20,7 @@ class CyberpunkLoadingIndicator: UIView {
     private var message: String? {
         didSet {
             messageLabel.text = message
-            messageLabel.isHidden = message == nil || message!.isEmpty
+            messageLabel.isHidden = message?.isEmpty ?? true
         }
     }
     

@@ -429,6 +429,7 @@ class AppCoordinator: NSObject, Coordinator {
 
 // MARK: - Authentication Coordinator Delegate
 extension AppCoordinator: AuthenticationCoordinatorDelegate {
+    @MainActor
     func authenticationCoordinatorDidComplete(_ coordinator: AuthenticationCoordinator) {
         childDidFinish(coordinator)
         showMainInterface()

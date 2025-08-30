@@ -120,7 +120,7 @@ final class ChatInputHandler: NSObject {
     private func updateConnectionStatus(_ status: ChatViewModel.ConnectionStatus) {
         switch status {
         case .connected:
-            inputBar?.connectionIndicator.tintColor = .systemGreen
+            inputBar?.connectionIndicator.tintColor = UIColor.systemGreen
             inputBar?.textView.isEditable = true
             
         case .connecting, .reconnecting:
@@ -138,11 +138,11 @@ final class ChatInputHandler: NSObject {
         inputBar?.characterCountLabel.text = "\(remaining)"
         
         if remaining < 100 {
-            inputBar?.characterCountLabel.textColor = .systemOrange
+            inputBar?.characterCountLabel.textColor = UIColor.systemOrange
         } else if remaining < 0 {
-            inputBar?.characterCountLabel.textColor = .systemRed
+            inputBar?.characterCountLabel.textColor = UIColor.systemRed
         } else {
-            inputBar?.characterCountLabel.textColor = .secondaryLabel
+            inputBar?.characterCountLabel.textColor = UIColor.secondaryLabel
         }
     }
     
@@ -157,7 +157,9 @@ final class ChatInputHandler: NSObject {
         
         // Reset timer
         compositionTimer = Timer.scheduledTimer(withTimeInterval: typingDebounceInterval, repeats: false) { [weak self] _ in
-            self?.stopTypingIndicator()
+            Task { @MainActor in
+                self?.stopTypingIndicator()
+            }
         }
     }
     
@@ -184,7 +186,7 @@ final class ChatInputHandler: NSObject {
     
     private func sendMessage() {
         guard let text = inputBar?.textView.text,
-              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+              !text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty else { return }
         
         // Stop typing indicator
         stopTypingIndicator()
@@ -232,7 +234,7 @@ extension ChatInputHandler: UITextViewDelegate {
     
     func textViewDidChange(_ textView: UITextView) {
         let text = textView.text ?? ""
-        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedText = text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         
         // Update send button state
         inputBar?.sendButtonEnabled = !trimmedText.isEmpty && text.count <= maxMessageLength
@@ -253,7 +255,7 @@ extension ChatInputHandler: UITextViewDelegate {
         // Handle return key
         if text == "\n" {
             // Check if shift is pressed for multi-line
-            if !inputBar?.isShiftPressed ?? false {
+            if !(inputBar?.isShiftPressed ?? false) {
                 sendMessage()
                 return false
             }
@@ -351,129 +353,11 @@ extension ChatInputHandler {
     }
 }
 
-// MARK: - ChatInputBar Protocol
+// The ChatInputBar class and ChatInputBarDelegate protocol are defined in
+// Features/Chat/Views/ChatInputBar.swift
 
-protocol ChatInputBarDelegate: AnyObject {
-    func chatInputBarDidTapSend(_ inputBar: ChatInputBar)
-    func chatInputBarDidTapAttachment(_ inputBar: ChatInputBar)
-    func chatInputBar(_ inputBar: ChatInputBar, didChangeHeight height: CGFloat)
-}
-
-// MARK: - ChatInputBar View
-
-class ChatInputBar: UIView {
-    
-    // UI Components
-    let textView = UITextView()
-    let sendButton = UIButton(type: .system)
-    let attachmentButton = UIButton(type: .system)
-    let characterCountLabel = UILabel()
-    let connectionIndicator = UIView()
-    
-    // Properties
-    weak var delegate: ChatInputBarDelegate?
-    var maxTextLength = 5000
-    var placeholder = "Type a message..."
-    var isShiftPressed = false
-    
-    var sendButtonEnabled: Bool = false {
-        didSet {
-            sendButton.isEnabled = sendButtonEnabled
-            sendButton.alpha = sendButtonEnabled ? 1.0 : 0.5
-        }
-    }
-    
-    // MARK: - Initialization
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupUI()
-    }
-    
-    // MARK: - Setup
-    
-    private func setupUI() {
-        backgroundColor = .secondarySystemBackground
-        
-        // Configure text view
-        textView.font = .preferredFont(forTextStyle: .body)
-        textView.isScrollEnabled = false
-        textView.textContainerInset = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
-        textView.layer.cornerRadius = 18
-        textView.layer.borderWidth = 1
-        textView.layer.borderColor = UIColor.separator.cgColor
-        textView.backgroundColor = .systemBackground
-        
-        // Configure send button
-        sendButton.setImage(UIImage(systemName: "arrow.up.circle.fill"), for: .normal)
-        sendButton.tintColor = .systemBlue
-        sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
-        
-        // Configure attachment button
-        attachmentButton.setImage(UIImage(systemName: "paperclip"), for: .normal)
-        attachmentButton.tintColor = .label
-        attachmentButton.addTarget(self, action: #selector(attachmentTapped), for: .touchUpInside)
-        
-        // Configure character count
-        characterCountLabel.font = .preferredFont(forTextStyle: .caption2)
-        characterCountLabel.textColor = .secondaryLabel
-        
-        // Configure connection indicator
-        connectionIndicator.backgroundColor = .systemGreen
-        connectionIndicator.layer.cornerRadius = 3
-        
-        // Add subviews and setup constraints
-        addSubviews()
-        setupConstraints()
-    }
-    
-    private func addSubviews() {
-        addSubview(textView)
-        addSubview(sendButton)
-        addSubview(attachmentButton)
-        addSubview(characterCountLabel)
-        addSubview(connectionIndicator)
-    }
-    
-    private func setupConstraints() {
-        // Setup Auto Layout constraints
-        // Implementation would go here
-    }
-    
-    // MARK: - Actions
-    
-    @objc private func sendTapped() {
-        delegate?.chatInputBarDidTapSend(self)
-    }
-    
-    @objc private func attachmentTapped() {
-        delegate?.chatInputBarDidTapAttachment(self)
-    }
-    
-    // MARK: - Public Methods
-    
-    func handleSendButtonTapped() {
-        sendTapped()
-    }
-    
-    func updateHeight() {
-        let size = textView.sizeThatFits(CGSize(width: textView.frame.width, height: .infinity))
-        let newHeight = min(size.height, 120) // Max 5 lines approximately
-        
-        if frame.height != newHeight + 16 { // Padding
-            delegate?.chatInputBar(self, didChangeHeight: newHeight + 16)
-        }
-    }
-}
-
-// MARK: - Notification Names
+// MARK: - Additional Notification Names
 
 extension Notification.Name {
-    static let chatInputBarHeightDidChange = Notification.Name("chatInputBarHeightDidChange")
     static let chatInputDidBeginEditing = Notification.Name("chatInputDidBeginEditing")
 }

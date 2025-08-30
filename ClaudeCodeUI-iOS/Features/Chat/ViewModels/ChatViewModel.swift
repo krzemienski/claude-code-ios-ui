@@ -65,12 +65,12 @@ final class ChatViewModel: ObservableObject {
     
     // MARK: - Initialization
     
-    init(webSocketManager: WebSocketProtocol = DIContainer.shared.webSocketManager,
-         dataContainer: SwiftDataContainer? = DIContainer.shared.dataContainer,
-         apiClient: APIClient = DIContainer.shared.apiClient) {
-        self.webSocketManager = webSocketManager
-        self.dataContainer = dataContainer
-        self.apiClient = apiClient
+    init(webSocketManager: WebSocketProtocol? = nil,
+         dataContainer: SwiftDataContainer? = nil,
+         apiClient: APIClient? = nil) {
+        self.webSocketManager = webSocketManager ?? DIContainer.shared.webSocketManager
+        self.dataContainer = dataContainer ?? DIContainer.shared.dataContainer
+        self.apiClient = apiClient ?? DIContainer.shared.apiClient
         
         setupBindings()
     }
@@ -117,7 +117,16 @@ final class ChatViewModel: ObservableObject {
             if let dataContainer = dataContainer {
                 let localMessages = try await dataContainer.fetchMessages(for: session)
                 await MainActor.run {
-                    self.messages = localMessages.sorted { $0.timestamp < $1.timestamp }
+                    // Convert Message to ChatMessage
+                    self.messages = localMessages.map { msg in
+                        ChatMessage(
+                            id: msg.id,
+                            content: msg.content,
+                            isUser: msg.role.isUser,
+                            timestamp: msg.timestamp,
+                            status: .sent
+                        )
+                    }.sorted { $0.timestamp < $1.timestamp }
                 }
             }
             
@@ -129,8 +138,17 @@ final class ChatViewModel: ObservableObject {
                 )
                 
                 await MainActor.run {
-                    // Merge and deduplicate
-                    self.mergeMessages(remoteMessages)
+                    // Convert and merge remote messages
+                    let convertedMessages = remoteMessages.map { msg in
+                        ChatMessage(
+                            id: msg.id,
+                            content: msg.content,
+                            isUser: msg.role.isUser,
+                            timestamp: msg.timestamp,
+                            status: .sent
+                        )
+                    }
+                    self.mergeMessages(convertedMessages)
                 }
             }
         } catch {
@@ -147,8 +165,8 @@ final class ChatViewModel: ObservableObject {
         // Create message
         let message = ChatMessage(
             id: UUID().uuidString,
-            role: .user,
             content: content,
+            isUser: true,
             timestamp: Date(),
             status: .sending
         )
@@ -236,7 +254,7 @@ final class ChatViewModel: ObservableObject {
         messages.append(message)
         
         // Update typing status
-        if message.role == .assistant {
+        if !message.isUser {
             isTyping = false
         }
     }
@@ -249,7 +267,7 @@ final class ChatViewModel: ObservableObject {
         messages.sort { $0.timestamp < $1.timestamp }
     }
     
-    private func updateMessageStatus(_ messageId: String, to status: ChatMessage.Status) {
+    func updateMessageStatus(_ messageId: String, to status: MessageStatus) {
         guard let index = messages.firstIndex(where: { $0.id == messageId }) else { return }
         messages[index].status = status
         
@@ -300,33 +318,7 @@ final class ChatViewModel: ObservableObject {
 }
 
 // MARK: - ChatMessage Extensions
-
-extension ChatMessage {
-    enum Status {
-        case sending
-        case delivered
-        case read
-        case failed
-        
-        var icon: String {
-            switch self {
-            case .sending: return "arrow.up.circle"
-            case .delivered: return "checkmark.circle"
-            case .read: return "checkmark.circle.fill"
-            case .failed: return "exclamationmark.circle"
-            }
-        }
-        
-        var color: UIColor {
-            switch self {
-            case .sending: return .systemGray
-            case .delivered: return .systemBlue
-            case .read: return .systemGreen
-            case .failed: return .systemRed
-            }
-        }
-    }
-}
+// Status enum moved to ChatMessage.swift to avoid conflicts
 
 // MARK: - Notification Names
 

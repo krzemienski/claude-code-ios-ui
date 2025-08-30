@@ -13,21 +13,60 @@ struct AppConfig {
     
     // MARK: - Network Configuration
     
-    /// Local backend URL for development
-    /// This URL connects to the local Node.js backend server
-    /// Using host machine's IP address for iOS simulator to reach the backend
-    static var backendURL: String = "http://192.168.0.43:3004"
+    /// Backend URL - can be configured via environment variable or UserDefaults
+    static var backendURL: String = {
+        // First check environment variable
+        if let envURL = ProcessInfo.processInfo.environment["BACKEND_URL"] {
+            return envURL
+        }
+        // Then check UserDefaults
+        if let savedURL = UserDefaults.standard.string(forKey: "backendURL") {
+            return savedURL
+        }
+        // Default for development
+        return "http://192.168.0.43:3004"
+    }()
     
     /// Default backend URL for resetting
     private static let defaultBackendURL = "http://192.168.0.43:3004"
     
-    /// Local WebSocket URLs for real-time communication
-    static let websocketURL: String = "ws://192.168.0.43:3004/ws"          // Main chat WebSocket
-    static let shellWebSocketURL: String = "ws://192.168.0.43:3004/shell"  // Terminal WebSocket
+    /// WebSocket URLs derived from backend URL
+    static var websocketURL: String {
+        let base = backendURL
+        if base.hasPrefix("https://") {
+            return base.replacingOccurrences(of: "https://", with: "wss://") + "/ws"
+        } else if base.hasPrefix("http://") {
+            return base.replacingOccurrences(of: "http://", with: "ws://") + "/ws"
+        }
+        return "ws://\(base)/ws"
+    }
     
-    /// Local Backend host (extracted from URL)
-    static let backendHost: String = "192.168.0.43"
-    static let backendPort: Int = 3004  // Local Node.js server port
+    static var shellWebSocketURL: String {
+        let base = backendURL
+        if base.hasPrefix("https://") {
+            return base.replacingOccurrences(of: "https://", with: "wss://") + "/shell"
+        } else if base.hasPrefix("http://") {
+            return base.replacingOccurrences(of: "http://", with: "ws://") + "/shell"
+        }
+        return "ws://\(base)/shell"
+    }
+    
+    /// Backend host (extracted from URL)
+    static var backendHost: String {
+        if let url = URL(string: backendURL),
+           let host = url.host {
+            return host
+        }
+        return "192.168.0.43"
+    }
+    
+    static var backendPort: Int {
+        if let url = URL(string: backendURL),
+           let port = url.port {
+            return port
+        }
+        return 3004
+    }
     
     // MARK: - API Endpoints (Hardcoded for consistency)
     

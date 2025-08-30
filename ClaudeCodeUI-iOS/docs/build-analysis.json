@@ -1,0 +1,161 @@
+{
+  "projectStructure": {
+    "buildSystem": "Tuist",
+    "tuistVersion": "4.65.4",
+    "swiftVersion": "5.9",
+    "deploymentTarget": "iOS 17.0",
+    "mainTarget": "ClaudeCodeUI",
+    "testTargets": [
+      "ClaudeCodeUITests",
+      "ClaudeCodeUIUITests", 
+      "ClaudeCodeUIIntegrationTests"
+    ],
+    "bundleId": "com.claudecode.ui"
+  },
+  "dependencies": {
+    "external": [
+      {
+        "name": "Starscream",
+        "version": "4.0.6",
+        "purpose": "WebSocket library for improved reliability"
+      }
+    ]
+  },
+  "moduleArchitecture": {
+    "app": ["AppDelegate", "SceneDelegate", "Resources"],
+    "core": [
+      "Accessibility",
+      "Analytics", 
+      "Cache",
+      "Config",
+      "Data",
+      "Navigation",
+      "Network",
+      "Performance",
+      "Protocols",
+      "Security",
+      "Services",
+      "Utils"
+    ],
+    "features": [
+      "Analytics",
+      "AppTour",
+      "Authentication",
+      "Chat",
+      "Common",
+      "Demo",
+      "Feedback",
+      "FileExplorer",
+      "Git",
+      "Launch",
+      "MCP",
+      "Onboarding",
+      "Projects",
+      "Search",
+      "Security",
+      "Sessions",
+      "Settings",
+      "Terminal",
+      "Transcription"
+    ],
+    "design": [
+      "Animations",
+      "Components",
+      "Effects",
+      "Theme"
+    ],
+    "ui": [
+      "Base",
+      "Components",
+      "SwiftUI"
+    ]
+  },
+  "buildIssues": {
+    "critical": [
+      {
+        "severity": "CRITICAL",
+        "file": "ChatViewController.swift",
+        "issue": "ChatMessageCell redeclaration conflict",
+        "description": "Two conflicting declarations of ChatMessageCell exist",
+        "fix": "Remove duplicate ChatMessageCell declaration in ChatViewController.swift"
+      },
+      {
+        "severity": "CRITICAL",
+        "file": "ChatInputBarAdapter.swift",
+        "issue": "Cannot override immutable properties",
+        "description": "Attempting to override let properties with var getters",
+        "fix": "Change properties in ChatInputHandler to var or adjust adapter implementation"
+      },
+      {
+        "severity": "CRITICAL",
+        "file": "ChatViewModel.swift",
+        "issue": "Main actor isolation violations",
+        "description": "Non-isolated context accessing main actor-isolated properties",
+        "fix": "Add @MainActor annotations or use Task for async access"
+      }
+    ],
+    "warnings": [
+      {
+        "severity": "WARNING",
+        "file": "AppCoordinator.swift",
+        "issue": "Swift 6 concurrency warnings",
+        "description": "Main actor-isolated properties cannot satisfy nonisolated protocol requirements",
+        "fix": "Update protocol or add proper actor annotations"
+      },
+      {
+        "severity": "WARNING",
+        "file": "Assets.xcassets",
+        "issue": "Missing accent color",
+        "description": "AccentColor is not present in asset catalogs",
+        "fix": "Add AccentColor to Assets.xcassets"
+      }
+    ]
+  },
+  "buildConfiguration": {
+    "schemes": [
+      "ClaudeCodeUI",
+      "ClaudeCodeUI-Workspace",
+      "ClaudeCodeUITests",
+      "Generate Project"
+    ],
+    "configurations": [
+      "Debug",
+      "Release"
+    ],
+    "platforms": [
+      "iOS",
+      "iPadOS"
+    ]
+  },
+  "recommendedFixes": {
+    "immediate": [
+      "Remove duplicate ChatMessageCell class in ChatViewController.swift",
+      "Fix property override issues in ChatInputBarAdapter",
+      "Add @MainActor annotations to ChatViewModel initializer",
+      "Remove or rename disabled files that are causing conflicts"
+    ],
+    "shortTerm": [
+      "Update to Swift 6 concurrency model",
+      "Clean up disabled files in project",
+      "Add missing accent color asset",
+      "Resolve all ambiguous type references"
+    ],
+    "longTerm": [
+      "Refactor Chat module to eliminate duplicate code",
+      "Implement proper dependency injection pattern",
+      "Update Tuist configuration to latest best practices",
+      "Add comprehensive unit test coverage"
+    ]
+  },
+  "buildStatus": "FAILED",
+  "totalErrors": 23,
+  "totalWarnings": 12,
+  "analysisDate": "2025-08-29",
+  "recommendedNextSteps": [
+    "1. Fix critical ChatMessageCell duplication issue",
+    "2. Resolve property override conflicts in ChatInputBarAdapter",
+    "3. Add @MainActor annotations for thread safety",
+    "4. Clean build and test",
+    "5. Run integration tests after fixes"
+  ]
+}

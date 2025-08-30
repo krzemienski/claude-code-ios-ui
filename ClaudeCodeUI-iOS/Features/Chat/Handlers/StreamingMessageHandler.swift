@@ -12,6 +12,7 @@ import Combine
 // MARK: - StreamingMessageHandler
 
 /// Manages streaming message updates, partial content, and progressive rendering
+@MainActor
 final class StreamingMessageHandler {
     
     // MARK: - Properties
@@ -67,8 +68,33 @@ final class StreamingMessageHandler {
             withTimeInterval: updateInterval,
             repeats: true
         ) { [weak self] _ in
-            self?.processStreamingUpdates()
+            Task { @MainActor in
+                self?.processStreamingUpdates()
+            }
         }
+    }
+    
+    // MARK: - Public Methods
+    
+    /// Reset the handler's state
+    func reset() {
+        streamingMessages.removeAll()
+        updateTimer?.invalidate()
+        updateTimer = nil
+        cancellables.removeAll()
+    }
+    
+    /// Process a streaming chunk
+    func processStreamingChunk(_ chunk: String, for messageId: String) {
+        addChunk(chunk, to: messageId)
+    }
+    
+    /// Extract structured content from a message
+    func extractStructuredContent(from text: String) -> String {
+        // Basic extraction logic - can be enhanced
+        return text
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
     // MARK: - Streaming Operations
@@ -169,6 +195,7 @@ final class StreamingMessageHandler {
         }
     }
     
+    @MainActor
     private func updateStreamingMessage(_ messageId: String) {
         guard let message = streamingMessages[messageId] else { return }
         
@@ -183,6 +210,7 @@ final class StreamingMessageHandler {
         updateVisibleCell(for: messageId)
     }
     
+    @MainActor
     private func updateVisibleCell(for messageId: String) {
         guard let tableView = tableView,
               let messages = viewModel?.messages,
@@ -224,6 +252,7 @@ final class StreamingMessageHandler {
     }
     
     /// Clear all streaming messages
+    @MainActor
     func clearAll() {
         streamingMessages.removeAll()
         viewModel?.isTyping = false
@@ -240,10 +269,10 @@ extension ChatViewModel {
             // Create new message if doesn't exist
             let newMessage = ChatMessage(
                 id: messageId,
-                role: .assistant,
                 content: content,
+                isUser: false,  // Assistant message
                 timestamp: Date(),
-                status: isComplete ? .delivered : .sending
+                status: isComplete ? MessageStatus.delivered : MessageStatus.sending
             )
             messages.append(newMessage)
             return
@@ -251,7 +280,7 @@ extension ChatViewModel {
         
         // Update existing message
         messages[index].content = content
-        messages[index].status = isComplete ? .delivered : .sending
+        messages[index].status = isComplete ? MessageStatus.delivered : MessageStatus.sending
     }
 }
 

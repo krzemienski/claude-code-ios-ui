@@ -198,31 +198,5 @@ final class ChatDateHeaderView: UITableViewHeaderFooterView {
 
 // MARK: - CyberpunkTheme
 
-/// Cyberpunk theme colors and styles
-struct CyberpunkTheme {
-    static let primaryCyan = UIColor(red: 0, green: 217/255, blue: 255/255, alpha: 1)
-    static let accentPink = UIColor(red: 255/255, green: 0, blue: 110/255, alpha: 1)
-    static let background = UIColor.systemBackground
-    static let surface = UIColor.secondarySystemBackground
-    static let textPrimary = UIColor.label
-    static let textSecondary = UIColor.secondaryLabel
-    static let border = UIColor.separator
-    static let error = UIColor.systemRed
-    static let warning = UIColor.systemOrange
-    static let success = UIColor.systemGreen
-    
-    static func applyGlowEffect(to view: UIView, color: UIColor, radius: CGFloat = 8) {
-        view.layer.shadowColor = color.cgColor
-        view.layer.shadowOffset = CGSize(width: 0, height: 0)
-        view.layer.shadowOpacity = 0.3
-        view.layer.shadowRadius = radius
-    }
-    
-    static func createNeonBorder(for view: UIView, color: UIColor, width: CGFloat = 1) {
-        view.layer.borderColor = color.cgColor
-        view.layer.borderWidth = width
-        
-        // Add glow
-        applyGlowEffect(to: view, color: color)
-    }
-}
+// Using the global CyberpunkTheme from Design/Theme/CyberpunkTheme.swift
+// Removed duplicate CyberpunkTheme struct to avoid ambiguity

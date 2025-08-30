@@ -17,22 +17,35 @@ class ChatInputBarAdapter: ChatInputBar {
     private let attachBtn: UIButton
     private let placeholderLabel: UILabel
     
-    // ChatInputBar protocol requirements
+    // ChatInputBar protocol requirements - override with computed properties
     override var textView: UITextView {
-        return inputTextView
+        get { return inputTextView }
+        set { /* Read-only override */ }
     }
     
     override var sendButton: UIButton {
-        return sendBtn
+        get { return sendBtn }
+        set { /* Read-only override */ }
     }
     
     override var attachmentButton: UIButton {
-        return attachBtn
+        get { return attachBtn }
+        set { /* Read-only override */ }
     }
     
-    // Additional components (created as needed)
-    override let characterCountLabel = UILabel()
-    override let connectionIndicator = UIView()
+    // Additional components (created as needed) 
+    private let _characterCountLabel = UILabel()
+    private let _connectionIndicator = UIView()
+    
+    override var characterCountLabel: UILabel {
+        get { return _characterCountLabel }
+        set { /* Read-only override */ }
+    }
+    
+    override var connectionIndicator: UIView {
+        get { return _connectionIndicator }
+        set { /* Read-only override */ }
+    }
     
     // Initialize with existing UI components from ChatViewController
     init(containerView: UIView,

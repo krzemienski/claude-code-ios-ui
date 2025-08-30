@@ -8,6 +8,15 @@
 import Foundation
 import UIKit
 
+// MARK: - Message Status (for Chat UI)
+enum MessageStatus: String, Codable {
+    case sending = "sending"
+    case sent = "sent"
+    case delivered = "delivered"
+    case failed = "failed"
+    case read = "read"
+}
+
 // MARK: - Enhanced Message Type
 enum MessageType: String, Codable {
     case text = "text"
@@ -212,14 +221,7 @@ struct TodoItem: Codable {
     }
 }
 
-// MARK: - Message Status
-enum MessageStatus: String, Codable {
-    case sending = "sending"
-    case sent = "sent"
-    case delivered = "delivered"
-    case failed = "failed"
-    case read = "read"
-}
+// MARK: - Message Status (duplicate removed - using the one defined at the top)
 
 // MARK: - Base Chat Message
 class ChatMessage {

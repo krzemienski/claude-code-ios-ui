@@ -8,6 +8,15 @@
 import Foundation
 import SwiftData
 
+// MARK: - Message Status Value (for Message model)
+enum MessageStatusValue: String, Codable {
+    case sending = "sending"
+    case sent = "sent" 
+    case delivered = "delivered"
+    case failed = "failed"
+    case read = "read"
+}
+
 // MARK: - Message Role
 enum MessageRole: String, Codable, CaseIterable {
     case user = "user"
@@ -70,8 +79,21 @@ final class Message {
     var isStreaming: Bool = false
     var isError: Bool = false
     var isAborted: Bool = false
+    var statusString: String = "sent"  // Store as String for SwiftData compatibility
     
     // MARK: - Computed Properties
+    
+    // Status computed property - since MessageStatus is defined in MessageTypes.swift,
+    // we'll use a simple enum here to avoid circular dependencies
+    var status: MessageStatusValue {
+        get {
+            return MessageStatusValue(rawValue: statusString) ?? .sent
+        }
+        set {
+            statusString = newValue.rawValue
+        }
+    }
+    
     var metadata: MessageMetadata? {
         get {
             guard let json = metadataJSON,

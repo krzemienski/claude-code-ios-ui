@@ -585,50 +585,57 @@ class TerminalViewController: BaseViewController {
             return
         }
         
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             DispatchQueue.main.async {
+                guard let self = self else { return }
+                
                 if let error = error {
-                    self?.appendToTerminal("Error: \(error.localizedDescription)", color: CyberpunkTheme.accentPink)
+                    self.appendToTerminal("Error: \(error.localizedDescription)", color: CyberpunkTheme.accentPink)
                     return
                 }
                 
                 guard let data = data else {
-                    self?.appendToTerminal("Error: No response from server", color: CyberpunkTheme.accentPink)
+                    self.appendToTerminal("Error: No response from server", color: CyberpunkTheme.accentPink)
                     return
                 }
                 
-                do {
-                    if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                        // Handle stdout output
-                        if let output = json["output"] as? String, !output.isEmpty {
-                            self?.appendToTerminal(output)
-                        }
-                        
-                        // Handle stderr output
-                        if let stderr = json["stderr"] as? String, !stderr.isEmpty {
-                            self?.appendToTerminal(stderr, color: CyberpunkTheme.warning)
-                        }
-                        
-                        // Handle error messages
-                        if let errorMsg = json["error"] as? String {
-                            if errorMsg.contains("Command not found") || errorMsg.contains("not found") {
-                                self?.appendToTerminal("\(errorMsg)", color: CyberpunkTheme.accentPink)
-                            } else {
-                                self?.appendToTerminal("Error: \(errorMsg)", color: CyberpunkTheme.accentPink)
-                            }
-                        }
-                        
-                        // Store session ID if provided
-                        if let sessionId = json["sessionId"] as? String {
-                            // Could use this for session management if needed
-                            print("Terminal session ID: \(sessionId)")
-                        }
+                self.handleCommandResponse(data: data)
+            }
+        }
+        task.resume()
+    }
+    
+    private func handleCommandResponse(data: Data) {
+        do {
+            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                // Handle stdout output
+                if let output = json["output"] as? String, !output.isEmpty {
+                    appendToTerminal(output)
+                }
+                
+                // Handle stderr output
+                if let stderr = json["stderr"] as? String, !stderr.isEmpty {
+                    appendToTerminal(stderr, color: CyberpunkTheme.warning)
+                }
+                
+                // Handle error messages
+                if let errorMsg = json["error"] as? String {
+                    if errorMsg.contains("Command not found") || errorMsg.contains("not found") {
+                        appendToTerminal("\(errorMsg)", color: CyberpunkTheme.accentPink)
+                    } else {
+                        appendToTerminal("Error: \(errorMsg)", color: CyberpunkTheme.accentPink)
                     }
-                } catch {
-                    self?.appendToTerminal("Error: Failed to parse response", color: CyberpunkTheme.accentPink)
+                }
+                
+                // Store session ID if provided
+                if let sessionId = json["sessionId"] as? String {
+                    // Could use this for session management if needed
+                    print("Terminal session ID: \(sessionId)")
                 }
             }
-        }.resume()
+        } catch {
+            appendToTerminal("Error: Failed to parse response", color: CyberpunkTheme.accentPink)
+        }
     }
     
     // MARK: - WebSocket Methods

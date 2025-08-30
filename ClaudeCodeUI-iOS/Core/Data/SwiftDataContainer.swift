@@ -173,6 +173,30 @@ class SwiftDataContainer {
         return message
     }
     
+    func deleteMessage(_ messageId: String, from session: Session) throws {
+        guard let messages = session.messages else { return }
+        
+        if let messageIndex = messages.firstIndex(where: { $0.id == messageId }) {
+            let message = messages[messageIndex]
+            container.mainContext.delete(message)
+            session.messages?.remove(at: messageIndex)
+            try save()
+        }
+    }
+    
+    func clearMessages(for session: Session) throws {
+        guard let messages = session.messages else { return }
+        
+        // Delete all messages from context
+        for message in messages {
+            container.mainContext.delete(message)
+        }
+        
+        // Clear session's messages array
+        session.messages?.removeAll()
+        try save()
+    }
+    
     // MARK: - Settings Operations
     
     func fetchSettings() throws -> Settings {

@@ -107,7 +107,7 @@ final class AuthenticationManager: ObservableObject {
                 try keychainManager.saveAuthToken(token)
                 
                 // Update API client
-                apiClient.setAuthToken(token)
+                await apiClient.setAuthToken(token)
                 
                 // Parse user info from token if needed
                 if let user = parseUserFromToken(token) {
@@ -156,7 +156,7 @@ final class AuthenticationManager: ObservableObject {
         }
         
         // Clear API client token
-        apiClient.setAuthToken(nil)
+        await apiClient.setAuthToken(nil)
         
         // Update state
         self.isAuthenticated = false
@@ -191,7 +191,7 @@ final class AuthenticationManager: ObservableObject {
                 try keychainManager.saveAuthToken(newToken)
                 
                 // Update API client
-                apiClient.setAuthToken(newToken)
+                await apiClient.setAuthToken(newToken)
                 
                 // Setup new refresh timer
                 setupTokenRefresh(for: newToken)
@@ -220,7 +220,7 @@ final class AuthenticationManager: ObservableObject {
                 // Validate token
                 if isTokenValid(token) {
                     // Update API client
-                    apiClient.setAuthToken(token)
+                    await apiClient.setAuthToken(token)
                     
                     // Parse user info
                     if let user = parseUserFromToken(token) {

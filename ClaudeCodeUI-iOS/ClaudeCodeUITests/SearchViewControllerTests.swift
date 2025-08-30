@@ -408,7 +408,7 @@ final class SearchViewControllerTests: XCTestCase {
         
         let searchBar = searchViewController.view.subviews.first { $0 is UISearchBar } as? UISearchBar
         let tableView = searchViewController.view.subviews.first { $0 is UITableView } as? UITableView
-        let activityIndicator = searchViewController.view.subviews.first { $0 is UIActivityIndicatorView } as? UIActivityIndicator
+        let activityIndicator = searchViewController.view.subviews.first { $0 is UIActivityIndicatorView } as? UIActivityIndicatorView
         
         // Test complete search flow
         let searchFlowExpectation = XCTestExpectation(description: "Complete search flow")
@@ -518,7 +518,7 @@ extension SearchViewControllerTests {
     
     /// Helper method to simulate user typing with realistic delays
     func simulateTyping(_ text: String, in searchBar: UISearchBar, with viewController: SearchViewController) {
-        for (index, character) in text.enumerated() {
+        for (index, _) in text.enumerated() {
             let partialText = String(text.prefix(index + 1))
             DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.1) {
                 searchBar.text = partialText
