@@ -1268,6 +1268,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         // Add to messages array with animation
         print("➕ [SEND_MESSAGE] Adding message to array at \(Date().ISO8601Format())")
         messages.append(userMessage)
+        
+        // Persist user message to Core Data
+        persistMessageOnReceive(userMessage)
         print("📊 [SEND_MESSAGE] Total messages now: \(messages.count)")
         
         // Memory management: Trim history if needed
@@ -1757,6 +1760,58 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         }
     }
     
+    
+    // MARK: - Message Persistence (Core Data)
+    
+    @available(iOS 17.0, *)
+    func persistCurrentMessages() async {
+        guard let sessionId = currentSessionId else {
+            print("⚠️ [PERSISTENCE] No session ID available for saving messages")
+            return
+        }
+        
+        // Convert EnhancedChatMessage to Message for persistence
+        let messagesToPersist = messages.compactMap { enhancedMessage -> Message? in
+            let message = Message(
+                id: enhancedMessage.id,
+                role: enhancedMessage.isUser ? .user : .assistant,
+                content: enhancedMessage.content
+            )
+            message.timestamp = enhancedMessage.timestamp
+            
+            // Add metadata if available
+            if let type = enhancedMessage.messageType {
+                message.metadata = MessageMetadata(type: type.rawValue)
+            }
+            
+            return message
+        }
+        
+        // Save to Core Data
+        await MessagePersistenceService.shared.saveMessages(messagesToPersist, for: sessionId)
+        print("💾 [PERSISTENCE] Saved \(messagesToPersist.count) messages to Core Data")
+    }
+    
+    private func persistMessageOnReceive(_ message: EnhancedChatMessage) {
+        guard #available(iOS 17.0, *) else { return }
+        guard let sessionId = currentSessionId else { return }
+        
+        Task {
+            let msg = Message(
+                id: message.id,
+                role: message.isUser ? .user : .assistant,
+                content: message.content
+            )
+            msg.timestamp = message.timestamp
+            
+            if let type = message.messageType {
+                msg.metadata = MessageMetadata(type: type.rawValue)
+            }
+            
+            await MessagePersistenceService.shared.appendMessage(msg, to: sessionId)
+            print("💾 [PERSISTENCE] Persisted single message to Core Data")
+        }
+    }
     // CM-CHAT-05: Add connection status indicator to navigation bar
     private func updateNavigationStatusIndicator(isConnected: Bool, isConnecting: Bool) {
         DispatchQueue.main.async { [weak self] in
@@ -2643,6 +2698,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
                 timestamp: Date(),
                 status: .sending
             )
+            
+            // Persist assistant message to Core Data
+            persistMessageOnReceive(chatMessage)
             chatMessage.messageType = .claudeResponse
             self.messages.append(chatMessage)
             self.tableView.reloadData()
@@ -2670,6 +2728,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             
         case .streamEnd:
             // Complete the streaming message
+                
+                // Persist completed streaming message
+                if let message = streamingMessage {
+                    persistMessageOnReceive(message)
+                }
             if let lastMessage = self.messages.last,
                !lastMessage.isUser,
                lastMessage.status == .sending {

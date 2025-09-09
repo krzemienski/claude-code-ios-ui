@@ -56,7 +56,7 @@ echo "🔨 Step 3: Compiling project..."
 xcodebuild -workspace ClaudeCodeUI.xcworkspace \
            -scheme ClaudeCodeUI \
            -sdk iphonesimulator \
-           -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max,OS=18.0' \
+           -destination 'platform=iOS Simulator,id=50523130-57AA-48B0-ABD0-4D59CE455F14' \
            clean build \
            -quiet \
            CODE_SIGN_IDENTITY="" \
