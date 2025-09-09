@@ -113,22 +113,18 @@ final class ChatViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            // Load from local storage first
-            if let dataContainer = dataContainer {
-                let localMessages = try await dataContainer.fetchMessages(for: session)
-                await MainActor.run {
-                    // Convert Message to ChatMessage
-                    self.messages = localMessages.map { msg in
-                        ChatMessage(
-                            id: msg.id,
-                            content: msg.content,
-                            isUser: msg.role.isUser,
-                            timestamp: msg.timestamp,
-                            status: .sent
-                        )
-                    }.sorted { $0.timestamp < $1.timestamp }
-                }
-            }
+            // Load from local storage first using MessagePersistenceService
+            let localMessages = await MessagePersistenceService.shared.loadMessages(for: session.id)
+            // Convert Message to ChatMessage (already on MainActor)
+            self.messages = localMessages.map { msg in
+                ChatMessage(
+                    id: msg.id,
+                    content: msg.content,
+                    isUser: msg.role == .user,
+                    timestamp: msg.timestamp,
+                    status: .sent
+                )
+            }.sorted { $0.timestamp < $1.timestamp }
             
             // Then fetch from backend
             if let projectName = currentProject?.name {
@@ -137,19 +133,17 @@ final class ChatViewModel: ObservableObject {
                     sessionId: session.id
                 )
                 
-                await MainActor.run {
-                    // Convert and merge remote messages
-                    let convertedMessages = remoteMessages.map { msg in
-                        ChatMessage(
-                            id: msg.id,
-                            content: msg.content,
-                            isUser: msg.role.isUser,
-                            timestamp: msg.timestamp,
-                            status: .sent
-                        )
-                    }
-                    self.mergeMessages(convertedMessages)
+                // Convert and merge remote messages (already on MainActor)
+                let convertedMessages = remoteMessages.map { msg in
+                    ChatMessage(
+                        id: msg.id,
+                        content: msg.content,
+                        isUser: msg.role.isUser,
+                        timestamp: msg.timestamp,
+                        status: .sent
+                    )
                 }
+                self.mergeMessages(convertedMessages)
             }
         } catch {
             self.error = error
@@ -194,14 +188,14 @@ final class ChatViewModel: ObservableObject {
             }
         }
         
-        // Save to local storage
-        if let dataContainer = dataContainer {
-            _ = try? await dataContainer.createMessage(
-                for: session,
-                role: .user,
-                content: content
-            )
-        }
+        // Save to local storage using MessagePersistenceService
+        let msg = Message(
+            id: message.id,
+            role: .user,
+            content: content
+        )
+        msg.timestamp = message.timestamp
+        await MessagePersistenceService.shared.appendMessage(msg, to: session.id)
     }
     
     /// Retry sending a failed message
@@ -220,10 +214,19 @@ final class ChatViewModel: ObservableObject {
     func deleteMessage(_ messageId: String) async {
         messages.removeAll { $0.id == messageId }
         
-        // Remove from local storage if exists
-        if let dataContainer = dataContainer,
-           let session = currentSession {
-            try? await dataContainer.deleteMessage(messageId, from: session)
+        // Note: MessagePersistenceService doesn't support individual message deletion
+        // The message is removed from the in-memory array only
+        // Consider saving all remaining messages to persist the deletion
+        if let session = currentSession {
+            // Save remaining messages to persist the deletion
+            let remainingMessages = messages.map { msg in
+                Message(
+                    id: msg.id,
+                    role: msg.isUser ? .user : .assistant, 
+                    content: msg.content
+                )
+            }
+            await MessagePersistenceService.shared.saveMessages(remainingMessages, for: session.id)
         }
     }
     
@@ -234,10 +237,9 @@ final class ChatViewModel: ObservableObject {
         messageStatusTimers.values.forEach { $0.invalidate() }
         messageStatusTimers.removeAll()
         
-        // Clear from local storage
-        if let dataContainer = dataContainer,
-           let session = currentSession {
-            try? await dataContainer.clearMessages(for: session)
+        // Clear from local storage using MessagePersistenceService
+        if let session = currentSession {
+            await MessagePersistenceService.shared.clearCache(for: session.id)
         }
     }
     
@@ -284,14 +286,16 @@ final class ChatViewModel: ObservableObject {
         
         // Start new timer - mark as failed after 30 seconds
         messageStatusTimers[messageId] = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: false) { [weak self] _ in
-            self?.updateMessageStatus(messageId, to: .failed)
+            Task { @MainActor in
+                self?.updateMessageStatus(messageId, to: .failed)
+            }
         }
     }
     
     // MARK: - Connection Management
     
     func connect() {
-        guard let projectPath = currentProject?.fullPath else { return }
+        guard currentProject?.fullPath != nil else { return }
         
         connectionStatus = .connecting
         

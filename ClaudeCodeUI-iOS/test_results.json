@@ -1,0 +1,3 @@
+Error: This command is deprecated and will be removed in a future release, --legacy flag is required to use it.
+Usage: xcresulttool get object [--legacy] --path <path> [--id <id>] [--version <version>] [--format <format>]
+  See 'xcresulttool get object --help' for more information.

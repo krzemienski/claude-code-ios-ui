@@ -90,11 +90,21 @@ public class ProjectsViewController: BaseViewController {
     // MARK: - UI Setup
     
     private func setupUI() {
+        print("🎯 [ProjectsViewController] setupUI() called")
+        print("🎯 [ProjectsViewController] Thread: \(Thread.isMainThread ? "Main" : "Background")")
+        
         view.backgroundColor = CyberpunkTheme.background
+        view.accessibilityIdentifier = "ProjectsView"
         
         // Setup refresh control with custom cyberpunk styling
         setupRefreshControl()
         collectionView.refreshControl = refreshControl
+        // Use "projectsTableView" for UI testing compatibility with Phase 3 tests
+        collectionView.accessibilityIdentifier = "projectsTableView"
+        
+        print("🎯 [ProjectsViewController] collectionView.accessibilityIdentifier = \(collectionView.accessibilityIdentifier ?? "nil")")
+        print("🎯 [ProjectsViewController] collectionView.frame = \(collectionView.frame)")
+        print("🎯 [ProjectsViewController] collectionView.isHidden = \(collectionView.isHidden)")
         
         // Add long press gesture for deletion
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
@@ -117,6 +127,9 @@ public class ProjectsViewController: BaseViewController {
             emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             emptyStateView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        
+        print("🎯 [ProjectsViewController] Collection view added to view hierarchy")
+        print("🎯 [ProjectsViewController] view.subviews.count = \(view.subviews.count)")
         
         setupEmptyState()
     }
@@ -268,6 +281,10 @@ public class ProjectsViewController: BaseViewController {
     
     private func performInitialLoad() {
         print("🚨🚨🚨 CRITICAL: performInitialLoad() ENTERED!")
+        print("🚨 Backend URL: \(AppConfig.backendURL)")
+        print("🚨 Launch arguments: \(ProcessInfo.processInfo.arguments)")
+        print("🚨 Environment: \(ProcessInfo.processInfo.environment)")
+        
         guard !hasPerformedInitialLoad else { 
             print("⚠️ DEBUG: performInitialLoad() skipped - already performed")
             return 
@@ -302,7 +319,12 @@ public class ProjectsViewController: BaseViewController {
                 
                 // Debug: Check what URL is actually being used
                 print("🔍 DEBUG: AppConfig.backendURL = \(AppConfig.backendURL)")
-                print("🔍 DEBUG: Expected URL = http://192.168.0.43:3004")
+                print("🔍 DEBUG: Expected URL for UI testing = http://localhost:3004")
+                
+                // Check if we're in UI testing mode
+                let arguments = ProcessInfo.processInfo.arguments
+                print("🔍 DEBUG: Launch arguments = \(arguments)")
+                print("🔍 DEBUG: Contains --uitesting = \(arguments.contains("--uitesting"))")
                 
                 // Add a minimum delay to see the skeleton animation
                 let startTime = Date()
@@ -326,11 +348,19 @@ public class ProjectsViewController: BaseViewController {
                 
                 // Already on main thread due to @MainActor
                 self.projects = remoteProjects
+                print("🚨 DEBUG: self.projects set to \(remoteProjects.count) projects")
+                print("🚨 DEBUG: Projects array = \(self.projects)")
+                
                 self.hideSkeletonLoading()
                 self.hideLoading()  // Hide the loading indicator
                 self.updateUI()
                 self.isLoadingProjects = false  // Reset loading flag
                 print("🎨 UI updated with \(self.projects.count) projects")
+                
+                // Debug: Verify collection view state
+                print("🚨 DEBUG: collectionView.isHidden = \(self.collectionView.isHidden)")
+                print("🚨 DEBUG: emptyStateView.isHidden = \(self.emptyStateView.isHidden)")
+                print("🚨 DEBUG: collectionView.numberOfItems(inSection: 0) = \(self.collectionView.numberOfItems(inSection: 0))")
                 
                 // Log success message
                 if !remoteProjects.isEmpty {
@@ -480,18 +510,23 @@ public class ProjectsViewController: BaseViewController {
         print("🔴 DEBUG: updateUI() called")
         print("🔴 DEBUG: projects.count = \(projects.count)")
         print("🔴 DEBUG: projects = \(projects)")
+        print("🔴 DEBUG: collectionView.accessibilityIdentifier = \(collectionView.accessibilityIdentifier ?? "nil")")
+        print("🔴 DEBUG: collectionView.superview = \(collectionView.superview != nil ? "exists" : "nil")")
         
         // Clear animated cells when reloading to allow fresh animations
         animatedCells.removeAll()
         
         if projects.isEmpty && !isShowingSkeletons {
+            print("🔴 DEBUG: Hiding collection view because projects is empty")
             collectionView.isHidden = true
             emptyStateView.isHidden = false
         } else {
+            print("🔴 DEBUG: Showing collection view with \(projects.count) projects")
             emptyStateView.isHidden = true
             collectionView.isHidden = false
         }
         
+        print("🔴 DEBUG: collectionView.isHidden = \(collectionView.isHidden)")
         collectionView.reloadData()
         print("🔴 DEBUG: collectionView reloaded")
         
@@ -990,7 +1025,9 @@ extension ProjectsViewController: UICollectionViewDataSource {
             // Project cell
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ProjectCollectionViewCell.identifier, for: indexPath) as! ProjectCollectionViewCell
             let project = projects[indexPath.item]
-            cell.configure(with: project)
+            // Phase 3 tests expect "firstProjectCell" identifier for the first project
+            let isFirstCell = (indexPath.item == 0)
+            cell.configure(with: project, isFirstCell: isFirstCell)
             return cell
         }
     }
@@ -1139,8 +1176,21 @@ class ProjectCollectionViewCell: UICollectionViewCell {
         ])
     }
     
-    func configure(with project: Project) {
+    func configure(with project: Project, isFirstCell: Bool = false) {
         projectCard.configure(with: project)
+        // Add accessibility identifiers for UI testing
+        // Phase 3 tests expect "firstProjectCell" for the first project
+        if isFirstCell {
+            accessibilityIdentifier = "firstProjectCell"
+        } else {
+            accessibilityIdentifier = "project_\(project.id)"
+        }
+        accessibilityLabel = project.displayName ?? project.name
+        accessibilityTraits = .button
+        isAccessibilityElement = true
+        
+        // Add title and timestamp accessibility identifiers
+        projectCard.accessibilityIdentifier = "projectCard_\(project.id)"
     }
 }
 

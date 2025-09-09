@@ -36,10 +36,10 @@ class SimpleBaseViewController: UIViewController {
 
 // Simple API Client stub - renamed to avoid conflict with the real APIClient in Core/Network/APIClient.swift
 class SimpleAPIClient {
-    var baseURL = "http://192.168.0.43:3004"  // Fixed for iOS simulator
+    var baseURL = "http://192.168.0.155:3004"  // Fixed for iOS simulator
     private var authToken: String?
     
-    init(baseURL: String = "http://192.168.0.43:3004") {
+    init(baseURL: String = "http://192.168.0.155:3004") {
         self.baseURL = baseURL
         // Retrieve saved token from UserDefaults
         self.authToken = UserDefaults.standard.string(forKey: "authToken")

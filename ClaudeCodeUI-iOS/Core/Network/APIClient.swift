@@ -41,15 +41,20 @@ actor APIClient: APIClientProtocol {
     static let shared = APIClient()
     
     // MARK: - Properties
-    private let baseURL: String
     private let session: URLSession
     private var authToken: String?
     private let offlineManager = OfflineManager.shared
     private let offlineStore = OfflineDataStore.shared
     
+    // MARK: - Dynamic backend URL (for testing support)
+    private var baseURL: String {
+        // Always get the current backend URL from AppConfig
+        // This ensures we pick up launch arguments in UI tests
+        return AppConfig.backendURL
+    }
+    
     // MARK: - Initialization
-    init(baseURL: String = AppConfig.backendURL, session: URLSession = .shared) {
-        self.baseURL = baseURL
+    init(session: URLSession = .shared) {
         self.session = session
         
         // Initialize with token from secure storage if available
@@ -61,6 +66,16 @@ actor APIClient: APIClientProtocol {
     
     // MARK: - Private Methods
     private func loadAuthenticationToken() async {
+        // Check if we're in UI testing mode first
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--uitesting") {
+            // Use a development token for UI testing
+            // This bypasses the need for authentication during tests
+            self.authToken = "dev-token-for-ui-testing"
+            print("🧪 [APIClient] UI Testing mode - using development token")
+            return
+        }
+        
         // Try to get token from KeychainManager (secure storage)
         // Load saved token from secure Keychain storage
         do {
@@ -242,6 +257,8 @@ actor APIClient: APIClientProtocol {
         print("🔍 [APIClient] fetchProjects() called")
         print("🔍 [APIClient] Using baseURL: \(baseURL)")
         print("🔍 [APIClient] Full URL will be: \(baseURL)/api/projects")
+        print("🔍 [APIClient] Auth token: \(authToken ?? "nil")")
+        print("🔍 [APIClient] Launch arguments: \(ProcessInfo.processInfo.arguments)")
         
         // Check if offline
         if await offlineManager.isOffline {
@@ -264,6 +281,7 @@ actor APIClient: APIClientProtocol {
         }
         
         do {
+            print("🌐 [APIClient] About to make network request to fetch projects...")
             let dtos: [ProjectDTO] = try await request(.getProjects())
             print("✅ [APIClient] Successfully decoded \(dtos.count) ProjectDTOs")
             

@@ -19,6 +19,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Setup error handling
         ErrorHandlingService.shared.setupCrashReporting()
         
+        // Apply UI Testing patches if needed
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("UI-TESTING") {
+            logInfo("🔧 UI Testing mode detected - runtime patches disabled for now", category: "App")
+            // UITestingRuntimePatch.shared.applyPatchesIfNeeded() // TODO: Add to Xcode project
+        }
+        #endif
+        
         // SECURITY FIX: Migrate authentication tokens from UserDefaults to secure Keychain storage
         // This is a one-time migration to move away from insecure storage
         // TODO: Add AuthenticationMigration to Xcode project

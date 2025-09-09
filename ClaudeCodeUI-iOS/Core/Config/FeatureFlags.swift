@@ -349,7 +349,7 @@ final class WebSocketMigrationCoordinator {
         let delegate = TestDelegate()
         delegate.completion = completion
         if let websocketManager = testSocket as? WebSocketManager {
-            websocketManager.delegate = delegate as? WebSocketManagerDelegate
+            websocketManager.delegate = delegate as any WebSocketManagerDelegate
         }
         
         // Attempt connection using protocol method

@@ -30,8 +30,8 @@ class SessionFlowE2ETests: XCTestCase {
         testProjectName = "TestProject_\(UUID().uuidString.prefix(8))"
         
         // Initialize API client for backend verification
-        apiClient = APIClient.shared
-        apiClient.baseURL = "http://localhost:3004"
+        // APIClient now uses AppConfig.backendURL which checks launch arguments
+        apiClient = APIClient()
         
         // Verify backend is running
         try verifyBackendHealth()
@@ -158,9 +158,9 @@ class SessionFlowE2ETests: XCTestCase {
         // Wait for WebSocket response (Claude's response)
         let responseExpectation = expectation(description: "WebSocket response received")
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [self] in
             // Check for response message cell
-            let responseCells = app.cells.matching(identifier: "AssistantMessageCell")
+            let responseCells = self.app.cells.matching(identifier: "AssistantMessageCell")
             XCTAssertTrue(responseCells.count > 0, "No response received via WebSocket")
             responseExpectation.fulfill()
         }

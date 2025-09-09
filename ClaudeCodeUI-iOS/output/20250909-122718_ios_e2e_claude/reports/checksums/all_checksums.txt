@@ -1,0 +1,29 @@
+SHA-256 Checksums
+=================
+
+Videos:
+3b762fb6bc4166d5e10192176c33afcd1e41c7031ce5433891db1cbeb224a40e videos/full_session.mp4
+4f6765d10db8bdde96f8f04940fb2089565033d251faaeca4e632b0e83124b6d video_segments/segment_04_message_send.mp4
+08f4f464bf718529bf2b6a5e5ba4f1bbc1073859f3924ace28607ceacc83841f video_segments/segment_01_app_launch.mp4
+60f8810cd1d14db1bb7fddb45cd43d9ccd07665e12a52f44888dab84eb3a9dab video_segments/segment_02_projects_nav.mp4
+7599b9acfa4dc1e385e4858363f9365cd44954f2d50b004244565297dd57ca22 video_segments/segment_05_persistence.mp4
+6733ebe5db46f8fb5ae0db3843c92711085c4119d9a5705d67ca80d1757dc528 video_segments/segment_03_session_open.mp4
+
+Screenshots (Thumbnails):
+feb6056fa5af13ea53cbaf72ad991bc1d316895bd64c6354f0d7211531ea42e8 video_segments/segment_03_session_open_thumb.jpg
+15f6e7e68ed8ae3082e5b8d5b6047ff5e8caf65a576646d563d76e4566cca3d8 video_segments/segment_02_projects_nav_thumb.jpg
+3fd0b42f3e22eea6fb783bfb820f50f60ac9526c9d4fcb7bc4b8cbaec97f434e video_segments/segment_05_persistence_thumb.jpg
+7f6c2f0f26986235e222a5ca1db7865a419498e04749c43013061f4c11511cb4 video_segments/segment_04_message_send_thumb.jpg
+8bd33b5bf91dc9122312c5e3a2594c9dd2467418fa0c64a0f3b6eb82796b5b70 video_segments/segment_01_app_launch_thumb.jpg
+
+
+MD5 Checksums (Secondary Verification)
+=======================================
+
+Videos:
+ef3921392c1679af268907bf943246e1 videos/full_session.mp4
+49005c6757abc47dffcaeacc30c1b7ca video_segments/segment_04_message_send.mp4
+c4533de9bc41de784573905ee7ef5671 video_segments/segment_01_app_launch.mp4
+49e03fe6c747ba94a8324414c81e2a2d video_segments/segment_02_projects_nav.mp4
+cdd3c0acfd942851208226b1b43e8179 video_segments/segment_05_persistence.mp4
+158045d75ec199f2ddca093737bcbc8d video_segments/segment_03_session_open.mp4

@@ -35,6 +35,16 @@ final class PerformanceIntegrationTests: XCTestCase {
     private let cpuTestDuration: TimeInterval = 30.0
     private let networkTestRequests = 50
     
+    // MARK: - Async Wrapper Methods for MasterTestRunner
+    
+    override func setUp() async throws {
+        try setUpWithError()
+    }
+    
+    override func tearDown() {
+        try? tearDownWithError()
+    }
+    
     override func setUpWithError() throws {
         super.setUp()
         testStartTime = Date()
@@ -76,7 +86,7 @@ final class PerformanceIntegrationTests: XCTestCase {
     
     // MARK: - Memory Leak Detection Tests
     
-    func testMemoryLeakDetection() throws {
+    func testMemoryLeakDetection() async throws {
         print("🧠 Testing comprehensive memory leak detection...")
         
         let memoryTestStartTime = Date()
@@ -176,7 +186,7 @@ final class PerformanceIntegrationTests: XCTestCase {
     
     // MARK: - CPU Usage Monitoring Tests
     
-    func testCPUUsagePatterns() throws {
+    func testCPUUsagePatterns() async throws {
         print("🔥 Testing CPU usage patterns during various operations...")
         
         let cpuTestStartTime = Date()
@@ -314,7 +324,7 @@ final class PerformanceIntegrationTests: XCTestCase {
     
     // MARK: - Battery Impact Assessment Tests
     
-    func testBatteryImpactAssessment() throws {
+    func testBatteryImpactAssessment() async throws {
         print("🔋 Testing battery impact assessment during various operations...")
         
         let batteryTestStartTime = Date()
@@ -406,7 +416,7 @@ final class PerformanceIntegrationTests: XCTestCase {
     
     // MARK: - Network Efficiency Tests
     
-    func testNetworkEfficiencyMetrics() throws {
+    func testNetworkEfficiencyMetrics() async throws {
         print("🌐 Testing network efficiency metrics and optimization...")
         
         let networkTestStartTime = Date()
@@ -473,7 +483,7 @@ final class PerformanceIntegrationTests: XCTestCase {
     
     // MARK: - Overall Performance Stress Tests
     
-    func testOverallPerformanceStressTest() throws {
+    func testOverallPerformanceStressTest() async throws {
         print("🔥 Conducting overall performance stress test...")
         
         let stressTestStartTime = Date()
@@ -653,7 +663,7 @@ final class PerformanceIntegrationTests: XCTestCase {
         for _ in 1...5 {
             autoreleasepool {
                 let webSocketManager = WebSocketManager()
-                webSocketManager.connect()
+                webSocketManager.connect(to: "ws://192.168.0.155:3004/ws")
                 Thread.sleep(forTimeInterval: 1.0)
                 webSocketManager.disconnect()
             }
@@ -1041,7 +1051,7 @@ final class PerformanceIntegrationTests: XCTestCase {
             connectExpectation.fulfill()
         }
         
-        webSocketManager.connect()
+        webSocketManager.connect(to: "ws://192.168.0.155:3004/ws")
         waitForExpectations(timeout: 10.0)
         
         NotificationCenter.default.removeObserver(observer)
@@ -1091,7 +1101,7 @@ final class PerformanceIntegrationTests: XCTestCase {
     // MARK: - Helper Methods - Utility Functions
     
     private func getCurrentMemoryUsage() -> Double {
-        let info = mach_task_basic_info()
+        var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
         
         let result: kern_return_t = withUnsafeMutablePointer(to: &info) {

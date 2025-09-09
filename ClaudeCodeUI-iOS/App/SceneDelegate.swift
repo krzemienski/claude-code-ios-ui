@@ -11,6 +11,34 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
     var appCoordinator: AppCoordinator?
+    
+    // MARK: - Message Persistence Helper
+    
+    @available(iOS 17.0, *)
+    private func persistAllActiveMessages() async {
+        // Get current chat view controller if available
+        guard let window = window,
+              let rootVC = window.rootViewController else { return }
+        
+        // Find ChatViewController in the navigation hierarchy
+        var chatVC: ChatViewController?
+        
+        if let navController = rootVC as? UINavigationController {
+            chatVC = navController.viewControllers.first { $0 is ChatViewController } as? ChatViewController
+        } else if let tabController = rootVC as? UITabBarController {
+            for viewController in tabController.viewControllers ?? [] {
+                if let navController = viewController as? UINavigationController {
+                    chatVC = navController.viewControllers.first { $0 is ChatViewController } as? ChatViewController
+                    if chatVC != nil { break }
+                }
+            }
+        }
+        
+        // Persist messages if chat is active
+        if let chatVC = chatVC {
+            await chatVC.persistCurrentMessages()
+        }
+    }
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
@@ -37,6 +65,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Save any unsaved data
         Task { @MainActor in
             try? DIContainer.shared.dataContainer?.save()
+            
+            // Persist all messages when app disconnects
+            if #available(iOS 17.0, *) {
+                await persistAllActiveMessages()
+            }
         }
     }
 
@@ -64,9 +97,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
-        // Save state
+        // Save state and persist messages
         Task { @MainActor in
             try? DIContainer.shared.dataContainer?.save()
+            
+            // Persist messages when app becomes inactive
+            if #available(iOS 17.0, *) {
+                await persistAllActiveMessages()
+            }
         }
     }
 
@@ -78,9 +116,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         AnalyticsManager.shared.track(.appEnteredBackground)
         AnalyticsManager.shared.flush()
         
-        // Save state and disconnect WebSocket
+        // Save state, persist messages, and disconnect WebSocket
         Task { @MainActor in
             try? DIContainer.shared.dataContainer?.save()
+            
+            // Persist all messages before going to background
+            if #available(iOS 17.0, *) {
+                await persistAllActiveMessages()
+            }
         }
         DIContainer.shared.webSocketManager.disconnect()
     }

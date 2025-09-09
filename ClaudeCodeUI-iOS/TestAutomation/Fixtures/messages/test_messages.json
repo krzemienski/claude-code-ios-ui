@@ -1,0 +1,16 @@
+{
+    "messages": [
+        {
+            "id": "msg_001",
+            "content": "Hello from automated test",
+            "type": "user",
+            "timestamp": "2025-01-07T10:00:00Z"
+        },
+        {
+            "id": "msg_002",
+            "content": "Response from assistant",
+            "type": "assistant",
+            "timestamp": "2025-01-07T10:00:05Z"
+        }
+    ]
+}

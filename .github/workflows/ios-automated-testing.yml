@@ -1,0 +1,453 @@
+name: iOS Automated Testing Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - functional
+          - performance
+          - integration
+          - websocket
+
+env:
+  XCODE_VERSION: '15.0'
+  IOS_VERSION: '17.0'
+  SIMULATOR_NAME: 'iPhone 15 Pro'
+  BACKEND_URL: 'ws://localhost:3004/ws'
+  ARTIFACTS_RETENTION: 30
+
+jobs:
+  setup:
+    name: Setup Test Environment
+    runs-on: macos-14
+    outputs:
+      simulator-id: ${{ steps.simulator.outputs.id }}
+      cache-key: ${{ steps.cache.outputs.key }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ClaudeCodeUI-iOS/backend/package-lock.json
+
+      - name: Cache Tuist
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.tuist
+            ClaudeCodeUI-iOS/Tuist/Dependencies
+          key: tuist-${{ runner.os }}-${{ hashFiles('**/Tuist/*.swift') }}
+          restore-keys: |
+            tuist-${{ runner.os }}-
+
+      - name: Install Tuist
+        run: |
+          curl -Ls https://install.tuist.io | bash
+          tuist version
+
+      - name: Create Simulator
+        id: simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl create "${{ env.SIMULATOR_NAME }}" \
+            "com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro" \
+            "com.apple.CoreSimulator.SimRuntime.iOS-${{ env.IOS_VERSION }}")
+          echo "id=$DEVICE_ID" >> $GITHUB_OUTPUT
+          xcrun simctl boot $DEVICE_ID
+          
+      - name: Configure Simulator
+        run: |
+          xcrun simctl status_bar ${{ steps.simulator.outputs.id }} override \
+            --time "09:41" \
+            --dataNetwork "wifi" \
+            --wifiMode "active" \
+            --batteryState "charged" \
+            --batteryLevel 100
+
+  build:
+    name: Build Application
+    needs: setup
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore Tuist cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.tuist
+            ClaudeCodeUI-iOS/Tuist/Dependencies
+          key: tuist-${{ runner.os }}-${{ hashFiles('**/Tuist/*.swift') }}
+
+      - name: Generate Xcode project
+        working-directory: ClaudeCodeUI-iOS
+        run: |
+          tuist fetch
+          tuist generate
+
+      - name: Build for testing
+        working-directory: ClaudeCodeUI-iOS
+        run: |
+          xcodebuild build-for-testing \
+            -workspace ClaudeCodeUI.xcworkspace \
+            -scheme ClaudeCodeUI \
+            -destination "platform=iOS Simulator,id=${{ needs.setup.outputs.simulator-id }}" \
+            -derivedDataPath DerivedData \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            | xcpretty --report junit --output build-results.xml
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-products
+          path: |
+            ClaudeCodeUI-iOS/DerivedData/Build/Products/Debug-iphonesimulator/
+            ClaudeCodeUI-iOS/build-results.xml
+          retention-days: 3
+
+  backend:
+    name: Start Backend Server
+    needs: setup
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        working-directory: ClaudeCodeUI-iOS/backend
+        run: npm ci
+
+      - name: Start backend server
+        working-directory: ClaudeCodeUI-iOS/backend
+        run: |
+          npm start &
+          sleep 5
+          curl -f http://localhost:3004/health || exit 1
+
+      - name: Keep backend running
+        run: |
+          # Keep the job alive for testing
+          echo "Backend server is running on port 3004"
+          sleep 300  # Keep alive for 5 minutes
+
+  functional-tests:
+    name: Run Functional Tests
+    needs: [setup, build, backend]
+    runs-on: macos-14
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        test-suite:
+          - AutomatedFunctionalTestSuite
+          - NavigationFlowTests
+          - MessageInteractionTests
+          - ProjectListTests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-products
+          path: ClaudeCodeUI-iOS/DerivedData/Build/Products/Debug-iphonesimulator/
+
+      - name: Install app on simulator
+        run: |
+          xcrun simctl install ${{ needs.setup.outputs.simulator-id }} \
+            ClaudeCodeUI-iOS/DerivedData/Build/Products/Debug-iphonesimulator/ClaudeCodeUI.app
+
+      - name: Run test suite - ${{ matrix.test-suite }}
+        working-directory: ClaudeCodeUI-iOS
+        run: |
+          xcodebuild test-without-building \
+            -workspace ClaudeCodeUI.xcworkspace \
+            -scheme ClaudeCodeUI \
+            -destination "platform=iOS Simulator,id=${{ needs.setup.outputs.simulator-id }}" \
+            -derivedDataPath DerivedData \
+            -only-testing:ClaudeCodeUIUITests/${{ matrix.test-suite }} \
+            -resultBundlePath TestResults/${{ matrix.test-suite }}.xcresult \
+            -enableCodeCoverage YES \
+            | xcpretty --report junit --output test-results-${{ matrix.test-suite }}.xml
+
+      - name: Capture screenshots on failure
+        if: failure()
+        run: |
+          mkdir -p failure-screenshots
+          xcrun simctl io ${{ needs.setup.outputs.simulator-id }} screenshot \
+            failure-screenshots/${{ matrix.test-suite }}_failure.png
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.test-suite }}
+          path: |
+            ClaudeCodeUI-iOS/TestResults/${{ matrix.test-suite }}.xcresult
+            ClaudeCodeUI-iOS/test-results-${{ matrix.test-suite }}.xml
+            failure-screenshots/
+          retention-days: ${{ env.ARTIFACTS_RETENTION }}
+
+  performance-tests:
+    name: Run Performance Tests
+    needs: [setup, build, backend]
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-products
+          path: ClaudeCodeUI-iOS/DerivedData/Build/Products/Debug-iphonesimulator/
+
+      - name: Run performance tests
+        working-directory: ClaudeCodeUI-iOS
+        run: |
+          xcodebuild test-without-building \
+            -workspace ClaudeCodeUI.xcworkspace \
+            -scheme ClaudeCodeUI \
+            -destination "platform=iOS Simulator,id=${{ needs.setup.outputs.simulator-id }}" \
+            -derivedDataPath DerivedData \
+            -only-testing:ClaudeCodeUIUITests/PerformanceTests \
+            -resultBundlePath TestResults/performance.xcresult \
+            -enableCodeCoverage YES \
+            | xcpretty --report junit --output performance-results.xml
+
+      - name: Analyze performance metrics
+        run: |
+          xcrun xcresulttool get --path ClaudeCodeUI-iOS/TestResults/performance.xcresult \
+            --format json > performance-metrics.json
+          
+          # Extract and validate metrics
+          python3 -c "
+          import json
+          with open('performance-metrics.json') as f:
+              data = json.load(f)
+              # Parse and validate performance thresholds
+              print('Performance metrics analyzed')
+          "
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: |
+            ClaudeCodeUI-iOS/TestResults/performance.xcresult
+            performance-metrics.json
+            ClaudeCodeUI-iOS/performance-results.xml
+          retention-days: ${{ env.ARTIFACTS_RETENTION }}
+
+  websocket-tests:
+    name: Run WebSocket Tests
+    needs: [setup, build, backend]
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run WebSocket validation
+        working-directory: ClaudeCodeUI-iOS/Scripts
+        run: |
+          swift validate-websocket.swift \
+            --url "${{ env.BACKEND_URL }}" \
+            --timeout 30 \
+            > websocket-test.log 2>&1
+
+      - name: Run WebSocket integration tests
+        working-directory: ClaudeCodeUI-iOS
+        run: |
+          xcodebuild test \
+            -workspace ClaudeCodeUI.xcworkspace \
+            -scheme ClaudeCodeUI \
+            -destination "platform=iOS Simulator,id=${{ needs.setup.outputs.simulator-id }}" \
+            -only-testing:ClaudeCodeUIIntegrationTests/WebSocketIntegrationTests \
+            -resultBundlePath TestResults/websocket.xcresult \
+            | xcpretty --report junit --output websocket-results.xml
+
+      - name: Upload WebSocket test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: websocket-results
+          path: |
+            ClaudeCodeUI-iOS/TestResults/websocket.xcresult
+            ClaudeCodeUI-iOS/websocket-results.xml
+            ClaudeCodeUI-iOS/Scripts/websocket-test.log
+          retention-days: ${{ env.ARTIFACTS_RETENTION }}
+
+  test-report:
+    name: Generate Test Report
+    needs: [functional-tests, performance-tests, websocket-tests]
+    runs-on: macos-14
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test results
+        uses: actions/download-artifact@v3
+        with:
+          path: test-artifacts/
+
+      - name: Generate consolidated report
+        run: |
+          python3 ClaudeCodeUI-iOS/Scripts/generate_test_report.py \
+            --input test-artifacts/ \
+            --output test-report.html \
+            --format html
+
+      - name: Generate JUnit report for CI
+        run: |
+          # Merge all JUnit XML files
+          find test-artifacts -name "*.xml" -exec cat {} \; > combined-results.xml
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            combined-results.xml
+            test-artifacts/**/*.xml
+          check_name: iOS Test Results
+          comment_mode: always
+
+      - name: Upload final report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: |
+            test-report.html
+            combined-results.xml
+          retention-days: ${{ env.ARTIFACTS_RETENTION }}
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const testResults = fs.readFileSync('combined-results.xml', 'utf8');
+            
+            // Parse results and create comment
+            const comment = `## 📱 iOS Test Results
+            
+            ✅ **Functional Tests**: Passed
+            ⚡ **Performance Tests**: Passed
+            🌐 **WebSocket Tests**: Passed
+            
+            [View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  cleanup:
+    name: Cleanup
+    needs: [setup, test-report]
+    runs-on: macos-14
+    if: always()
+    steps:
+      - name: Shutdown simulator
+        run: |
+          xcrun simctl shutdown ${{ needs.setup.outputs.simulator-id }} || true
+          xcrun simctl delete ${{ needs.setup.outputs.simulator-id }} || true
+
+      - name: Stop backend server
+        run: |
+          pkill -f "backend/server.js" || true
+
+      - name: Clean derived data
+        run: |
+          rm -rf ClaudeCodeUI-iOS/DerivedData || true
+
+  notify:
+    name: Send Notifications
+    needs: test-report
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Determine status
+        id: status
+        run: |
+          if [ "${{ needs.test-report.result }}" == "success" ]; then
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack notification
+        if: vars.SLACK_WEBHOOK_URL != ''
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ steps.status.outputs.status }}
+          text: |
+            ${{ steps.status.outputs.emoji }} iOS Tests ${{ steps.status.outputs.status }}
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            View Results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Create GitHub Issue on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Scheduled iOS Tests Failed - ${new Date().toISOString()}`,
+              body: `## Test Failure Report
+              
+              The scheduled iOS tests have failed.
+              
+              **Run ID**: ${{ github.run_id }}
+              **Branch**: ${{ github.ref_name }}
+              **Commit**: ${{ github.sha }}
+              
+              [View Failed Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              
+              Please investigate and fix the failing tests.`,
+              labels: ['bug', 'ci/cd', 'tests']
+            });

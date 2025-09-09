@@ -1,0 +1,8 @@
+FOUND: logs/build_raw.log
+FOUND: logs/build_pretty.log
+FOUND: reports/xcresult_report.json
+FOUND: reports/in_depth_analysis.md
+FOUND: reports/sanitization_report.json
+FOUND: reports/video_segments_summary.json
+FOUND: screenshots/01-current-state.png
+FOUND: screenshots/02-app-launched.png

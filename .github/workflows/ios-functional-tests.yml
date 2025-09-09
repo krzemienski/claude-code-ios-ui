@@ -1,0 +1,236 @@
+name: iOS Functional Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'ClaudeCodeUI-iOS/**'
+      - 'backend/**'
+      - '.github/workflows/ios-functional-tests.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'ClaudeCodeUI-iOS/**'
+      - 'backend/**'
+  workflow_dispatch:
+    inputs:
+      test_category:
+        description: 'Test category to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - unit
+          - integration
+          - performance
+          - e2e
+
+env:
+  XCODE_VERSION: '15.0'
+  IOS_VERSION: '17.0'
+  SIMULATOR_NAME: 'iPhone 15'
+
+jobs:
+  test:
+    name: Run Functional Tests
+    runs-on: macos-14
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ env.XCODE_VERSION }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Cache CocoaPods
+      uses: actions/cache@v3
+      with:
+        path: ClaudeCodeUI-iOS/Pods
+        key: ${{ runner.os }}-pods-${{ hashFiles('ClaudeCodeUI-iOS/Podfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pods-
+    
+    - name: Cache Swift Package Manager
+      uses: actions/cache@v3
+      with:
+        path: ~/Library/Developer/Xcode/DerivedData
+        key: ${{ runner.os }}-spm-${{ hashFiles('ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj/project.pbxproj') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+    
+    - name: Install backend dependencies
+      working-directory: backend
+      run: npm ci
+    
+    - name: Start backend server
+      working-directory: backend
+      run: |
+        npm start &
+        echo "BACKEND_PID=$!" >> $GITHUB_ENV
+        # Wait for backend to be ready
+        for i in {1..30}; do
+          if curl -s http://localhost:3004/health > /dev/null; then
+            echo "Backend is ready!"
+            break
+          fi
+          echo "Waiting for backend... ($i/30)"
+          sleep 2
+        done
+    
+    - name: Install iOS dependencies
+      working-directory: ClaudeCodeUI-iOS
+      run: |
+        if [ -f "Podfile" ]; then
+          pod install
+        fi
+    
+    - name: Create simulator
+      run: |
+        xcrun simctl create "${{ env.SIMULATOR_NAME }}" \
+          "com.apple.CoreSimulator.SimDeviceType.iPhone-15" \
+          "com.apple.CoreSimulator.SimRuntime.iOS-${{ env.IOS_VERSION }}"
+        xcrun simctl boot "${{ env.SIMULATOR_NAME }}"
+    
+    - name: Build for testing
+      working-directory: ClaudeCodeUI-iOS
+      run: |
+        xcodebuild build-for-testing \
+          -workspace ClaudeCodeUI.xcworkspace \
+          -scheme ClaudeCodeUI \
+          -destination "platform=iOS Simulator,name=${{ env.SIMULATOR_NAME }},OS=${{ env.IOS_VERSION }}" \
+          -derivedDataPath build/DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO
+    
+    - name: Run tests
+      working-directory: ClaudeCodeUI-iOS
+      run: |
+        TEST_FILTER=""
+        if [ "${{ github.event.inputs.test_category }}" != "all" ] && [ -n "${{ github.event.inputs.test_category }}" ]; then
+          case "${{ github.event.inputs.test_category }}" in
+            unit)
+              TEST_FILTER="-only-testing:ClaudeCodeUITests"
+              ;;
+            integration)
+              TEST_FILTER="-only-testing:ClaudeCodeUIIntegrationTests"
+              ;;
+            performance)
+              TEST_FILTER="-only-testing:ClaudeCodeUIIntegrationTests/PerformanceIntegrationTests"
+              ;;
+            e2e)
+              TEST_FILTER="-only-testing:ClaudeCodeUIIntegrationTests/SessionFlowE2ETests"
+              ;;
+          esac
+        fi
+        
+        xcodebuild test-without-building \
+          -workspace ClaudeCodeUI.xcworkspace \
+          -scheme ClaudeCodeUI \
+          -destination "platform=iOS Simulator,name=${{ env.SIMULATOR_NAME }},OS=${{ env.IOS_VERSION }}" \
+          -derivedDataPath build/DerivedData \
+          -resultBundlePath TestResults.xcresult \
+          $TEST_FILTER \
+          -parallel-testing-enabled YES \
+          -maximum-concurrent-test-simulator-destinations 2 \
+          | xcpretty --report junit --output test-results.xml
+    
+    - name: Generate test report
+      if: always()
+      run: |
+        if [ -d "ClaudeCodeUI-iOS/TestResults.xcresult" ]; then
+          xcrun xcresulttool get \
+            --format json \
+            --path ClaudeCodeUI-iOS/TestResults.xcresult \
+            > test-results.json
+        fi
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          ClaudeCodeUI-iOS/TestResults.xcresult
+          ClaudeCodeUI-iOS/test-results.xml
+          ClaudeCodeUI-iOS/test-results.json
+    
+    - name: Upload coverage reports
+      if: always()
+      uses: codecov/codecov-action@v3
+      with:
+        file: ClaudeCodeUI-iOS/TestResults.xcresult
+        flags: ios
+        name: ios-coverage
+    
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: iOS Test Results
+        path: ClaudeCodeUI-iOS/test-results.xml
+        reporter: java-junit
+    
+    - name: Stop backend server
+      if: always()
+      run: |
+        if [ -n "$BACKEND_PID" ]; then
+          kill $BACKEND_PID || true
+        fi
+    
+    - name: Clean up simulator
+      if: always()
+      run: |
+        xcrun simctl shutdown "${{ env.SIMULATOR_NAME }}" || true
+        xcrun simctl delete "${{ env.SIMULATOR_NAME }}" || true
+
+  notify:
+    name: Notify Results
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Notify Slack
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: |
+          iOS Functional Tests ${{ job.status }}
+          Commit: ${{ github.sha }}
+          Author: ${{ github.actor }}
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    
+    - name: Create issue on failure
+      if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `Test Failure: ${context.workflow} - ${new Date().toISOString()}`,
+            body: `## Test Failure Details
+            
+            **Workflow:** ${context.workflow}
+            **Run:** ${context.runNumber}
+            **Commit:** ${context.sha}
+            **Author:** ${context.actor}
+            
+            [View Run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            `,
+            labels: ['test-failure', 'automated']
+          })

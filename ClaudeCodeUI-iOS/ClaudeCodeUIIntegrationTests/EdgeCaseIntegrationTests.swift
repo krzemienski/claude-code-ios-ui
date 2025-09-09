@@ -7,7 +7,6 @@
 //
 
 import XCTest
-import XCUIApplication
 import Network
 @testable import ClaudeCodeUI
 
@@ -53,9 +52,19 @@ class EdgeCaseIntegrationTests: XCTestCase {
         try super.tearDownWithError()
     }
     
+    // MARK: - Async Wrapper Methods for MasterTestRunner
+    
+    override func setUp() async throws {
+        try setUpWithError()
+    }
+    
+    override func tearDown() {
+        try? tearDownWithError()
+    }
+    
     // MARK: - Low Memory Condition Tests
     
-    func testLowMemoryConditions() throws {
+    func testLowMemoryConditions() async throws {
         print("🧠 Testing low memory condition handling...")
         
         edgeCaseMetrics.recordTestStart("LowMemoryConditions")
@@ -95,7 +104,7 @@ class EdgeCaseIntegrationTests: XCTestCase {
         print("✅ Low memory condition test completed")
     }
     
-    func testMemoryLeakPrevention() throws {
+    func testMemoryLeakPrevention() async throws {
         print("🔍 Testing memory leak prevention during edge cases...")
         
         edgeCaseMetrics.recordTestStart("MemoryLeakPrevention")
@@ -145,7 +154,7 @@ class EdgeCaseIntegrationTests: XCTestCase {
     
     // MARK: - Poor Network Connectivity Tests
     
-    func testPoorNetworkConnectivity() throws {
+    func testPoorNetworkConnectivity() async throws {
         print("📡 Testing poor network connectivity handling...")
         
         edgeCaseMetrics.recordTestStart("PoorNetworkConnectivity")
@@ -196,7 +205,7 @@ class EdgeCaseIntegrationTests: XCTestCase {
         print("✅ Poor network connectivity test completed")
     }
     
-    func testNetworkTimeoutHandling() throws {
+    func testNetworkTimeoutHandling() async throws {
         print("⏱️ Testing network timeout handling...")
         
         edgeCaseMetrics.recordTestStart("NetworkTimeoutHandling")
@@ -238,7 +247,7 @@ class EdgeCaseIntegrationTests: XCTestCase {
     
     // MARK: - Background/Foreground Transition Tests
     
-    func testBackgroundForegroundTransitions() throws {
+    func testBackgroundForegroundTransitions() async throws {
         print("🔄 Testing background/foreground transition handling...")
         
         edgeCaseMetrics.recordTestStart("BackgroundForegroundTransitions")
@@ -297,7 +306,7 @@ class EdgeCaseIntegrationTests: XCTestCase {
         print("✅ Background/foreground transition test completed")
     }
     
-    func testAppLifecycleEdgeCases() throws {
+    func testAppLifecycleEdgeCases() async throws {
         print("🔄 Testing app lifecycle edge cases...")
         
         edgeCaseMetrics.recordTestStart("AppLifecycleEdgeCases")
@@ -324,7 +333,7 @@ class EdgeCaseIntegrationTests: XCTestCase {
     
     // MARK: - Device Rotation Tests
     
-    func testDeviceRotation() throws {
+    func testDeviceRotation() async throws {
         print("📱 Testing device rotation handling...")
         
         edgeCaseMetrics.recordTestStart("DeviceRotation")
@@ -380,7 +389,7 @@ class EdgeCaseIntegrationTests: XCTestCase {
         print("✅ Device rotation test completed")
     }
     
-    func testRapidOrientationChanges() throws {
+    func testRapidOrientationChanges() async throws {
         print("🌀 Testing rapid orientation changes...")
         
         edgeCaseMetrics.recordTestStart("RapidOrientationChanges")
@@ -430,7 +439,7 @@ class EdgeCaseIntegrationTests: XCTestCase {
     
     // MARK: - Combined Edge Case Stress Tests
     
-    func testCombinedEdgeCaseStressTest() throws {
+    func testCombinedEdgeCaseStressTest() async throws {
         print("🚨 Testing combined edge case stress scenarios...")
         
         edgeCaseMetrics.recordTestStart("CombinedEdgeCaseStress")
@@ -944,11 +953,5 @@ class EdgeCaseMetrics {
                 print("    - \(testName): \(String(format: "%.2f", duration))s")
             }
         }
-    }
-}
-
-extension String {
-    func repeating(_ count: Int) -> String {
-        return String(repeating: self, count: count)
     }
 }

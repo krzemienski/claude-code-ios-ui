@@ -27,6 +27,16 @@ final class UIFlowIntegrationTests: XCTestCase {
     private let testSessionName = "UIFlowTestSession"
     private let testMessage = "UI flow integration test message"
     
+    // MARK: - Async Wrapper Methods for MasterTestRunner
+    
+    override func setUp() async throws {
+        try setUpWithError()
+    }
+    
+    override func tearDown() {
+        try? tearDownWithError()
+    }
+    
     override func setUpWithError() throws {
         super.setUp()
         testStartTime = Date()

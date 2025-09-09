@@ -1,0 +1,3 @@
+BROKEN REFERENCE: phase3_test_result.xcresult
+BROKEN REFERENCE: logs/
+BROKEN REFERENCE: screenshots/

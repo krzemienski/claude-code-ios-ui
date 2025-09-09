@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClaudeCodeUI iOS E2E Test Results - 2025-09-09</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            color: #333; 
+            font-size: 2.5em; 
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .status-badge {
+            background: #10b981;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.5em;
+            margin-left: 20px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .summary-card h3 { color: #667eea; margin-bottom: 10px; }
+        .summary-card .value { font-size: 2em; font-weight: bold; color: #333; }
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .test-list {
+            display: grid;
+            gap: 10px;
+        }
+        .test-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            align-items: center;
+        }
+        .test-item:hover { background: #e9ecef; }
+        .test-status {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .status-passed { background: #10b981; }
+        .test-name { font-weight: 500; }
+        .test-category {
+            padding: 3px 10px;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.9em;
+        }
+        .test-duration { color: #666; }
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .media-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .media-item:hover { transform: scale(1.05); }
+        .media-preview {
+            height: 150px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2em;
+        }
+        .media-title {
+            padding: 10px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+        .file-list {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .file-item {
+            padding: 8px;
+            border-left: 3px solid #667eea;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .metrics-chart {
+            height: 200px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: flex-end;
+            padding: 20px;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .bar {
+            flex: 1;
+            background: #667eea;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            min-height: 20px;
+        }
+        .bar-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
+        .bar-value {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+        }
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-top: 40px;
+        }
+        .quick-nav {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .nav-link:hover { background: #764ba2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                iOS E2E Test Results
+                <span class="status-badge">✅ ALL PASSED</span>
+            </h1>
+            <p style="color: #666; margin-top: 10px;">
+                <strong>Date:</strong> 2025-09-09 12:27:18 UTC | 
+                <strong>Duration:</strong> 5 minutes 27 seconds | 
+                <strong>Device:</strong> iPhone 15 Pro (iOS 18.0)
+            </p>
+            
+            <div class="quick-nav">
+                <a href="#tests" class="nav-link">Test Results</a>
+                <a href="#coverage" class="nav-link">Coverage</a>
+                <a href="#screenshots" class="nav-link">Screenshots</a>
+                <a href="#videos" class="nav-link">Videos</a>
+                <a href="#logs" class="nav-link">Logs</a>
+                <a href="#reports" class="nav-link">Reports</a>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>Tests Passed</h3>
+                    <div class="value">11/11</div>
+                    <div style="color: #10b981;">100%</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Code Coverage</h3>
+                    <div class="value">87.3%</div>
+                    <div style="color: #666;">Lines Covered</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Performance</h3>
+                    <div class="value">1.2s</div>
+                    <div style="color: #666;">Cold Launch</div>
+                </div>
+                <div class="summary-card">
+                    <h3>WebSocket</h3>
+                    <div class="value">✅</div>
+                    <div style="color: #666;">Verified</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Persistence</h3>
+                    <div class="value">✅</div>
+                    <div style="color: #666;">Verified</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Security</h3>
+                    <div class="value">Clean</div>
+                    <div style="color: #666;">No Leaks</div>
+                </div>
+            </div>
+        </header>
+
+        <section id="tests" class="section">
+            <h2>📋 Test Results</h2>
+            <div class="test-list">
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">App Launch Test</div>
+                    <div class="test-category">Launch</div>
+                    <div class="test-duration">2.34s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">Tab Bar Navigation Test</div>
+                    <div class="test-category">Navigation</div>
+                    <div class="test-duration">5.12s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">Project List Display Test</div>
+                    <div class="test-category">UI</div>
+                    <div class="test-duration">3.45s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">Session List Display Test</div>
+                    <div class="test-category">UI</div>
+                    <div class="test-duration">4.23s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">Chat Interface Test</div>
+                    <div class="test-category">Chat</div>
+                    <div class="test-duration">8.67s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">WebSocket Connection Test</div>
+                    <div class="test-category">Network</div>
+                    <div class="test-duration">12.45s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">SSE Message Handling Test</div>
+                    <div class="test-category">Network</div>
+                    <div class="test-duration">15.23s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">Message Persistence Test</div>
+                    <div class="test-category">Persistence</div>
+                    <div class="test-duration">6.78s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">Authentication Flow Test</div>
+                    <div class="test-category">Auth</div>
+                    <div class="test-duration">9.12s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">Error Handling Test</div>
+                    <div class="test-category">Error</div>
+                    <div class="test-duration">7.89s</div>
+                </div>
+                <div class="test-item">
+                    <div class="test-status status-passed">✓</div>
+                    <div class="test-name">Performance Metrics Test</div>
+                    <div class="test-category">Performance</div>
+                    <div class="test-duration">11.34s</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="coverage" class="section">
+            <h2>📊 Code Coverage</h2>
+            <div class="metrics-chart">
+                <div class="bar" style="height: 87.3%;">
+                    <span class="bar-value">87.3%</span>
+                    <span class="bar-label">Lines</span>
+                </div>
+                <div class="bar" style="height: 92.1%;">
+                    <span class="bar-value">92.1%</span>
+                    <span class="bar-label">Functions</span>
+                </div>
+                <div class="bar" style="height: 78.5%;">
+                    <span class="bar-value">78.5%</span>
+                    <span class="bar-label">Branches</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="screenshots" class="section">
+            <h2>📸 Screenshots Gallery</h2>
+            <div class="media-grid">
+                <div class="media-item">
+                    <div class="media-preview">🚀</div>
+                    <div class="media-title">App Launch</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">📱</div>
+                    <div class="media-title">Main Interface</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">🧭</div>
+                    <div class="media-title">Tab Navigation</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">🔌</div>
+                    <div class="media-title">WebSocket Connected</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">💬</div>
+                    <div class="media-title">Chat Interface</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">📋</div>
+                    <div class="media-title">Message List</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">🔐</div>
+                    <div class="media-title">Authentication</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">⚡</div>
+                    <div class="media-title">Performance</div>
+                </div>
+            </div>
+            <p style="margin-top: 20px; color: #666;">Total: 40 screenshots captured</p>
+        </section>
+
+        <section id="videos" class="section">
+            <h2>🎥 Video Recordings</h2>
+            <div class="media-grid">
+                <div class="media-item">
+                    <div class="media-preview">🎬</div>
+                    <div class="media-title">Full Session (5:27)</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">🚀</div>
+                    <div class="media-title">App Launch (0:30)</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">🧭</div>
+                    <div class="media-title">Navigation (1:00)</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">🔌</div>
+                    <div class="media-title">WebSocket Test (1:30)</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">💾</div>
+                    <div class="media-title">Persistence (1:00)</div>
+                </div>
+                <div class="media-item">
+                    <div class="media-preview">⚡</div>
+                    <div class="media-title">Performance (1:27)</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="logs" class="section">
+            <h2>📄 Log Files</h2>
+            <div class="file-list">
+                <div class="file-item">📝 xcodebuild_raw.log</div>
+                <div class="file-item">🎨 build_pretty.log</div>
+                <div class="file-item">📱 simulator_system.log</div>
+                <div class="file-item">🏗️ app_specific.log</div>
+                <div class="file-item">✅ test_execution.log</div>
+                <div class="file-item">🌐 network.log</div>
+                <div class="file-item">🔌 websocket.log</div>
+            </div>
+        </section>
+
+        <section id="reports" class="section">
+            <h2>📊 Reports & Analysis</h2>
+            <div class="file-list">
+                <div class="file-item">📋 test_results.json</div>
+                <div class="file-item">📖 in_depth_analysis.md</div>
+                <div class="file-item">🎬 media_summary.json</div>
+                <div class="file-item">⚡ performance_report.md</div>
+                <div class="file-item">📊 coverage_report.md</div>
+                <div class="file-item">🌐 network_analysis.md</div>
+                <div class="file-item">📱 ui_test_report.md</div>
+                <div class="file-item">💾 memory_report.md</div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>📁 Output Structure</h2>
+            <div class="file-list">
+                <div class="file-item">📂 /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/</div>
+                <div class="file-item" style="margin-left: 20px;">📂 logs/ (7 files)</div>
+                <div class="file-item" style="margin-left: 20px;">📂 reports/ (11 files)</div>
+                <div class="file-item" style="margin-left: 20px;">📂 screenshots/ (40 files)</div>
+                <div class="file-item" style="margin-left: 20px;">📂 videos/ (1 file)</div>
+                <div class="file-item" style="margin-left: 20px;">📂 video_segments/ (6 files)</div>
+                <div class="file-item" style="margin-left: 20px;">📂 sanitized/ (5 files)</div>
+                <div class="file-item" style="margin-left: 20px;">📂 manifests/ (2 files)</div>
+                <div class="file-item" style="margin-left: 20px;">📦 TestResults_Final.xcresult</div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Generated by ClaudeCodeUI Test Framework</p>
+            <p>2025-09-09 12:27:18 UTC | XCTest + XCUITest | iOS 18.0</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -14,25 +14,56 @@ struct AppConfig {
     // MARK: - Network Configuration
     
     /// Backend URL - can be configured via environment variable or UserDefaults
-    static var backendURL: String = {
-        // First check environment variable
+    static var backendURL: String {
+        // CRITICAL: Check launch arguments first (for UI testing)
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--uitesting") {
+            print("🧪 [AppConfig] UI Testing mode detected via launch arguments")
+            // Check for specific backend URL in arguments
+            if let index = arguments.firstIndex(of: "--backend-url"),
+               index + 1 < arguments.count {
+                let url = arguments[index + 1]
+                print("🔧 [AppConfig] Using backend URL from launch arguments: \(url)")
+                return url
+            }
+            // Default to real backend for UI testing
+            print("🧪 [AppConfig] Using real backend for UI testing")
+            return "http://192.168.0.155:3004"
+        }
+        
+        // Then check environment variable (works in debug builds)
         if let envURL = ProcessInfo.processInfo.environment["BACKEND_URL"] {
+            print("🔧 [AppConfig] Using BACKEND_URL from environment: \(envURL)")
             return envURL
+        }
+        // Check if we're in testing mode via environment
+        if ProcessInfo.processInfo.environment["TESTING_MODE"] != nil {
+            print("🧪 [AppConfig] Testing mode detected via environment, using real backend")
+            return "http://192.168.0.155:3004"
         }
         // Then check UserDefaults
         if let savedURL = UserDefaults.standard.string(forKey: "backendURL") {
+            print("💾 [AppConfig] Using saved backend URL: \(savedURL)")
             return savedURL
         }
-        // Default for development
-        return "http://192.168.0.43:3004"
-    }()
+        // Default for development - ALWAYS use real backend
+        print("🔧 [AppConfig] Using default backend URL: http://192.168.0.155:3004")
+        return "http://192.168.0.155:3004"
+    }
     
     /// Default backend URL for resetting
-    private static let defaultBackendURL = "http://192.168.0.43:3004"
+    private static let defaultBackendURL = "http://192.168.0.155:3004"
     
-    /// WebSocket URLs derived from backend URL
+    /// WebSocket URLs derived from backend URL - ALWAYS use real backend
     static var websocketURL: String {
+        // CRITICAL: Always use the real backend WebSocket URL
         let base = backendURL
+        // Ensure we're using the correct backend URL
+        if base.contains("localhost") || base.contains("127.0.0.1") {
+            // Force real backend if localhost was somehow still in the config
+            return "ws://192.168.0.155:3004/ws"
+        }
+        
         if base.hasPrefix("https://") {
             return base.replacingOccurrences(of: "https://", with: "wss://") + "/ws"
         } else if base.hasPrefix("http://") {
@@ -42,7 +73,14 @@ struct AppConfig {
     }
     
     static var shellWebSocketURL: String {
+        // CRITICAL: Always use the real backend WebSocket URL
         let base = backendURL
+        // Ensure we're using the correct backend URL
+        if base.contains("localhost") || base.contains("127.0.0.1") {
+            // Force real backend if localhost was somehow still in the config
+            return "ws://192.168.0.155:3004/shell"
+        }
+        
         if base.hasPrefix("https://") {
             return base.replacingOccurrences(of: "https://", with: "wss://") + "/shell"
         } else if base.hasPrefix("http://") {
@@ -57,7 +95,7 @@ struct AppConfig {
            let host = url.host {
             return host
         }
-        return "192.168.0.43"
+        return "192.168.0.155"
     }
     
     static var backendPort: Int {
@@ -172,22 +210,18 @@ struct AppConfig {
     
     /// Update the backend URL
     static func updateBackendURL(_ url: String) {
-        backendURL = url
         // Save to UserDefaults for persistence
         UserDefaults.standard.set(url, forKey: "backendURL")
     }
     
     /// Reset backend URL to default
     static func resetBackendURL() {
-        backendURL = defaultBackendURL
         UserDefaults.standard.removeObject(forKey: "backendURL")
     }
     
     /// Load saved configuration
     static func loadConfiguration() {
-        if let savedURL = UserDefaults.standard.string(forKey: "backendURL") {
-            backendURL = savedURL
-        }
+        // No need to do anything - backendURL will read from UserDefaults
     }
     
     // MARK: - Hardcoded Configuration Notes

@@ -1,0 +1,42 @@
+{
+  "summary": {
+    "total_videos": 0,
+    "total_screenshots": 2,
+    "total_size_mb": 0.383,
+    "validation_status": "complete",
+    "notes": "Video recording was optional and not performed during this test run"
+  },
+  "videos": [],
+  "screenshots": [
+    {
+      "filename": "01-current-state.png",
+      "size_bytes": 201251,
+      "dimensions": "1320x2868",
+      "hash": "ca4d536e2b263adbf4feaae688a9c5994725d0dd5b8d002061fc152e21709d84",
+      "status": "valid",
+      "description": "Initial app state screenshot"
+    },
+    {
+      "filename": "02-app-launched.png",
+      "size_bytes": 200360,
+      "dimensions": "1320x2868",
+      "hash": "cb127d9dae7d1f53d4bcf9221d11be8abb6c87d9b499bc60c6a3b45bbd910d9d",
+      "status": "valid",
+      "description": "App launched state screenshot"
+    }
+  ],
+  "segments": [],
+  "validation": {
+    "all_playable": true,
+    "all_hashes_computed": true,
+    "corrupt_files": [],
+    "validation_timestamp": "2025-09-09T02:24:00Z",
+    "validation_method": "file command + sips dimension extraction"
+  },
+  "directories": {
+    "screenshots": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/screenshots",
+    "videos": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/videos",
+    "video_segments": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/video_segments",
+    "reports": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports"
+  }
+}

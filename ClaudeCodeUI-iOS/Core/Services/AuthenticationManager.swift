@@ -10,31 +10,37 @@ import Foundation
 
 /// Manages authentication state and token lifecycle
 @MainActor
-final class AuthenticationManager: ObservableObject {
+public final class AuthenticationManager: ObservableObject {
     
     // MARK: - Singleton
-    static let shared = AuthenticationManager()
+    public static let shared = AuthenticationManager()
     
     // MARK: - Published Properties
-    @Published private(set) var isAuthenticated: Bool = false
-    @Published private(set) var currentUser: User?
-    @Published private(set) var authError: AuthenticationError?
+    @Published public private(set) var isAuthenticated: Bool = false
+    @Published public private(set) var currentUser: User?
+    @Published public private(set) var authError: AuthenticationError?
+    
+    // MARK: - Current Token
+    private var _currentToken: String?
+    public var currentToken: String? {
+        return _currentToken
+    }
     
     // MARK: - Properties
-    private let keychainManager = KeychainManager.shared
+    private let keychainManager: KeychainManager
     private let apiClient = APIClient.shared
     private var tokenRefreshTask: Task<Void, Never>?
     private var tokenExpiryTimer: Timer?
     
     // MARK: - Models
-    struct User: Codable {
-        let id: Int
-        let username: String
-        let email: String?
-        let createdAt: Date?
+    public struct User: Codable {
+        public let id: Int
+        public let username: String
+        public let email: String?
+        public let createdAt: Date?
     }
     
-    struct AuthTokens: Codable {
+    public struct AuthTokens: Codable {
         let accessToken: String
         let refreshToken: String?
         let expiresIn: TimeInterval?
@@ -46,13 +52,18 @@ final class AuthenticationManager: ObservableObject {
         }
     }
     
-    struct LoginCredentials {
-        let username: String
-        let password: String
+    public struct LoginCredentials {
+        public let username: String
+        public let password: String
+        
+        public init(username: String, password: String) {
+            self.username = username
+            self.password = password
+        }
     }
     
     // MARK: - Errors
-    enum AuthenticationError: LocalizedError {
+    public enum AuthenticationError: LocalizedError {
         case invalidCredentials
         case tokenExpired
         case refreshFailed
@@ -61,7 +72,7 @@ final class AuthenticationManager: ObservableObject {
         case serverError(String)
         case unauthorized
         
-        var errorDescription: String? {
+        public var errorDescription: String? {
             switch self {
             case .invalidCredentials:
                 return "Invalid username or password"
@@ -82,7 +93,8 @@ final class AuthenticationManager: ObservableObject {
     }
     
     // MARK: - Initialization
-    private init() {
+    public init(keychainManager: KeychainManager = KeychainManager.shared) {
+        self.keychainManager = keychainManager
         Task {
             await checkAuthenticationStatus()
         }
@@ -115,6 +127,7 @@ final class AuthenticationManager: ObservableObject {
                 }
                 
                 // Update authentication state
+                self._currentToken = token
                 self.isAuthenticated = true
                 self.authError = nil
                 
@@ -141,7 +154,7 @@ final class AuthenticationManager: ObservableObject {
     }
     
     /// Logs out the current user
-    func logout() async {
+    public func logout() async {
         // Cancel token refresh
         tokenRefreshTask?.cancel()
         tokenRefreshTask = nil
@@ -159,6 +172,7 @@ final class AuthenticationManager: ObservableObject {
         await apiClient.setAuthToken(nil)
         
         // Update state
+        self._currentToken = nil
         self.isAuthenticated = false
         self.currentUser = nil
         self.authError = nil
@@ -227,6 +241,7 @@ final class AuthenticationManager: ObservableObject {
                         self.currentUser = user
                     }
                     
+                    self._currentToken = token
                     self.isAuthenticated = true
                     
                     // Setup token refresh
@@ -252,8 +267,84 @@ final class AuthenticationManager: ObservableObject {
     
     /// Gets the current authentication token
     /// - Returns: The JWT token if available
-    func getCurrentToken() -> String? {
+    public func getCurrentToken() -> String? {
         return try? keychainManager.getAuthToken()
+    }
+    
+    /// Sets the current token (for testing purposes)
+    public func setCurrentToken(_ token: String?) {
+        self._currentToken = token
+        if let token = token {
+            self.isAuthenticated = true
+        } else {
+            self.isAuthenticated = false
+        }
+    }
+    
+    /// Validates and refreshes token if needed
+    /// - Returns: true if token is valid or successfully refreshed
+    public func validateAndRefreshTokenIfNeeded() async -> Bool {
+        guard let token = _currentToken ?? (try? keychainManager.getAuthToken()) else {
+            return false
+        }
+        
+        if isTokenValid(token) {
+            return true
+        }
+        
+        // Try to refresh
+        do {
+            try await refreshToken()
+            return true
+        } catch {
+            return false
+        }
+    }
+    
+    /// Attempts auto-login with stored credentials
+    /// - Returns: true if auto-login was successful
+    public func attemptAutoLogin() async -> Bool {
+        do {
+            // Try to get token from keychain
+            if let token = try keychainManager.getAuthToken() {
+                // Validate token
+                if isTokenValid(token) {
+                    // Update state
+                    self._currentToken = token
+                    self.isAuthenticated = true
+                    
+                    // Parse user info
+                    if let user = parseUserFromToken(token) {
+                        self.currentUser = user
+                    }
+                    
+                    // Setup token refresh
+                    setupTokenRefresh(for: token)
+                    
+                    return true
+                } else {
+                    // Token expired, try to refresh if we have refresh token
+                    if try keychainManager.getRefreshToken() != nil {
+                        do {
+                            try await refreshToken()
+                            return true
+                        } catch {
+                            // Refresh failed, clear invalid token
+                            try? keychainManager.clearAuthenticationData()
+                            return false
+                        }
+                    } else {
+                        // No refresh token, clear invalid auth token
+                        try? keychainManager.clearAuthenticationData()
+                        return false
+                    }
+                }
+            }
+        } catch {
+            print("⚠️ [AuthenticationManager] Auto-login failed: \(error)")
+        }
+        
+        return false
     }
     
     // MARK: - Private Methods

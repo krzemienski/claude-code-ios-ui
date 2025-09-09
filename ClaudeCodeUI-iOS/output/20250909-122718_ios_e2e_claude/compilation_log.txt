@@ -1,0 +1,703 @@
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
+{ platform:iOS Simulator, arch:x86_64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
+{ platform:iOS Simulator, arch:x86_64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
+/* com.apple.actool.notices */
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Resources/Assets.xcassets: warning: Accent color ‘AccentColor’ is not present in any asset catalogs.
+/* com.apple.actool.compilation-results */
+/Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/assetcatalog_generated_info.plist_thinned
+
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/AuthenticationManager.swift:277:16: warning: value 'token' was defined but never used; consider replacing with boolean test
+        if let token = token {
+           ~~~~^~~~~~~~
+                             != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:151:48: warning: non-sendable result type 'Settings' cannot be sent from main actor-isolated context in call to instance method 'fetchSettings()'; this is an error in the Swift 6 language mode
+        let settings = try await dataContainer.fetchSettings()
+                                               ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Settings.swift:14:13: note: class 'Settings' does not conform to the 'Sendable' protocol
+final class Settings {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:217:44: warning: non-sendable result type '[Project]' cannot be sent from actor-isolated context in call to instance method 'fetchProjects()'; this is an error in the Swift 6 language mode
+        let projects = try await apiClient.fetchProjects()
+                                           ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:233:43: warning: non-sendable result type 'Project' cannot be sent from actor-isolated context in call to instance method 'createProject(name:path:)'; this is an error in the Swift 6 language mode
+        let project = try await apiClient.createProject(name: name, path: path)
+                                          ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:15:13: note: class 'Project' does not conform to the 'Sendable' protocol
+final class Project: Codable {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:266:51: warning: non-sendable result type 'Project?' cannot be sent from main actor-isolated context in call to instance method 'fetchProject(byId:)'; this is an error in the Swift 6 language mode
+           let project = try? await dataContainer.fetchProject(byId: id) {
+                                                  ^
+Swift.Optional:1:21: note: generic enum 'Optional' does not conform to the 'Sendable' protocol
+@frozen public enum Optional<Wrapped> : ~Copyable where Wrapped : ~Copyable {
+                    ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:283:13: warning: initialization of immutable value 'chatMessage' was never used; consider replacing with assignment to '_' or removing it
+        let chatMessage = Message(
+        ~~~~^~~~~~~~~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:304:42: warning: non-sendable result type 'Message' cannot be sent from main actor-isolated context in call to instance method 'createMessage(for:role:content:)'; this is an error in the Swift 6 language mode
+            _ = try? await dataContainer.createMessage(for: session, role: .user, content: message)
+                                         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Models/Message.swift:63:13: note: class 'Message' does not conform to the 'Sendable' protocol
+final class Message {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:318:47: warning: non-sendable result type 'Session' cannot be sent from main actor-isolated context in call to instance method 'createSession(for:)'; this is an error in the Swift 6 language mode
+        let session = try await dataContainer.createSession(for: project)
+                                              ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Models/Session.swift:21:13: note: class 'Session' does not conform to the 'Sendable' protocol
+final class Session {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/MessagePersistenceService.swift:78:20: warning: value 'error' was defined but never used; consider replacing with boolean test
+            if let error = error {
+               ~~~~^~~~~~~~
+                                 != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/OfflineManager.swift:297:40: warning: non-sendable result type 'Project' cannot be sent from actor-isolated context in call to instance method 'createProject(name:path:)'; this is an error in the Swift 6 language mode
+        _ = try await APIClient.shared.createProject(name: project.name, path: project.path)
+                                       ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:15:13: note: class 'Project' does not conform to the 'Sendable' protocol
+final class Project: Codable {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/OfflineManager.swift:386:17: warning: capture of 'self' with non-sendable type 'OfflineSyncManager?' in a '@Sendable' closure
+                self?.performSync()
+                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/OfflineManager.swift:365:7: note: class 'OfflineSyncManager' does not conform to the 'Sendable' protocol
+class OfflineSyncManager {
+      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/PushNotificationManager.swift:297:34: warning: 'applicationIconBadgeNumber' was deprecated in iOS 17.0: Use -[UNUserNotificationCenter setBadgeCount:withCompletionHandler:] instead.
+            UIApplication.shared.applicationIconBadgeNumber = count
+                                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:58:44: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        for window in UIApplication.shared.windows {
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:79:27: warning: cast from 'UIView' to unrelated type 'UINavigationController' always fails
+        if let nav = view as? UINavigationController {
+                     ~~~~ ^   ~~~~~~~~~~~~~~~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:94:44: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        for window in UIApplication.shared.windows {
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:201:44: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        for window in UIApplication.shared.windows {
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:225:44: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        for window in UIApplication.shared.windows {
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Utils/HapticFeedback.swift:327:14: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+            .onChange(of: trigger) { _ in
+             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Utils/HapticFeedback.swift:351:14: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+            .onChange(of: configuration.isPressed) { pressed in
+             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Components/AnimatedComponents.swift:250:10: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+        .onChange(of: progress) { newValue in
+         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Components/ConnectionStatusView.swift:124:19: warning: value 'navigationController' was defined but never used; consider replacing with boolean test
+        guard let navigationController = viewController.navigationController else { return }
+              ~~~~^~~~~~~~~~~~~~~~~~~~~~~
+                                                                             != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:245:26: warning: conformance of 'Project' to 'Sendable' is unavailable: PersistentModels are not Sendable, consider utilizing a ModelActor or use Project's persistentModelID instead; this is an error in the Swift 6 language mode
+        return try await Task { @MainActor in
+                         ^
+@__swiftmacro_12ClaudeCodeUI7Project5ModelfMe_.swift:11:1: note: conformance of 'Project' to 'Sendable' has been explicitly marked unavailable here
+extension Project: Sendable {
+^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:14:1: note: in expansion of macro 'Model' on class 'Project' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:14:1: note: in expansion of macro 'Model' on class 'Project' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:245:26: warning: conformance of 'Project' to 'Sendable' is unavailable: PersistentModels are not Sendable, consider utilizing a ModelActor or use Project's persistentModelID instead; this is an error in the Swift 6 language mode
+        return try await Task { @MainActor in
+                         ^
+@__swiftmacro_12ClaudeCodeUI7Project5ModelfMe_.swift:11:1: note: conformance of 'Project' to 'Sendable' has been explicitly marked unavailable here
+extension Project: Sendable {
+^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:14:1: note: in expansion of macro 'Model' on class 'Project' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:14:1: note: in expansion of macro 'Model' on class 'Project' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:247:11: warning: conformance of 'Project' to 'Sendable' is unavailable: PersistentModels are not Sendable, consider utilizing a ModelActor or use Project's persistentModelID instead; this is an error in the Swift 6 language mode
+        }.value
+          ^
+@__swiftmacro_12ClaudeCodeUI7Project5ModelfMe_.swift:11:1: note: conformance of 'Project' to 'Sendable' has been explicitly marked unavailable here
+extension Project: Sendable {
+^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:14:1: note: in expansion of macro 'Model' on class 'Project' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:14:1: note: in expansion of macro 'Model' on class 'Project' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:245:26: warning: non-sendable type 'Task<[Project], any Error>' cannot exit main actor-isolated context in call to nonisolated property 'value'; this is an error in the Swift 6 language mode
+        return try await Task { @MainActor in
+                         ^
+_Concurrency.Task:2:23: note: generic struct 'Task' does not conform to the 'Sendable' protocol
+@frozen public struct Task<Success, Failure> : Sendable where Success : Sendable, Failure : Error {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:247:11: warning: non-sendable type '[Project]' of nonisolated property 'value' cannot be sent to main actor-isolated context; this is an error in the Swift 6 language mode
+        }.value
+          ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:251:26: warning: conformance of 'Settings' to 'Sendable' is unavailable: PersistentModels are not Sendable, consider utilizing a ModelActor or use Settings's persistentModelID instead; this is an error in the Swift 6 language mode
+        return try await Task { @MainActor in
+                         ^
+@__swiftmacro_12ClaudeCodeUI8Settings5ModelfMe_.swift:11:1: note: conformance of 'Settings' to 'Sendable' has been explicitly marked unavailable here
+extension Settings: Sendable {
+^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Settings.swift:13:1: note: in expansion of macro 'Model' on class 'Settings' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Settings.swift:13:1: note: in expansion of macro 'Model' on class 'Settings' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:251:26: warning: conformance of 'Settings' to 'Sendable' is unavailable: PersistentModels are not Sendable, consider utilizing a ModelActor or use Settings's persistentModelID instead; this is an error in the Swift 6 language mode
+        return try await Task { @MainActor in
+                         ^
+@__swiftmacro_12ClaudeCodeUI8Settings5ModelfMe_.swift:11:1: note: conformance of 'Settings' to 'Sendable' has been explicitly marked unavailable here
+extension Settings: Sendable {
+^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Settings.swift:13:1: note: in expansion of macro 'Model' on class 'Settings' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Settings.swift:13:1: note: in expansion of macro 'Model' on class 'Settings' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:253:11: warning: conformance of 'Settings' to 'Sendable' is unavailable: PersistentModels are not Sendable, consider utilizing a ModelActor or use Settings's persistentModelID instead; this is an error in the Swift 6 language mode
+        }.value
+          ^
+@__swiftmacro_12ClaudeCodeUI8Settings5ModelfMe_.swift:11:1: note: conformance of 'Settings' to 'Sendable' has been explicitly marked unavailable here
+extension Settings: Sendable {
+^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Settings.swift:13:1: note: in expansion of macro 'Model' on class 'Settings' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Settings.swift:13:1: note: in expansion of macro 'Model' on class 'Settings' here
+@Model
+^~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:251:26: warning: non-sendable type 'Task<Settings, any Error>' cannot exit main actor-isolated context in call to nonisolated property 'value'; this is an error in the Swift 6 language mode
+        return try await Task { @MainActor in
+                         ^
+_Concurrency.Task:2:23: note: generic struct 'Task' does not conform to the 'Sendable' protocol
+@frozen public struct Task<Success, Failure> : Sendable where Success : Sendable, Failure : Error {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/SwiftDataContainer.swift:253:11: warning: non-sendable type 'Settings' of nonisolated property 'value' cannot be sent to main actor-isolated context; this is an error in the Swift 6 language mode
+        }.value
+          ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Settings.swift:14:13: note: class 'Settings' does not conform to the 'Sendable' protocol
+final class Settings {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:74:9: warning: main actor-isolated property 'childCoordinators' cannot be used to satisfy nonisolated requirement from protocol 'Coordinator'; this is an error in the Swift 6 language mode
+    var childCoordinators: [Coordinator] = []
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:71:33: note: add '@preconcurrency' to the 'Coordinator' conformance to defer isolation checking to run time
+class AppCoordinator: NSObject, Coordinator {
+                                ^
+                                @preconcurrency 
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:63:9: note: requirement 'childCoordinators' declared here
+    var childCoordinators: [Coordinator] { get set }
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:75:9: warning: main actor-isolated property 'navigationController' cannot be used to satisfy nonisolated requirement from protocol 'Coordinator'; this is an error in the Swift 6 language mode
+    var navigationController: UINavigationController
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:64:9: note: requirement 'navigationController' declared here
+    var navigationController: UINavigationController { get set }
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:87:10: warning: main actor-isolated instance method 'start()' cannot be used to satisfy nonisolated requirement from protocol 'Coordinator'; this is an error in the Swift 6 language mode
+    func start() {
+         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:87:10: note: add 'nonisolated' to 'start()' to make this instance method not isolated to the actor
+    func start() {
+         ^
+    nonisolated 
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:66:10: note: mark the protocol requirement 'start()' 'async' to allow actor-isolated conformances
+    func start()
+         ^
+                 async
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:433:10: warning: main actor-isolated instance method 'authenticationCoordinatorDidComplete' cannot be used to satisfy nonisolated requirement from protocol 'AuthenticationCoordinatorDelegate'; this is an error in the Swift 6 language mode
+    func authenticationCoordinatorDidComplete(_ coordinator: AuthenticationCoordinator) {
+         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:431:27: note: add '@preconcurrency' to the 'AuthenticationCoordinatorDelegate' conformance to defer isolation checking to run time
+extension AppCoordinator: AuthenticationCoordinatorDelegate {
+                          ^
+                          @preconcurrency 
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:459:10: note: mark the protocol requirement 'authenticationCoordinatorDidComplete' 'async' to allow actor-isolated conformances
+    func authenticationCoordinatorDidComplete(_ coordinator: AuthenticationCoordinator)
+         ^
+                                                                                        async
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:97:43: warning: no 'async' operations occur within 'await' expression
+                guard let dataContainer = await DIContainer.shared.dataContainer else { return }
+                                          ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:287:31: warning: string interpolation produces a debug description for an optional value; did you mean to make this explicit?
+        label.text = "Chat: \(project.displayName)"
+                              ^~~~~~~~~~~~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:287:39: note: use 'String(describing:)' to silence this warning
+        label.text = "Chat: \(project.displayName)"
+                              ~~~~~~~~^~~~~~~~~~~
+                              String(describing: )
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:287:39: note: provide a default value to avoid this warning
+        label.text = "Chat: \(project.displayName)"
+                              ~~~~~~~~^~~~~~~~~~~
+                                                  ?? <#default value#>
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/MainTabBarController.swift:248:52: warning: conditional cast from 'UITabBar' to 'UITabBar' always succeeds
+        guard let tabBar = tabBarController.tabBar as? UITabBar,
+                                                   ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/MainTabBarController.swift:251:19: warning: immutable value 'item' was never used; consider replacing with '_' or removing it
+              let item = tabBar.items?[selectedIndex] else { return }
+              ~~~~^~~~
+              _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/MainTabBarController.swift:256:24: warning: value 'imageView' was defined but never used; consider replacing with boolean test
+                if let imageView = subview as? UIImageView {
+                   ~~~~^~~~~~~~~~~~        ~~~
+                                           is
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Analytics/AnalyticsIntegration.swift:21:51: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            return objc_getAssociatedObject(self, &AssociatedKeys.analyticsScreenName) as? String
+                                                  ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Analytics/AnalyticsIntegration.swift:24:44: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            objc_setAssociatedObject(self, &AssociatedKeys.analyticsScreenName, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Analytics/AnalyticsIntegration.swift:31:51: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            return objc_getAssociatedObject(self, &AssociatedKeys.analyticsScreenStartTime) as? Date
+                                                  ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Analytics/AnalyticsIntegration.swift:34:44: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            objc_setAssociatedObject(self, &AssociatedKeys.analyticsScreenStartTime, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/MemoryLeakDetector.swift:207:13: warning: initialization of immutable value 'notificationCenter' was never used; consider replacing with assignment to '_' or removing it
+        let notificationCenter = NotificationCenter.default
+        ~~~~^~~~~~~~~~~~~~~~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/MemoryLeakDetector.swift:284:51: warning: conditional cast from 'Any' to 'AnyObject' always succeeds
+                    if let delegate = child.value as? AnyObject {
+                                                  ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/MetricsCollector.swift:235:50: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+            if let window = UIApplication.shared.windows.first,
+                                                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/MetricsCollector.swift:274:30: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        UIApplication.shared.windows.first?.addGestureRecognizer(tapGesture)
+                             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceMonitor.swift:169:17: warning: initialization of immutable value 'expectedDuration' was never used; consider replacing with assignment to '_' or removing it
+            let expectedDuration = displayLink.targetTimestamp - displayLink.timestamp
+            ~~~~^~~~~~~~~~~~~~~~
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceMonitor.swift:329:50: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+            if let window = UIApplication.shared.windows.first,
+                                                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceMonitor.swift:337:13: warning: initialization of immutable value 'mirror' was never used; consider replacing with assignment to '_' or removing it
+        let mirror = Mirror(reflecting: viewController)
+        ~~~~^~~~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceOptimizer.swift:132:50: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+            if let window = UIApplication.shared.windows.first {
+                                                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceOptimizer.swift:486:46: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        if let window = UIApplication.shared.windows.first {
+                                             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/AuthenticationMigration.swift:42:13: warning: initialization of variable 'migrationSuccess' was never used; consider replacing with assignment to '_' or removing it
+        var migrationSuccess = true
+        ~~~~^~~~~~~~~~~~~~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/BiometricAuthManager.swift:75:9: warning: switch must be exhaustive
+        switch context.biometryType {
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/BiometricAuthManager.swift:75:9: note: add missing case: '.opticID'
+        switch context.biometryType {
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/BiometricAuthManager.swift:193:9: warning: switch must be exhaustive
+        switch context.biometryType {
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/BiometricAuthManager.swift:193:9: note: add missing case: '.opticID'
+        switch context.biometryType {
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Network/APIClient.swift:264:12: warning: no 'async' operations occur within 'await' expression
+        if await offlineManager.isOffline {
+           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Network/APIClient.swift:266:35: warning: no 'async' operations occur within 'await' expression
+            let offlineProjects = await offlineStore.fetchOfflineProjects()
+                                  ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Network/APIClient.swift:306:17: warning: no 'async' operations occur within 'await' expression
+                await offlineStore.saveProject(project, isOffline: false)
+                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Network/APIClient.swift:313:35: warning: no 'async' operations occur within 'await' expression
+            let offlineProjects = await offlineStore.fetchOfflineProjects()
+                                  ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Network/APIClient.swift:434:21: warning: variable 'messageType' was written to, but never read
+                var messageType = "text"
+                    ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Network/TranscriptionService.swift:64:57: warning: variable 'self' was written to, but never read
+        SFSpeechRecognizer.requestAuthorization { [weak self] authStatus in
+                                                        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Effects/GlowEffects.swift:229:19: warning: value 'context' was defined but never used; consider replacing with boolean test
+        guard let context = UIGraphicsGetCurrentContext() else { return }
+              ~~~~^~~~~~~~~~
+                                                          != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Analytics/AnalyticsDashboardViewController.swift:328:55: warning: non-sendable result type '[Project]' cannot be sent from actor-isolated context in call to instance method 'fetchProjects()'; this is an error in the Swift 6 language mode
+        if let projects = try? await APIClient.shared.fetchProjects() {
+                                                      ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Analytics/AnalyticsDashboardViewController.swift:336:55: warning: non-sendable result type '[Project]' cannot be sent from actor-isolated context in call to instance method 'fetchProjects()'; this is an error in the Swift 6 language mode
+        if let projects = try? await APIClient.shared.fetchProjects() {
+                                                      ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/AuthenticationViewController.swift:310:17: warning: no 'async' operations occur within 'await' expression
+                await proceedToMainApp()
+                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/AuthenticationViewController.swift:312:17: warning: no 'async' operations occur within 'await' expression
+                await errorHandler.handle(error)
+                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/AuthenticationViewController.swift:334:76: warning: left side of nil coalescing operator '??' has non-optional type 'Settings', so the right side is never used
+                    var settings = try await dataContainer.fetchSettings() ?? Settings()
+                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+                                                                          
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/AuthenticationViewController.swift:334:25: warning: variable 'settings' was never mutated; consider changing to 'let' constant
+                    var settings = try await dataContainer.fetchSettings() ?? Settings()
+                    ~~~ ^
+                    let
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/AuthenticationViewController.swift:339:25: warning: no 'async' operations occur within 'await' expression
+                    try await dataContainer.updateSettings(settings)
+                        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/AuthenticationViewController.swift:343:17: warning: no 'async' operations occur within 'await' expression
+                await proceedToMainApp()
+                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/AuthenticationViewController.swift:345:17: warning: no 'async' operations occur within 'await' expression
+                await errorHandler.handle(error)
+                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/LoginViewController.swift:305:25: warning: no 'async' operations occur within 'await' expression
+                    try await dataContainer.updateSettings(settings)
+                        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/LoginViewController.swift:309:17: warning: no 'async' operations occur within 'await' expression
+                await proceedToMainApp()
+                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/LoginViewController.swift:364:26: warning: no 'async' operations occur within 'await' expression
+                    try? await dataContainer.updateSettings(settings)
+                         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/LoginViewController.swift:369:13: warning: no 'async' operations occur within 'await' expression
+            await proceedToMainApp()
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatAnimationManager.swift:217:23: warning: value 'indexPath' was defined but never used; consider replacing with boolean test
+            guard let indexPath = tableView?.indexPath(for: cell) else { continue }
+                  ~~~~^~~~~~~~~~~~
+                  (                                              ) != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:298:14: warning: capture of 'self' in a closure that outlives deinit; this is an error in the Swift 6 language mode
+        Task { @MainActor in
+             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:576:64: warning: non-sendable result type '[Message]' cannot be sent from actor-isolated context in call to instance method 'fetchSessionMessages(projectName:sessionId:limit:offset:)'; this is an error in the Swift 6 language mode
+                let olderMessages = try await APIClient.shared.fetchSessionMessages(
+                                                               ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:811:77: warning: non-sendable result type '[Message]' cannot be sent from nonisolated context in call to instance method 'loadMessages(for:)'; this is an error in the Swift 6 language mode
+                let cachedMessages = await MessagePersistenceService.shared.loadMessages(for: sessionId)
+                                                                            ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:837:66: warning: non-sendable result type '[Message]' cannot be sent from actor-isolated context in call to instance method 'fetchSessionMessages(projectName:sessionId:limit:offset:)'; this is an error in the Swift 6 language mode
+                let backendMessages = try await APIClient.shared.fetchSessionMessages(
+                                                                 ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:1302:20: warning: value 'cell' was defined but never used; consider replacing with boolean test
+            if let cell = self?.tableView.cellForRow(at: indexPath) {
+               ~~~~^~~~~~~
+               (                                                   ) != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:1907:17: warning: initialization of immutable value 'type' was never used; consider replacing with assignment to '_' or removing it
+            let type = enhancedMessage.messageType
+            ~~~~^~~~
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:1908:17: warning: variable 'metadata' was never mutated; consider changing to 'let' constant
+            var metadata = MessageMetadata()
+            ~~~ ^
+            let
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:1933:17: warning: initialization of immutable value 'type' was never used; consider replacing with assignment to '_' or removing it
+            let type = message.messageType
+            ~~~~^~~~
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:1934:17: warning: variable 'metadata' was never mutated; consider changing to 'let' constant
+            var metadata = MessageMetadata()
+            ~~~ ^
+            let
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2374:17: warning: initialization of immutable value 'structured' was never used; consider replacing with assignment to '_' or removing it
+            let structured = streamingHandler.extractStructuredContent(from: message.content)
+            ~~~~^~~~~~~~~~
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2411:17: warning: initialization of immutable value 'structured' was never used; consider replacing with assignment to '_' or removing it
+            let structured = streamingHandler.extractStructuredContent(from: content)
+            ~~~~^~~~~~~~~~
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2567:24: warning: value 'cell' was defined but never used; consider replacing with boolean test
+                if let cell = self?.tableView.cellForRow(at: indexPath) {
+                   ~~~~^~~~~~~
+                   (                                                   ) != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:3030:28: warning: expression implicitly coerced from 'String?' to 'Any'
+            "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:3030:36: note: provide a default value to avoid this warning
+            "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:3030:36: note: force-unwrap the value to avoid this warning
+            "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:3030:36: note: explicitly cast to 'Any' with 'as Any' to silence this warning
+            "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:74:9: warning: main actor-isolated property 'childCoordinators' cannot be used to satisfy nonisolated requirement from protocol 'Coordinator'; this is an error in the Swift 6 language mode
+    var childCoordinators: [Coordinator] = []
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:71:33: note: add '@preconcurrency' to the 'Coordinator' conformance to defer isolation checking to run time
+class AppCoordinator: NSObject, Coordinator {
+                                ^
+                                @preconcurrency 
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:63:9: note: requirement 'childCoordinators' declared here
+    var childCoordinators: [Coordinator] { get set }
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:75:9: warning: main actor-isolated property 'navigationController' cannot be used to satisfy nonisolated requirement from protocol 'Coordinator'; this is an error in the Swift 6 language mode
+    var navigationController: UINavigationController
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:64:9: note: requirement 'navigationController' declared here
+    var navigationController: UINavigationController { get set }
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:87:10: warning: main actor-isolated instance method 'start()' cannot be used to satisfy nonisolated requirement from protocol 'Coordinator'; this is an error in the Swift 6 language mode
+    func start() {
+         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:87:10: note: add 'nonisolated' to 'start()' to make this instance method not isolated to the actor
+    func start() {
+         ^
+    nonisolated 
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:66:10: note: mark the protocol requirement 'start()' 'async' to allow actor-isolated conformances
+    func start()
+         ^
+                 async
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:433:10: warning: main actor-isolated instance method 'authenticationCoordinatorDidComplete' cannot be used to satisfy nonisolated requirement from protocol 'AuthenticationCoordinatorDelegate'; this is an error in the Swift 6 language mode
+    func authenticationCoordinatorDidComplete(_ coordinator: AuthenticationCoordinator) {
+         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:431:27: note: add '@preconcurrency' to the 'AuthenticationCoordinatorDelegate' conformance to defer isolation checking to run time
+extension AppCoordinator: AuthenticationCoordinatorDelegate {
+                          ^
+                          @preconcurrency 
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Navigation/AppCoordinator.swift:459:10: note: mark the protocol requirement 'authenticationCoordinatorDidComplete' 'async' to allow actor-isolated conformances
+    func authenticationCoordinatorDidComplete(_ coordinator: AuthenticationCoordinator)
+         ^
+                                                                                        async
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Network/APIClient.swift:434:21: warning: variable 'messageType' was written to, but never read
+                var messageType = "text"
+                    ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Terminal/TerminalViewController.swift:252:15: warning: 'traitCollectionDidChange' was deprecated in iOS 17.0: Use the trait change registration APIs declared in the UITraitChangeObservable protocol
+        super.traitCollectionDidChange(previousTraitCollection)
+              ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Terminal/TerminalViewController.swift:271:13: warning: 'init(input:modifierFlags:action:discoverabilityTitle:)' was deprecated in iOS 13.0
+            UIKeyCommand(
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Terminal/TerminalViewController.swift:278:13: warning: 'init(input:modifierFlags:action:discoverabilityTitle:)' was deprecated in iOS 13.0
+            UIKeyCommand(
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Terminal/TerminalViewController.swift:285:13: warning: 'init(input:modifierFlags:action:discoverabilityTitle:)' was deprecated in iOS 13.0
+            UIKeyCommand(
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Transcription/TranscriptionViewController.swift:244:41: warning: 'requestRecordPermission' was deprecated in iOS 17.0: Please use AVAudioApplication requestRecordPermissionWithCompletionHandler
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                                        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Components/SkeletonView.swift:211:13: warning: immutable value 'i' was never used; consider replacing with '_' or removing it
+        for i in 0..<count {
+            ^
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Components/SkeletonView.swift:322:13: warning: initialization of immutable value 'rows' was never used; consider replacing with assignment to '_' or removing it
+        let rows = (count + columns - 1) / columns
+        ~~~~^~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/Views/ChatMessageCell.swift:357:19: warning: value 'message' was defined but never used; consider replacing with boolean test
+        guard let message = message else { return }
+              ~~~~^~~~~~~~~~
+                                    != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/MessageCells.swift:103:21: warning: 'contentEdgeInsets' was deprecated in iOS 15.0: This property is ignored when using UIButtonConfiguration
+        retryButton.contentEdgeInsets = UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12)
+                    ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ViewModels/ChatViewModel.swift:117:72: warning: non-sendable result type '[Message]' cannot be sent from nonisolated context in call to instance method 'loadMessages(for:)'; this is an error in the Swift 6 language mode
+            let localMessages = await MessagePersistenceService.shared.loadMessages(for: session.id)
+                                                                       ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ViewModels/ChatViewModel.swift:131:58: warning: non-sendable result type '[Message]' cannot be sent from actor-isolated context in call to instance method 'fetchSessionMessages(projectName:sessionId:limit:offset:)'; this is an error in the Swift 6 language mode
+                let remoteMessages = try await apiClient.fetchSessionMessages(
+                                                         ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/Components/CyberpunkLoadingIndicator.swift:203:51: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            return objc_getAssociatedObject(self, &AssociatedKeys.loadingIndicator) as? CyberpunkLoadingIndicator
+                                                  ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/Components/CyberpunkLoadingIndicator.swift:206:44: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            objc_setAssociatedObject(self, &AssociatedKeys.loadingIndicator, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/Components/ErrorAlertView.swift:264:55: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        let targetView = view ?? UIApplication.shared.windows.first { $0.isKeyWindow } ?? UIApplication.shared.windows.first
+                                                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/Components/ErrorAlertView.swift:264:112: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        let targetView = view ?? UIApplication.shared.windows.first { $0.isKeyWindow } ?? UIApplication.shared.windows.first
+                                                                                                               ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Git/GitViewModel.swift:163:44: warning: result of call to 'addFiles(projectPath:files:)' is unused
+                try await APIClient.shared.addFiles(
+                                           ^       ~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Git/GitViewModel.swift:183:44: warning: result of call to 'resetFiles(projectPath:files:)' is unused
+                try await APIClient.shared.resetFiles(
+                                           ^         ~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Git/GitViewModel.swift:208:44: warning: result of call to 'commitChanges(projectPath:message:)' is unused
+                try await APIClient.shared.commitChanges(
+                                           ^            ~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Git/GitViewModel.swift:237:44: warning: result of call to 'pullChanges(projectPath:)' is unused
+                try await APIClient.shared.pullChanges(projectPath: project.fullPath ?? project.path)
+                                           ^          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Git/GitViewModel.swift:262:44: warning: result of call to 'pushChanges(projectPath:)' is unused
+                try await APIClient.shared.pushChanges(projectPath: project.fullPath ?? project.path)
+                                           ^          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Git/GitViewModel.swift:287:44: warning: result of call to 'checkoutBranch(projectPath:branch:)' is unused
+                try await APIClient.shared.checkoutBranch(
+                                           ^             ~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/MCP/MCPServerListViewController.swift:108:25: warning: no 'async' operations occur within 'await' expression
+                        await viewModel.loadServers()
+                        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/MCP/MCPServerViewModel.swift:37:15: warning: 'catch' block is unreachable because no errors are thrown in 'do' block
+            } catch {
+              ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/SwiftUI/EmptyStateView.swift:332:10: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+        .onChange(of: isRefreshing) { refreshing in
+         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/SwiftUI/LoadingStateView.swift:245:10: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+        .onChange(of: progress) { newValue in
+         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/SwiftUI/LoadingStateView.swift:354:10: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+        .onChange(of: progress) { newValue in
+         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/SwiftUI/SessionListView.swift:57:55: warning: non-sendable result type '[Session]' cannot be sent from actor-isolated context in call to instance method 'fetchSessions(projectName:limit:offset:)'; this is an error in the Swift 6 language mode
+            let fetchedSessions = try await apiClient.fetchSessions(
+                                                      ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/SwiftUI/SessionListView.swift:97:50: warning: non-sendable result type 'Session' cannot be sent from actor-isolated context in call to instance method 'createSession(projectName:)'; this is an error in the Swift 6 language mode
+            let newSession = try await apiClient.createSession(projectName: project.name)
+                                                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Models/Session.swift:21:13: note: class 'Session' does not conform to the 'Sendable' protocol
+final class Session {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/SwiftUI/SessionListView.swift:249:18: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+                .onChange(of: viewModel.searchText) { _ in
+                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/SwiftUI/SwiftUIIntegration.swift:107:61: warning: non-sendable result type 'Session' cannot be sent from actor-isolated context in call to instance method 'createSession(projectName:)'; this is an error in the Swift 6 language mode
+                let newSession = try await APIClient.shared.createSession(projectName: project.name)
+                                                            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Models/Session.swift:21:13: note: class 'Session' does not conform to the 'Sendable' protocol
+final class Session {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/UI/SwiftUI/SwiftUIIntegration.swift:327:14: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+            .onChange(of: messages.count) { _ in
+             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:334:65: warning: non-sendable result type '[Project]' cannot be sent from actor-isolated context in call to instance method 'fetchProjects()'; this is an error in the Swift 6 language mode
+                let remoteProjects = try await APIClient.shared.fetchProjects()
+                                                                ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:446:65: warning: non-sendable result type '[Project]' cannot be sent from actor-isolated context in call to instance method 'fetchProjects()'; this is an error in the Swift 6 language mode
+                let remoteProjects = try await APIClient.shared.fetchProjects()
+                                                                ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:488:65: warning: non-sendable result type '[Project]' cannot be sent from actor-isolated context in call to instance method 'fetchProjects()'; this is an error in the Swift 6 language mode
+                let remoteProjects = try await APIClient.shared.fetchProjects()
+                                                                ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:587:58: warning: string interpolation produces a debug description for an optional value; did you mean to make this explicit?
+            message: "Are you sure you want to delete '\(project.displayName)'?",
+                                                         ^~~~~~~~~~~~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:587:66: note: use 'String(describing:)' to silence this warning
+            message: "Are you sure you want to delete '\(project.displayName)'?",
+                                                         ~~~~~~~~^~~~~~~~~~~
+                                                         String(describing: )
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:587:66: note: provide a default value to avoid this warning
+            message: "Are you sure you want to delete '\(project.displayName)'?",
+                                                         ~~~~~~~~^~~~~~~~~~~
+                                                                             ?? <#default value#>
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:721:58: warning: non-sendable result type 'Project' cannot be sent from actor-isolated context in call to instance method 'createProject(name:path:)'; this is an error in the Swift 6 language mode
+                let project = try await APIClient.shared.createProject(name: name, path: path)
+                                                         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:15:13: note: class 'Project' does not conform to the 'Sendable' protocol
+final class Project: Codable {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:810:72: warning: non-sendable result type 'Project' cannot be sent from actor-isolated context in call to instance method 'createProject(name:path:)'; this is an error in the Swift 6 language mode
+                    let duplicatedProject = try await APIClient.shared.createProject(
+                                                                       ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:15:13: note: class 'Project' does not conform to the 'Sendable' protocol
+final class Project: Codable {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:862:69: warning: non-sendable result type 'Project' cannot be sent from actor-isolated context in call to instance method 'renameProject(id:name:)'; this is an error in the Swift 6 language mode
+                    let renamedProject = try await APIClient.shared.renameProject(id: project.id, name: name)
+                                                                    ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:15:13: note: class 'Project' does not conform to the 'Sendable' protocol
+final class Project: Codable {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:899:41: warning: string interpolation produces a debug description for an optional value; did you mean to make this explicit?
+            message: "This will move '\(project.displayName)' to the archive.",
+                                        ^~~~~~~~~~~~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:899:49: note: use 'String(describing:)' to silence this warning
+            message: "This will move '\(project.displayName)' to the archive.",
+                                        ~~~~~~~~^~~~~~~~~~~
+                                        String(describing: )
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Projects/ProjectsViewController.swift:899:49: note: provide a default value to avoid this warning
+            message: "This will move '\(project.displayName)' to the archive.",
+                                        ~~~~~~~~^~~~~~~~~~~
+                                                            ?? <#default value#>
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Security/AppLockViewController.swift:178:17: warning: no 'async' operations occur within 'await' expression
+                await unlockApp()
+                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Security/AppLockViewController.swift:302:49: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        guard let window = UIApplication.shared.windows.first,
+                                                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Sessions/SessionListViewController.swift:305:59: warning: non-sendable result type '[Session]' cannot be sent from actor-isolated context in call to instance method 'fetchSessions(projectName:limit:offset:)'; this is an error in the Swift 6 language mode
+                let fetchedSessions = try await apiClient.fetchSessions(
+                                                          ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Sessions/SessionListViewController.swift:416:54: warning: non-sendable result type 'Session' cannot be sent from actor-isolated context in call to instance method 'createSession(projectName:)'; this is an error in the Swift 6 language mode
+                let newSession = try await apiClient.createSession(projectName: project.name)
+                                                     ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Models/Session.swift:21:13: note: class 'Session' does not conform to the 'Sendable' protocol
+final class Session {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Sessions/SessionTableViewCell.swift:202:9: warning: default will never be executed
+        default:
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Sessions/SessionsViewController.swift:180:52: warning: non-sendable result type '[Session]' cannot be sent from actor-isolated context in call to instance method 'fetchSessions(projectName:limit:offset:)'; this is an error in the Swift 6 language mode
+                let sessions = try await apiClient.fetchSessions(projectName: project.name, limit: 50, offset: 0)
+                                                   ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Sessions/SessionsViewController.swift:203:52: warning: non-sendable result type '[Session]' cannot be sent from actor-isolated context in call to instance method 'fetchSessions(projectName:limit:offset:)'; this is an error in the Swift 6 language mode
+                let sessions = try await apiClient.fetchSessions(projectName: project.name, limit: 50, offset: 0)
+                                                   ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Sessions/SessionsViewController.swift:234:54: warning: non-sendable result type 'Session' cannot be sent from actor-isolated context in call to instance method 'createSession(projectName:)'; this is an error in the Swift 6 language mode
+                let newSession = try await apiClient.createSession(projectName: project.name)
+                                                     ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Models/Session.swift:21:13: note: class 'Session' does not conform to the 'Sendable' protocol
+final class Session {
+            ^
+note: Using codesigning identity override: 

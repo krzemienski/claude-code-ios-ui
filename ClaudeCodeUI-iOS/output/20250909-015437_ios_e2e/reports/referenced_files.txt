@@ -1,0 +1,7 @@
+logs/build_pretty_sanitized.log
+logs/build_final_sanitized.log
+screenshots/01-current-state.png
+screenshots/02-app-launched.png
+phase3_test_result.xcresult
+logs/
+screenshots/
