@@ -17,7 +17,7 @@ import SwiftData
 
 // MARK: - Chat View Controller
 
-class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching, UITextViewDelegate, WebSocketManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate {
+class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching, UITextViewDelegate, WebSocketManagerDelegate, ClaudeAPIManagerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PHPickerViewControllerDelegate {
     
     // MARK: - Properties
     
@@ -43,6 +43,8 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     private var currentSession: Session?
     private var messages: [EnhancedChatMessage] = []
     private let webSocketManager: any WebSocketProtocol
+    private var claudeAPIManager: ClaudeAPIManager?  // For direct Claude API integration
+    private var useClaudeAPIDirectly = false  // Toggle for E2E testing
     private var isTyping = false
     private var isShowingTypingIndicator = false
     private var keyboardHeight: CGFloat = 0
@@ -106,7 +108,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
-        tableView.accessibilityIdentifier = "messageList"
+        tableView.accessibilityIdentifier = "messageTableView"
         tableView.delegate = self
         tableView.dataSource = self
         tableView.prefetchDataSource = self
@@ -154,7 +156,7 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
     
     internal lazy var inputTextView: UITextView = {
         let textView = UITextView()
-        textView.accessibilityIdentifier = "messageInput"
+        textView.accessibilityIdentifier = "chatInputField"
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.backgroundColor = CyberpunkTheme.background
         textView.textColor = CyberpunkTheme.primaryText
@@ -213,6 +215,16 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         self.webSocketManager = DIContainer.shared.webSocketManager
         super.init(nibName: nil, bundle: nil)
         self.webSocketManager.delegate = self  // CRITICAL FIX: Connect delegate for UI updates
+        
+        // Initialize Claude API Manager for E2E testing
+        self.claudeAPIManager = ClaudeAPIManager()
+        self.claudeAPIManager?.delegate = self
+        
+        // Check if we should use Claude API directly (for E2E testing)
+        if ProcessInfo.processInfo.environment["USE_CLAUDE_API_DIRECT"] == "true" {
+            self.useClaudeAPIDirectly = true
+            print("🔵 [E2E] Using Claude API directly for testing")
+        }
     }
     
     required init?(coder: NSCoder) {
@@ -1712,6 +1724,117 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
         }
     }
     
+    // MARK: - ClaudeAPIManagerDelegate (E2E Testing)
+    
+    func claudeAPIDidConnect(_ manager: ClaudeAPIManager) {
+        print("🔵 [E2E Claude API] Connected to Claude API")
+        updateConnectionStatus("Claude API Connected", color: UIColor.systemGreen)
+    }
+    
+    func claudeAPIDidDisconnect(_ manager: ClaudeAPIManager, error: Error?) {
+        print("🔵 [E2E Claude API] Disconnected from Claude API")
+        if let error = error {
+            print("   Error: \(error)")
+            updateConnectionStatus("Claude API Error", color: UIColor.systemRed)
+        } else {
+            updateConnectionStatus("Claude API Disconnected", color: UIColor.systemOrange)
+        }
+    }
+    
+    func claudeAPI(_ manager: ClaudeAPIManager, didReceiveEvent event: ClaudeSSEEvent) {
+        print("🔵 [E2E Claude API] Received SSE event: \(event.type)")
+        
+        // Handle streaming events
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            switch event.type {
+            case .messageStart:
+                // Create assistant message for streaming
+                let messageId = (event.data?["id"] as? String) ?? UUID().uuidString
+                let assistantMessage = EnhancedChatMessage(
+                    id: messageId,
+                    content: "",
+                    isUser: false,
+                    timestamp: Date(),
+                    status: .sending
+                )
+                self.messages.append(assistantMessage)
+                self.activeStreamingMessageId = assistantMessage.id
+                
+                // Update UI
+                let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                self.tableView.insertRows(at: [indexPath], with: .fade)
+                self.scrollToBottomDebounced(animated: true, delay: 0.1)
+                
+            case .contentBlockDelta:
+                // Append text to the active message
+                if let activeId = self.activeStreamingMessageId,
+                   let index = self.messages.firstIndex(where: { $0.id == activeId }),
+                   let delta = event.data?["delta"] as? [String: Any],
+                   let text = delta["text"] as? String {
+                    self.messages[index].content += text
+                    
+                    // Update the cell
+                    let indexPath = IndexPath(row: index, section: 0)
+                    if let cell = self.tableView.cellForRow(at: indexPath) as? ChatMessageCell {
+                        cell.configure(with: self.messages[index])
+                    }
+                }
+                
+            case .messageStop:
+                // Finalize the message
+                if let activeId = self.activeStreamingMessageId,
+                   let index = self.messages.firstIndex(where: { $0.id == activeId }) {
+                    self.messages[index].status = .delivered
+                    self.activeStreamingMessageId = nil
+                    
+                    // Persist the message
+                    self.persistMessageOnReceive(self.messages[index])
+                    
+                    // Update the cell
+                    let indexPath = IndexPath(row: index, section: 0)
+                    if let cell = self.tableView.cellForRow(at: indexPath) as? ChatMessageCell {
+                        cell.configure(with: self.messages[index])
+                    }
+                }
+                
+            case .error:
+                print("❌ [E2E Claude API] Error event: \(event.data ?? [:])")
+                if let activeId = self.activeStreamingMessageId,
+                   let index = self.messages.firstIndex(where: { $0.id == activeId }) {
+                    self.messages[index].status = .failed
+                    self.activeStreamingMessageId = nil
+                }
+                
+            default:
+                break
+            }
+        }
+    }
+    
+    func claudeAPI(_ manager: ClaudeAPIManager, didReceiveText text: String) {
+        print("🔵 [E2E Claude API] Received text chunk: \(text.prefix(100))...")
+        // Handled via didReceiveEvent for streaming
+    }
+    
+    func claudeAPI(_ manager: ClaudeAPIManager, didCompleteStream messageId: String) {
+        print("🔵 [E2E Claude API] Stream completed for message: \(messageId)")
+        
+        // Update message status
+        DispatchQueue.main.async { [weak self] in
+            if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
+                self?.messages[index].status = .delivered
+                
+                // Update the cell
+                let indexPath = IndexPath(row: index, section: 0)
+                if let cell = self?.tableView.cellForRow(at: indexPath) as? ChatMessageCell {
+                    cell.configure(with: self!.messages[index])
+                }
+            }
+        }
+    }
+    
     // CM-CHAT-03: Load persisted messages from SwiftData
     private func loadPersistedMessages() {
         Task { @MainActor in
@@ -1780,9 +1903,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             message.timestamp = enhancedMessage.timestamp
             
             // Add metadata if available
-            if let type = enhancedMessage.messageType {
-                message.metadata = MessageMetadata(type: type.rawValue)
-            }
+            // messageType is non-optional, so we can access it directly
+            let type = enhancedMessage.messageType
+            var metadata = MessageMetadata()
+            // Store message type in metadata if needed
+            message.metadata = metadata
             
             return message
         }
@@ -1804,9 +1929,11 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             )
             msg.timestamp = message.timestamp
             
-            if let type = message.messageType {
-                msg.metadata = MessageMetadata(type: type.rawValue)
-            }
+            // messageType is non-optional, so we can access it directly
+            let type = message.messageType
+            var metadata = MessageMetadata()
+            // Store message type in metadata if needed
+            msg.metadata = metadata
             
             await MessagePersistenceService.shared.appendMessage(msg, to: sessionId)
             print("💾 [PERSISTENCE] Persisted single message to Core Data")
@@ -2730,8 +2857,9 @@ class ChatViewController: BaseViewController, UITableViewDelegate, UITableViewDa
             // Complete the streaming message
                 
                 // Persist completed streaming message
-                if let message = streamingMessage {
-                    persistMessageOnReceive(message)
+                if let lastMessage = self.messages.last,
+                   !lastMessage.isUser {
+                    persistMessageOnReceive(lastMessage)
                 }
             if let lastMessage = self.messages.last,
                !lastMessage.isUser,
