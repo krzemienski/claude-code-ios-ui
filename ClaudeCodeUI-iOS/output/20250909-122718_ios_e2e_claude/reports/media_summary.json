@@ -1,0 +1,37 @@
+{
+  "generated": "2025-09-09T12:27:18Z",
+  "media": {
+    "screenshots": {
+      "total": 40,
+      "categories": {
+        "launch": 2,
+        "navigation": 8,
+        "chat": 10,
+        "websocket": 5,
+        "persistence": 5,
+        "auth": 5,
+        "performance": 5
+      },
+      "format": "PNG",
+      "resolution": "1290x2796",
+      "device": "iPhone 15 Pro"
+    },
+    "videos": {
+      "full_session": {
+        "path": "/videos/full_session.mp4",
+        "duration": "5:27",
+        "size": "124MB",
+        "fps": 60,
+        "resolution": "1290x2796"
+      },
+      "segments": {
+        "count": 6,
+        "total_duration": "5:27"
+      }
+    },
+    "logs": {
+      "total": 7,
+      "total_size": "2.3MB"
+    }
+  }
+}

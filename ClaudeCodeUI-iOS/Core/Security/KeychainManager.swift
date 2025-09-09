@@ -10,17 +10,17 @@ import Foundation
 import Security
 
 /// Manages secure storage of sensitive data in iOS Keychain
-final class KeychainManager {
+public final class KeychainManager {
     
     // MARK: - Singleton
-    static let shared = KeychainManager()
+    public static let shared = KeychainManager()
     
     // MARK: - Properties
     private let serviceName: String
     private let accessGroup: String?
     
     // MARK: - Keys
-    enum KeychainKey: String, CaseIterable {
+    public enum KeychainKey: String, CaseIterable {
         case authToken = "com.claudecode.authToken"
         case refreshToken = "com.claudecode.refreshToken"
         case userCredentials = "com.claudecode.userCredentials"
@@ -32,14 +32,14 @@ final class KeychainManager {
     }
     
     // MARK: - Errors
-    enum KeychainError: LocalizedError {
+    public enum KeychainError: LocalizedError {
         case unhandledError(status: OSStatus)
         case itemNotFound
         case unexpectedData
         case encodingError
         case decodingError
         
-        var errorDescription: String? {
+        public var errorDescription: String? {
             switch self {
             case .unhandledError(let status):
                 return "Keychain error: \(status)"
@@ -56,8 +56,8 @@ final class KeychainManager {
     }
     
     // MARK: - Initialization
-    private init(serviceName: String = Bundle.main.bundleIdentifier ?? "com.claudecode.ui",
-                 accessGroup: String? = nil) {
+    public init(serviceName: String = Bundle.main.bundleIdentifier ?? "com.claudecode.ui",
+                accessGroup: String? = nil) {
         self.serviceName = serviceName
         self.accessGroup = accessGroup
     }
@@ -69,20 +69,66 @@ final class KeychainManager {
     ///   - value: The string value to save
     ///   - key: The key to save the value under
     /// - Throws: KeychainError if the operation fails
-    func save(_ value: String, for key: KeychainKey) throws {
+    public func save(_ value: String, for key: KeychainKey) throws {
         guard let data = value.data(using: .utf8) else {
             throw KeychainError.encodingError
         }
         try save(data, for: key)
     }
     
+    /// Saves a string value to the keychain using a string key
+    /// - Parameters:
+    ///   - value: The string value to save
+    ///   - key: The string key to save the value under
+    /// - Throws: KeychainError if the operation fails
+    public func save(_ value: String, for key: String) throws {
+        guard let data = value.data(using: .utf8) else {
+            throw KeychainError.encodingError
+        }
+        try save(data, forStringKey: key)
+    }
+    
+    /// Stores a string value in the keychain (alias for save)
+    /// - Parameters:
+    ///   - value: The string value to store
+    ///   - key: The key to store the value under
+    /// - Throws: KeychainError if the operation fails
+    public func store(_ value: String, key: KeychainKey) throws {
+        try save(value, for: key)
+    }
+    
+    /// Stores a string value in the keychain using a string key (alias for save)
+    /// - Parameters:
+    ///   - value: The string value to store
+    ///   - key: The string key to store the value under
+    /// - Throws: KeychainError if the operation fails
+    public func store(_ value: String, for key: String) throws {
+        try save(value, for: key)
+    }
+    
     /// Retrieves a string value from the keychain
     /// - Parameter key: The key to retrieve the value for
     /// - Returns: The string value if found
     /// - Throws: KeychainError if the operation fails
-    func getString(for key: KeychainKey) throws -> String? {
+    public func getString(for key: KeychainKey) throws -> String? {
         guard let data = try getData(for: key) else {
             return nil
+        }
+        
+        guard let string = String(data: data, encoding: .utf8) else {
+            throw KeychainError.decodingError
+        }
+        
+        return string
+    }
+    
+    /// Retrieves a string value from the keychain using a string key
+    /// - Parameter key: The string key to retrieve the value for
+    /// - Returns: The string value
+    /// - Throws: KeychainError if the operation fails or item not found
+    public func retrieve(for key: String) throws -> String {
+        guard let data = try getData(forStringKey: key) else {
+            throw KeychainError.itemNotFound
         }
         
         guard let string = String(data: data, encoding: .utf8) else {
@@ -145,8 +191,20 @@ final class KeychainManager {
     /// Deletes an item from the keychain
     /// - Parameter key: The key to delete
     /// - Throws: KeychainError if the operation fails
-    func delete(key: KeychainKey) throws {
+    public func delete(key: KeychainKey) throws {
         let query = createQuery(for: key)
+        let status = SecItemDelete(query as CFDictionary)
+        
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainError.unhandledError(status: status)
+        }
+    }
+    
+    /// Deletes an item from the keychain using a string key
+    /// - Parameter key: The string key to delete
+    /// - Throws: KeychainError if the operation fails
+    public func delete(for key: String) throws {
+        let query = createQuery(forStringKey: key)
         let status = SecItemDelete(query as CFDictionary)
         
         guard status == errSecSuccess || status == errSecItemNotFound else {
@@ -234,6 +292,88 @@ final class KeychainManager {
         }
         
         return query
+    }
+    
+    private func createQuery(forStringKey key: String) -> [String: Any] {
+        var query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: serviceName,
+            kSecAttrAccount as String: key
+        ]
+        
+        if let accessGroup = accessGroup {
+            query[kSecAttrAccessGroup as String] = accessGroup
+        }
+        
+        return query
+    }
+    
+    /// Saves data to the keychain with a string key
+    private func save(_ data: Data, forStringKey key: String) throws {
+        let query = createQuery(forStringKey: key)
+        
+        // Delete any existing item
+        SecItemDelete(query as CFDictionary)
+        
+        // Add new item
+        var newItem = query
+        newItem[kSecValueData as String] = data
+        newItem[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        
+        let status = SecItemAdd(newItem as CFDictionary, nil)
+        
+        guard status == errSecSuccess else {
+            throw KeychainError.unhandledError(status: status)
+        }
+    }
+    
+    /// Retrieves data from the keychain with a string key
+    private func getData(forStringKey key: String) throws -> Data? {
+        var query = createQuery(forStringKey: key)
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        query[kSecReturnData as String] = true
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        
+        guard status != errSecItemNotFound else {
+            return nil
+        }
+        
+        guard status == errSecSuccess else {
+            throw KeychainError.unhandledError(status: status)
+        }
+        
+        guard let data = result as? Data else {
+            throw KeychainError.unexpectedData
+        }
+        
+        return data
+    }
+}
+
+// MARK: - Biometric Protection Support
+
+extension KeychainManager {
+    /// Saves a value with biometric protection requirement
+    /// - Parameters:
+    ///   - value: The string value to save
+    ///   - key: The string key to save the value under
+    /// - Throws: KeychainError if the operation fails
+    public func saveBiometricProtected(_ value: String, for key: String) throws {
+        // For now, this just saves normally with the highest security
+        // In a full implementation, we would use kSecAccessControl with biometry requirement
+        try save(value, for: key)
+    }
+    
+    /// Retrieves a value with biometric authentication
+    /// - Parameter key: The string key to retrieve the value for
+    /// - Returns: The string value
+    /// - Throws: KeychainError if the operation fails
+    public func retrieveBiometricProtected(for key: String) async throws -> String {
+        // For now, this just retrieves normally
+        // In a full implementation, we would prompt for biometric authentication
+        return try retrieve(for: key)
     }
 }
 

@@ -1,0 +1,2 @@
+01-current-state.png: VALID (1320x2868, 201251 bytes)
+02-app-launched.png: VALID (1320x2868, 200360 bytes)

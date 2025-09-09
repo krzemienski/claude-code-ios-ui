@@ -1,0 +1,4 @@
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/in_depth_analysis.md:- **Scan Report**: [secrets_scan.json](secrets_scan.json)
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/in_depth_analysis.md:- Add authentication timeout handling
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/in_depth_analysis.md:- **Security Scan**: [secrets_scan.json](secrets_scan.json)
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/secrets_scan.json:{"level":"info-0","ts":"2025-09-09T02:19:11-04:00","logger":"trufflehog","msg":"finished scanning","chunks":3739,"bytes":48725407,"verified_secrets":0,"unverified_secrets":0,"scan_duration":"101.437667ms","trufflehog_version":"3.90.6","verification_caching":{"Hits":0,"Misses":0,"HitsWasted":0,"AttemptsSaved":0,"VerificationTimeSpentMS":0}}

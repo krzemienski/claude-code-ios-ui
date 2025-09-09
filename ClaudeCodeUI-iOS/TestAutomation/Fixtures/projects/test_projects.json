@@ -1,0 +1,16 @@
+{
+    "projects": [
+        {
+            "id": "proj_001",
+            "name": "Test Project Alpha",
+            "description": "Automated test project 1",
+            "created": "2025-01-01T00:00:00Z"
+        },
+        {
+            "id": "proj_002",
+            "name": "Test Project Beta",
+            "description": "Automated test project 2",
+            "created": "2025-01-02T00:00:00Z"
+        }
+    ]
+}

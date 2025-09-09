@@ -763,6 +763,32 @@ final class WebSocketManager: NSObject, WebSocketProtocol {
         }
     }
     
+    // MARK: - Testing Support
+    
+    #if DEBUG
+    /// Simulate disconnection for testing purposes
+    func simulateDisconnection() {
+        connectionQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Cancel the current task to simulate disconnection
+            self.webSocketTask?.cancel(with: .goingAway, reason: nil)
+            self.connectionState = .disconnected
+            self.webSocketTask = nil
+            
+            // Notify delegate
+            DispatchQueue.main.async {
+                self.delegate?.webSocketDidDisconnect(self, error: nil)
+            }
+            
+            // Trigger reconnection if auto-reconnect is enabled
+            if self.enableAutoReconnect && !self.intentionalDisconnect {
+                self.attemptReconnection()
+            }
+        }
+    }
+    #endif
+    
     // MARK: - App Lifecycle
     
     private func setupNotifications() {

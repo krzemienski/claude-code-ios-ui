@@ -68,6 +68,7 @@ public class SessionListViewController: BaseViewController {
     // MARK: - UI Setup
     private func setupUI() {
         view.backgroundColor = UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1.0)
+        view.accessibilityIdentifier = "SessionsView"
         title = "Sessions"
         
         // Setup navigation items

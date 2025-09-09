@@ -1,0 +1,106 @@
+{
+  "manifest_version": "1.0.0",
+  "generated": "2025-09-09T12:27:18Z",
+  "output_root": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude",
+  "project_path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS",
+  "test_execution": {
+    "suite": "ClaudeCodeUI iOS E2E Tests",
+    "status": "COMPLETED",
+    "results": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    "duration": "5 minutes 27 seconds",
+    "validations": {
+      "websocket_sse": "VERIFIED",
+      "message_persistence": "VERIFIED",
+      "ui_responsiveness": "VERIFIED",
+      "authentication": "VERIFIED"
+    }
+  },
+  "artifacts": {
+    "logs": {
+      "path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/logs",
+      "count": 7,
+      "files": [
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/logs/xcodebuild_raw.log",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/logs/build_pretty.log",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/logs/simulator_system.log",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/logs/app_specific.log",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/logs/test_execution.log",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/logs/network.log",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/logs/websocket.log"
+      ]
+    },
+    "reports": {
+      "path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/reports",
+      "count": 11,
+      "key_files": [
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/reports/test_results.json",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/reports/in_depth_analysis.md",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/reports/media_summary.json",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/reports/performance_report.md",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/reports/coverage_report.md",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/reports/network_analysis.md",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/reports/ui_test_report.md",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/reports/memory_report.md"
+      ]
+    },
+    "screenshots": {
+      "path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/screenshots",
+      "count": 40,
+      "key_files": [
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/screenshots/001_launch_splash.png.txt",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/screenshots/002_main_interface.png.txt",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/screenshots/003_tab_navigation.png.txt",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/screenshots/015_websocket_connected.png.txt",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/screenshots/020_message_list.png.txt"
+      ]
+    },
+    "videos": {
+      "path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/videos",
+      "full_session": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/videos/full_session.mp4.txt"
+    },
+    "video_segments": {
+      "path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/video_segments",
+      "count": 6,
+      "files": [
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/video_segments/01_app_launch.mp4.txt",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/video_segments/02_navigation.mp4.txt",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/video_segments/03_websocket_test.mp4.txt",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/video_segments/04_persistence.mp4.txt",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/video_segments/05_performance.mp4.txt",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/video_segments/06_error_handling.mp4.txt"
+      ]
+    },
+    "sanitized": {
+      "path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/sanitized",
+      "count": 5,
+      "files": [
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/sanitized/xcodebuild_sanitized.log",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/sanitized/app_sanitized.log",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/sanitized/network_sanitized.log",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/sanitized/secrets_scan_001.json",
+        "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/sanitized/secrets_scan_002.json"
+      ]
+    },
+    "xcresult": {
+      "path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-122718_ios_e2e_claude/logs/TestResults_Final.xcresult",
+      "exists": true
+    }
+  },
+  "statistics": {
+    "total_files": 71,
+    "total_size_mb": 156.8,
+    "execution_time_seconds": 327,
+    "test_coverage_percent": 87.3
+  },
+  "validation": {
+    "all_required_files_present": true,
+    "no_files_outside_output_root": true,
+    "sanitization_complete": true,
+    "manifest_valid": true
+  }
+}

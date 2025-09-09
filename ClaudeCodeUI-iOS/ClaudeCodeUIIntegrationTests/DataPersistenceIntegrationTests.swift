@@ -31,6 +31,16 @@ final class DataPersistenceIntegrationTests: XCTestCase {
     private let testMessageContent = "Data persistence integration test message"
     private let performanceTestIterations = 100
     
+    // MARK: - Async Wrapper Methods for MasterTestRunner
+    
+    override func setUp() async throws {
+        try setUpWithError()
+    }
+    
+    override func tearDown() {
+        try? tearDownWithError()
+    }
+    
     override func setUpWithError() throws {
         super.setUp()
         testStartTime = Date()
@@ -722,8 +732,9 @@ final class DataPersistenceIntegrationTests: XCTestCase {
         try testContext.save()
         
         // Verify relationships
+        let projectId = project.id
         let sessionsForProject = try testContext.fetch(
-            FetchDescriptor<Session>(predicate: #Predicate { $0.projectId == project.id })
+            FetchDescriptor<Session>(predicate: #Predicate { $0.projectId == projectId })
         )
         XCTAssertEqual(sessionsForProject.count, 2, "Project should have 2 sessions")
         
@@ -1160,7 +1171,7 @@ final class DataPersistenceIntegrationTests: XCTestCase {
     
     private func getMemoryUsage() -> Double {
         // Get current memory usage in MB
-        let info = mach_task_basic_info()
+        var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
         
         let result: kern_return_t = withUnsafeMutablePointer(to: &info) {
@@ -1180,8 +1191,23 @@ final class DataPersistenceIntegrationTests: XCTestCase {
     }
     
     private func performMemoryCleanup() throws {
-        // Clean up objects to free memory
-        testContext.reset()
+        // Clean up objects to free memory - delete all objects
+        let allProjects = try testContext.fetch(FetchDescriptor<Project>())
+        for project in allProjects {
+            testContext.delete(project)
+        }
+        
+        let allSessions = try testContext.fetch(FetchDescriptor<Session>())
+        for session in allSessions {
+            testContext.delete(session)
+        }
+        
+        let allMessages = try testContext.fetch(FetchDescriptor<Message>())
+        for message in allMessages {
+            testContext.delete(message)
+        }
+        
+        try? testContext.save()
     }
     
     // MARK: - Cleanup
@@ -1293,7 +1319,7 @@ extension DataPersistenceIntegrationTests {
         }
     }
     
-    enum MessageStatus: String, CaseIterable {
+    enum MessageStatus: String, CaseIterable, Codable {
         case sending
         case sent
         case delivered

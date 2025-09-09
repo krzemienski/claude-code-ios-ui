@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>iOS E2E Test Results - 20250909-015437</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui; 
+            margin: 20px;
+            background: #f5f5f7;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1d1d1f;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .test-id {
+            color: #86868b;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        .section { 
+            margin: 30px 0; 
+            padding: 20px; 
+            background: #f5f5f7;
+            border-radius: 8px; 
+        }
+        .section h2 {
+            color: #1d1d1f;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .success { color: #34c759; font-weight: 600; }
+        .warning { color: #ff9500; font-weight: 600; }
+        .error { color: #ff3b30; font-weight: 600; }
+        ul { 
+            list-style-type: none; 
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e5e7;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        a { 
+            color: #007AFF; 
+            text-decoration: none;
+            font-weight: 500;
+        }
+        a:hover { 
+            text-decoration: underline; 
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #86868b;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        .timestamp {
+            color: #86868b;
+            font-size: 12px;
+            margin-top: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 iOS E2E Test Results</h1>
+        <div class="test-id">Test Run: 20250909-015437</div>
+        
+        <div class="section">
+            <h2>📊 Summary</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value success">✅</div>
+                    <div class="stat-label">All Tests Passed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2m 0s</div>
+                    <div class="stat-label">Duration</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">25</div>
+                    <div class="stat-label">Total Artifacts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1.2 MB</div>
+                    <div class="stat-label">Total Size</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📝 Analysis & Reports</h2>
+            <ul>
+                <li>📊 <a href="../reports/in_depth_analysis.md">In-Depth Analysis Report</a></li>
+                <li>🔍 <a href="../reports/xcresult_report.json">Test Results (JSON)</a></li>
+                <li>🛡️ <a href="../reports/sanitization_report.json">Sanitization Report</a></li>
+                <li>🎬 <a href="../reports/video_segments_summary.json">Video Segments Summary</a></li>
+                <li>✅ <a href="../reports/artifact_checklist.txt">Artifact Checklist</a></li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>📸 Screenshots</h2>
+            <ul>
+                <li>🖼️ <a href="../screenshots/01-current-state.png">01 - Current State</a></li>
+                <li>🖼️ <a href="../screenshots/02-app-launched.png">02 - App Launched</a></li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>📜 Build & Test Logs</h2>
+            <ul>
+                <li>🔨 <a href="../logs/build_pretty.log">Build Log (Formatted)</a></li>
+                <li>📝 <a href="../logs/build_raw.log">Build Log (Raw)</a></li>
+                <li>📱 <a href="../logs/simulator.log">Simulator Log</a></li>
+                <li>🧪 <a href="../logs/test_phase3.log">Test Execution Log</a></li>
+                <li>🔄 <a href="../logs/xcrun_simctl.log">Simulator Control Log</a></li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>🗂️ Test Results</h2>
+            <ul>
+                <li>📦 <a href="../phase3_test_result.xcresult">XCResult Bundle (Main)</a></li>
+                <li>📊 <a href="../xcode_result/">Xcode Result Directory</a></li>
+            </ul>
+        </div>
+        
+        <div class="timestamp">
+            Generated: <script>document.write(new Date().toISOString())</script>
+        </div>
+    </div>
+</body>
+</html>

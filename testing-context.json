@@ -1,7 +1,8 @@
 {
   "testingSession": {
-    "id": "test_session_20250118_comprehensive",
-    "startTime": "2025-01-18T19:33:00Z",
+    "id": "test_session_20250130_comprehensive",
+    "startTime": "2025-01-30T12:00:00Z",
+    "coordinator": "context-manager",
     "project": {
       "path": "/Users/nick/Documents/claude-code-ios-ui",
       "xcodeProject": "ClaudeCodeUI-iOS/ClaudeCodeUI.xcodeproj",
@@ -9,9 +10,9 @@
       "bundleId": "com.claudecode.ui"
     },
     "backend": {
-      "url": "http://localhost:3004",
-      "websocket": "ws://localhost:3004/ws",
-      "shellWebsocket": "ws://localhost:3004/shell",
+      "url": "http://192.168.0.43:3004",
+      "websocket": "ws://192.168.0.43:3004/ws",
+      "shellWebsocket": "ws://192.168.0.43:3004/shell",
       "status": "RUNNING",
       "pid": 83463,
       "lastHealthCheck": "2025-01-18T19:33:00Z",
@@ -376,6 +377,330 @@
         "endpoints": 8,
         "priority": "HIGH"
       }
+    }
+  },
+  "comprehensiveTestPlan": {
+    "version": "2.0",
+    "lastUpdated": "2025-01-30",
+    "totalSteps": 12,
+    "steps": [
+      {
+        "step": 1,
+        "name": "Environment Setup & Verification",
+        "description": "Verify backend server, simulator configuration, and build environment",
+        "agent": "qa-tester",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Verify backend server running on port 3004",
+          "Boot simulator A707456B-44DB-472F-9722-C88153CDFFA1",
+          "Check Tuist configuration",
+          "Verify Xcode project settings"
+        ]
+      },
+      {
+        "step": 2,
+        "name": "Build Verification & Compilation",
+        "description": "Clean build and resolve any compilation errors",
+        "agent": "ios-swift-developer",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Run tuist generate",
+          "Clean build folder",
+          "Build ClaudeCodeUI target",
+          "Resolve any compilation errors"
+        ]
+      },
+      {
+        "step": 3,
+        "name": "Unit Test Execution",
+        "description": "Run ClaudeCodeUITests target and validate results",
+        "agent": "qa-tester",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Execute unit test suite",
+          "Document test results",
+          "Identify failures",
+          "Create issue tickets for failures"
+        ]
+      },
+      {
+        "step": 4,
+        "name": "Integration Test Execution",
+        "description": "Run ClaudeCodeUIIntegrationTests target",
+        "agent": "qa-tester",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Execute integration tests",
+          "Test API endpoints",
+          "Verify WebSocket connections",
+          "Document integration issues"
+        ]
+      },
+      {
+        "step": 5,
+        "name": "UI Test Execution",
+        "description": "Run ClaudeCodeUIUITests target for UI validation",
+        "agent": "swiftui-expert",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Execute UI test suite",
+          "Capture screenshots",
+          "Test user flows",
+          "Validate UI components"
+        ]
+      },
+      {
+        "step": 6,
+        "name": "WebSocket Testing",
+        "description": "Test chat and terminal WebSocket connections",
+        "agent": "ios-swift-developer",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Test chat WebSocket connection",
+          "Verify message sending/receiving",
+          "Test terminal WebSocket",
+          "Validate auto-reconnection"
+        ]
+      },
+      {
+        "step": 7,
+        "name": "API Integration Testing",
+        "description": "Verify all backend API endpoints",
+        "agent": "ios-swift-developer",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Test authentication endpoints",
+          "Verify project CRUD operations",
+          "Test session management",
+          "Validate file operations"
+        ]
+      },
+      {
+        "step": 8,
+        "name": "Performance Testing",
+        "description": "Profile memory, launch time, frame rate",
+        "agent": "qa-tester",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Measure app launch time",
+          "Profile memory usage",
+          "Test frame rate",
+          "Identify performance bottlenecks"
+        ]
+      },
+      {
+        "step": 9,
+        "name": "UI/UX Validation",
+        "description": "Verify all UI components and interactions",
+        "agent": "swiftui-expert",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Validate tab navigation",
+          "Test pull-to-refresh",
+          "Verify swipe actions",
+          "Check loading indicators"
+        ]
+      },
+      {
+        "step": 10,
+        "name": "Security Testing",
+        "description": "Validate JWT handling, input validation",
+        "agent": "ios-swift-developer",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Test JWT token handling",
+          "Validate input sanitization",
+          "Check XSS prevention",
+          "Verify keychain usage"
+        ]
+      },
+      {
+        "step": 11,
+        "name": "Regression Testing",
+        "description": "Verify previously fixed issues remain resolved",
+        "agent": "qa-tester",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Test previously fixed bugs",
+          "Verify WebSocket stability",
+          "Check session persistence",
+          "Validate error recovery"
+        ]
+      },
+      {
+        "step": 12,
+        "name": "Final Report Generation",
+        "description": "Compile comprehensive test results report",
+        "agent": "context-manager",
+        "status": "NOT_STARTED",
+        "tasks": [
+          "Collect all test results",
+          "Generate issue summary",
+          "Calculate pass rates",
+          "Create final report"
+        ]
+      }
+    ]
+  },
+  "agentCoordination": {
+    "agents": {
+      "context-manager": {
+        "role": "Test Coordinator",
+        "responsibilities": [
+          "Maintain testing context across sessions",
+          "Track issue status and severity",
+          "Coordinate agent activities",
+          "Generate comprehensive reports",
+          "Manage test checkpoints"
+        ],
+        "currentFocus": "Testing context initialization"
+      },
+      "ios-swift-developer": {
+        "role": "Technical Implementation",
+        "responsibilities": [
+          "Fix compilation errors",
+          "Debug WebSocket issues",
+          "Implement API fixes",
+          "Security validation",
+          "Code optimization"
+        ],
+        "assignedSteps": [2, 6, 7, 10]
+      },
+      "swiftui-expert": {
+        "role": "UI/UX Specialist",
+        "responsibilities": [
+          "UI component testing",
+          "SwiftUI best practices",
+          "Performance optimization",
+          "Accessibility validation",
+          "Theme consistency"
+        ],
+        "assignedSteps": [5, 9]
+      },
+      "qa-tester": {
+        "role": "Quality Assurance",
+        "responsibilities": [
+          "Execute test suites",
+          "Performance profiling",
+          "Regression testing",
+          "Bug reproduction",
+          "Test automation"
+        ],
+        "assignedSteps": [1, 3, 4, 8, 11]
+      }
+    },
+    "communicationProtocol": {
+      "checkpoints": [
+        "After each test step completion",
+        "When critical issues discovered",
+        "At phase boundaries",
+        "During agent handoffs"
+      ],
+      "sharedResources": [
+        "testing-context.json",
+        "issue tracking system",
+        "test execution logs",
+        "performance metrics"
+      ]
+    }
+  },
+  "issueTrackingEnhanced": {
+    "severityLevels": {
+      "CRITICAL": {
+        "description": "App crashes, data loss, security vulnerabilities",
+        "sla": "Fix immediately",
+        "color": "red"
+      },
+      "HIGH": {
+        "description": "Major feature broken, significant performance issues",
+        "sla": "Fix within 24 hours",
+        "color": "orange"
+      },
+      "MEDIUM": {
+        "description": "Feature partially working, UI issues",
+        "sla": "Fix within 3 days",
+        "color": "yellow"
+      },
+      "LOW": {
+        "description": "Minor UI issues, enhancements",
+        "sla": "Fix when possible",
+        "color": "blue"
+      }
+    },
+    "currentIssues": {
+      "CRITICAL": [],
+      "HIGH": [],
+      "MEDIUM": [
+        {
+          "id": "ISSUE-001",
+          "title": "Tab Navigation Stickiness",
+          "component": "TabBarController",
+          "status": "OPEN",
+          "assignedTo": "swiftui-expert"
+        }
+      ],
+      "LOW": [
+        {
+          "id": "ISSUE-002",
+          "title": "MCP Tab Visibility",
+          "component": "TabBarController",
+          "status": "OPEN",
+          "assignedTo": "ios-swift-developer"
+        },
+        {
+          "id": "ISSUE-003",
+          "title": "Pull-to-Refresh Incomplete",
+          "component": "Multiple ViewControllers",
+          "status": "OPEN",
+          "assignedTo": "swiftui-expert"
+        },
+        {
+          "id": "ISSUE-004",
+          "title": "Swipe Actions Partial",
+          "component": "TableView cells",
+          "status": "OPEN",
+          "assignedTo": "swiftui-expert"
+        },
+        {
+          "id": "ISSUE-005",
+          "title": "Loading Indicators Enhancement",
+          "component": "UI Components",
+          "status": "OPEN",
+          "assignedTo": "swiftui-expert"
+        }
+      ]
+    }
+  },
+  "testCheckpoints": {
+    "phase1_environment": {
+      "status": "NOT_STARTED",
+      "timestamp": null,
+      "memoryKey": "checkpoint_phase1"
+    },
+    "phase2_build": {
+      "status": "NOT_STARTED",
+      "timestamp": null,
+      "memoryKey": "checkpoint_phase2"
+    },
+    "phase3_unit_tests": {
+      "status": "NOT_STARTED",
+      "timestamp": null,
+      "memoryKey": "checkpoint_phase3"
+    },
+    "phase4_integration": {
+      "status": "NOT_STARTED",
+      "timestamp": null,
+      "memoryKey": "checkpoint_phase4"
+    },
+    "phase5_ui_tests": {
+      "status": "NOT_STARTED",
+      "timestamp": null,
+      "memoryKey": "checkpoint_phase5"
+    },
+    "phase6_final": {
+      "status": "NOT_STARTED",
+      "timestamp": null,
+      "memoryKey": "checkpoint_phase6"
     }
   }
 }

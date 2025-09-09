@@ -160,7 +160,7 @@ private class CodeBlockParser {
                   let codeRange = Range(match.range(at: 2), in: text) else { return nil }
             
             let language = match.numberOfRanges > 1 ? 
-                          (try? NSString(string: text).substring(with: match.range(at: 1))) : nil
+                          NSString(string: text).substring(with: match.range(at: 1)) : nil
             
             return CodeBlock(
                 language: language,

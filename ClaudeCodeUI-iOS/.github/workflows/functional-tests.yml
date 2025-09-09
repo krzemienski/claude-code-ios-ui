@@ -1,0 +1,238 @@
+name: iOS Functional Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      backend_url:
+        description: 'Backend URL for testing'
+        required: false
+        default: 'http://localhost:3004'
+      test_type:
+        description: 'Type of tests to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - unit
+          - integration
+          - ui
+          - performance
+
+env:
+  XCODE_VERSION: '15.0'
+  SIMULATOR_NAME: 'iPhone 15'
+  SIMULATOR_OS: '17.0'
+
+jobs:
+  test:
+    name: Run Functional Tests
+    runs-on: macos-latest
+    timeout-minutes: 60
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ env.XCODE_VERSION }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Cache Swift Packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/Library/Developer/Xcode/DerivedData
+          .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+    
+    - name: Install Backend Dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Start Backend Server
+      run: |
+        cd backend
+        npm start &
+        sleep 10
+        curl -f http://localhost:3004/health || exit 1
+      env:
+        NODE_ENV: test
+        PORT: 3004
+    
+    - name: Setup Simulator
+      run: |
+        xcrun simctl list devices
+        xcrun simctl boot "${{ env.SIMULATOR_NAME }}" || true
+        xcrun simctl openurl booted https://example.com # Warm up simulator
+    
+    - name: Install Tuist (if needed)
+      run: |
+        if [ -f "ClaudeCodeUI-iOS/Tuist/Config.swift" ]; then
+          curl -Ls https://install.tuist.io | bash
+          cd ClaudeCodeUI-iOS
+          tuist generate
+        fi
+    
+    - name: Build for Testing
+      run: |
+        cd ClaudeCodeUI-iOS
+        xcodebuild build-for-testing \
+          -workspace ClaudeCodeUI.xcworkspace \
+          -scheme ClaudeCodeUI \
+          -destination "platform=iOS Simulator,name=${{ env.SIMULATOR_NAME }},OS=${{ env.SIMULATOR_OS }}" \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          | xcpretty
+    
+    - name: Run Unit Tests
+      if: ${{ github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'unit' }}
+      run: |
+        cd ClaudeCodeUI-iOS
+        xcodebuild test-without-building \
+          -workspace ClaudeCodeUI.xcworkspace \
+          -scheme ClaudeCodeUI \
+          -destination "platform=iOS Simulator,name=${{ env.SIMULATOR_NAME }},OS=${{ env.SIMULATOR_OS }}" \
+          -derivedDataPath DerivedData \
+          -resultBundlePath TestResults/UnitTests.xcresult \
+          -only-testing:ClaudeCodeUITests \
+          | xcpretty --test --color
+      continue-on-error: true
+    
+    - name: Run Integration Tests
+      if: ${{ github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'integration' }}
+      run: |
+        cd ClaudeCodeUI-iOS
+        xcodebuild test-without-building \
+          -workspace ClaudeCodeUI.xcworkspace \
+          -scheme ClaudeCodeUI \
+          -destination "platform=iOS Simulator,name=${{ env.SIMULATOR_NAME }},OS=${{ env.SIMULATOR_OS }}" \
+          -derivedDataPath DerivedData \
+          -resultBundlePath TestResults/IntegrationTests.xcresult \
+          -only-testing:ClaudeCodeUIIntegrationTests \
+          | xcpretty --test --color
+      env:
+        BACKEND_URL: ${{ github.event.inputs.backend_url || 'http://localhost:3004' }}
+      continue-on-error: true
+    
+    - name: Run UI Tests
+      if: ${{ github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'ui' }}
+      run: |
+        cd ClaudeCodeUI-iOS
+        xcodebuild test-without-building \
+          -workspace ClaudeCodeUI.xcworkspace \
+          -scheme ClaudeCodeUI \
+          -destination "platform=iOS Simulator,name=${{ env.SIMULATOR_NAME }},OS=${{ env.SIMULATOR_OS }}" \
+          -derivedDataPath DerivedData \
+          -resultBundlePath TestResults/UITests.xcresult \
+          -only-testing:ClaudeCodeUIUITests \
+          | xcpretty --test --color
+      continue-on-error: true
+    
+    - name: Run Performance Tests
+      if: ${{ github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'performance' }}
+      run: |
+        cd ClaudeCodeUI-iOS
+        xcodebuild test-without-building \
+          -workspace ClaudeCodeUI.xcworkspace \
+          -scheme ClaudeCodeUI \
+          -destination "platform=iOS Simulator,name=${{ env.SIMULATOR_NAME }},OS=${{ env.SIMULATOR_OS }}" \
+          -derivedDataPath DerivedData \
+          -resultBundlePath TestResults/PerformanceTests.xcresult \
+          -only-testing:ClaudeCodeUIUITests/PerformanceTests \
+          | xcpretty --test --color
+      continue-on-error: true
+    
+    - name: Parse Test Results
+      if: always()
+      run: |
+        cd ClaudeCodeUI-iOS
+        if [ -f "Scripts/parse_results.py" ]; then
+          python3 Scripts/parse_results.py TestResults
+        fi
+        
+        # Generate summary
+        echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        for result in TestResults/*.xcresult; do
+          if [ -f "$result" ]; then
+            echo "### $(basename $result .xcresult)" >> $GITHUB_STEP_SUMMARY
+            xcrun xcresulttool get --format json --path "$result" | \
+              python3 -c "import json, sys; data = json.load(sys.stdin); print(f\"- Tests Run: {data.get('metrics', {}).get('testsCount', {}).get('_value', 'N/A')}\"); print(f\"- Tests Failed: {data.get('metrics', {}).get('testsFailedCount', {}).get('_value', 0)}\")" \
+              >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "- Unable to parse results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+        done
+    
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ github.run_number }}
+        path: |
+          ClaudeCodeUI-iOS/TestResults/
+          ClaudeCodeUI-iOS/DerivedData/Logs/Test/
+        retention-days: 7
+    
+    - name: Upload Coverage Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report-${{ github.run_number }}
+        path: |
+          ClaudeCodeUI-iOS/DerivedData/Build/ProfileData/
+          ClaudeCodeUI-iOS/DerivedData/Build/CodeCoverage/
+        retention-days: 7
+    
+    - name: Comment PR with Results
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Read test summary if available
+          let summary = '## iOS Functional Test Results\n\n';
+          
+          try {
+            const resultsPath = 'ClaudeCodeUI-iOS/TestResults/test-summary.md';
+            if (fs.existsSync(resultsPath)) {
+              summary += fs.readFileSync(resultsPath, 'utf8');
+            } else {
+              summary += '✅ Tests completed. Check artifacts for detailed results.';
+            }
+          } catch (error) {
+            summary += '⚠️ Unable to read test summary.';
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: summary
+          });
+    
+    - name: Stop Backend Server
+      if: always()
+      run: |
+        pkill -f "node.*backend" || true

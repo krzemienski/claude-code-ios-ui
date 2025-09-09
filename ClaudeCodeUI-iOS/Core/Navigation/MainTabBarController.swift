@@ -202,6 +202,12 @@ public class MainTabBarController: UITabBarController {
         view.addSubview(offlineIndicator)
         offlineIndicator.translatesAutoresizingMaskIntoConstraints = false
         
+        // Check if tabBar is properly initialized during test bootstrap
+        guard tabBar.superview != nil else {
+            print("⚠️ Tab bar not yet added to view hierarchy for offline indicator setup")
+            return
+        }
+        
         NSLayoutConstraint.activate([
             offlineIndicator.bottomAnchor.constraint(equalTo: tabBar.topAnchor, constant: -10),
             offlineIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor)

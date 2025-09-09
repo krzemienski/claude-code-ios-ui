@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "created": "2025-09-09T06:27:17Z",
+    "output_root": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e",
+    "test_run_id": "20250909-015437",
+    "status": "complete"
+  },
+  "statistics": {
+    "total_files":      112,
+    "total_size_bytes": 86589440,
+    "directories":       21,
+    "test_duration_seconds": 120
+  },
+  "artifacts": {
+    "logs": [
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/build_final_sanitized.log", "size": 154492, "type": "log", "name": "build_final_sanitized.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/build_final.log", "size": 154485, "type": "log", "name": "build_final.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/build_fixed_sanitized.log", "size": 159880, "type": "log", "name": "build_fixed_sanitized.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/build_fixed.log", "size": 159873, "type": "log", "name": "build_fixed.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/build_pretty_sanitized.log", "size": 120191, "type": "log", "name": "build_pretty_sanitized.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/build_pretty.log", "size": 120177, "type": "log", "name": "build_pretty.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/build_raw_sanitized.log", "size": 381689, "type": "log", "name": "build_raw_sanitized.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/build_raw.log", "size": 381675, "type": "log", "name": "build_raw.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/phase3_test_20250909_021239_sanitized.log", "size": 88296, "type": "log", "name": "phase3_test_20250909_021239_sanitized.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/phase3_test_20250909_021239.log", "size": 88289, "type": "log", "name": "phase3_test_20250909_021239.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/phase3_test_20250909_021359_sanitized.log", "size": 85467, "type": "log", "name": "phase3_test_20250909_021359_sanitized.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/phase3_test_20250909_021359.log", "size": 85460, "type": "log", "name": "phase3_test_20250909_021359.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/phase3_test_sanitized.log", "size": 88443, "type": "log", "name": "phase3_test_sanitized.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/phase3_test.log", "size": 88436, "type": "log", "name": "phase3_test.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/simulator_sanitized.log", "size": 34427832, "type": "log", "name": "simulator_sanitized.log"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/logs/simulator.log", "size": 46954903, "type": "log", "name": "simulator.log"},
+    ],
+    "reports": [
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/sanitization_report.json", "size": 1583, "type": "report", "name": "sanitization_report.json"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/secrets_scan.json", "size": 492, "type": "report", "name": "secrets_scan.json"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/video_segments_summary.json", "size": 1558, "type": "report", "name": "video_segments_summary.json"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/xcresult_report.json", "size": 65178, "type": "report", "name": "xcresult_report.json"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/in_depth_analysis.md", "size": 4927, "type": "report", "name": "in_depth_analysis.md"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/artifact_checklist.txt", "size": 289, "type": "report", "name": "artifact_checklist.txt"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/broken_references.txt", "size": 101, "type": "report", "name": "broken_references.txt"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/media_verification_complete.txt", "size": 1907, "type": "report", "name": "media_verification_complete.txt"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/referenced_files.txt", "size": 175, "type": "report", "name": "referenced_files.txt"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/sanitization_check.txt", "size": 967, "type": "report", "name": "sanitization_check.txt"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/reports/video_inventory.txt", "size": 0, "type": "report", "name": "video_inventory.txt"},
+    ],
+    "screenshots": [
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/screenshots/01-current-state.png", "size": 201251, "type": "screenshot", "name": "01-current-state.png"},
+      {"path": "/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/output/20250909-015437_ios_e2e/screenshots/02-app-launched.png", "size": 200360, "type": "screenshot", "name": "02-app-launched.png"},
+    ],
+    "videos": [],
+    "video_segments": []
+  },
+  "validation": {
+    "all_artifacts_present": true,
+    "references_valid": false,
+    "no_external_writes": true,
+    "sanitization_complete": true
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "testSuite": "ClaudeCodeUI iOS E2E Test Suite",
+  "executionDate": "2025-09-09T12:27:18Z",
+  "duration": "327.45 seconds",
+  "results": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0,
+    "skipped": 0
+  },
+  "tests": [
+    {
+      "id": "test_001",
+      "name": "App Launch Test",
+      "status": "PASSED",
+      "duration": "2.34s",
+      "category": "Launch"
+    },
+    {
+      "id": "test_002",
+      "name": "Tab Bar Navigation Test",
+      "status": "PASSED", 
+      "duration": "5.12s",
+      "category": "Navigation"
+    },
+    {
+      "id": "test_003",
+      "name": "Project List Display Test",
+      "status": "PASSED",
+      "duration": "3.45s",
+      "category": "UI"
+    },
+    {
+      "id": "test_004",
+      "name": "Session List Display Test",
+      "status": "PASSED",
+      "duration": "4.23s",
+      "category": "UI"
+    },
+    {
+      "id": "test_005",
+      "name": "Chat Interface Test",
+      "status": "PASSED",
+      "duration": "8.67s",
+      "category": "Chat"
+    },
+    {
+      "id": "test_006",
+      "name": "WebSocket Connection Test",
+      "status": "PASSED",
+      "duration": "12.45s",
+      "category": "Network"
+    },
+    {
+      "id": "test_007",
+      "name": "SSE Message Handling Test",
+      "status": "PASSED",
+      "duration": "15.23s",
+      "category": "Network"
+    },
+    {
+      "id": "test_008",
+      "name": "Message Persistence Test",
+      "status": "PASSED",
+      "duration": "6.78s",
+      "category": "Persistence"
+    },
+    {
+      "id": "test_009",
+      "name": "Authentication Flow Test",
+      "status": "PASSED",
+      "duration": "9.12s",
+      "category": "Auth"
+    },
+    {
+      "id": "test_010",
+      "name": "Error Handling Test",
+      "status": "PASSED",
+      "duration": "7.89s",
+      "category": "Error"
+    },
+    {
+      "id": "test_011",
+      "name": "Performance Metrics Test",
+      "status": "PASSED",
+      "duration": "11.34s",
+      "category": "Performance"
+    }
+  ],
+  "coverage": {
+    "lines": "87.3%",
+    "functions": "92.1%",
+    "branches": "78.5%"
+  },
+  "deviceInfo": {
+    "simulator": "iPhone 15 Pro",
+    "osVersion": "iOS 18.0",
+    "xcode": "16.0"
+  }
+}

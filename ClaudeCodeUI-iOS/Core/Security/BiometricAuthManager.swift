@@ -172,3 +172,46 @@ public class BiometricAuthManager {
         context.invalidate()
     }
 }
+
+// MARK: - Test Support Extensions
+
+extension BiometricAuthManager {
+    /// Biometric type enumeration for testing
+    public enum BiometricType {
+        case none
+        case touchID
+        case faceID
+    }
+    
+    /// Check if biometric authentication is available (test-friendly version)
+    public func isBiometricAuthenticationAvailable() -> Bool {
+        return isBiometricAvailable
+    }
+    
+    /// Get the available biometric type
+    public func availableBiometricType() -> BiometricType {
+        switch context.biometryType {
+        case .none:
+            return .none
+        case .touchID:
+            return .touchID
+        case .faceID:
+            return .faceID
+        @unknown default:
+            return .none
+        }
+    }
+    
+    /// Authenticate user with a specific reason (test-friendly async version)
+    public func authenticateUser(reason: String) async throws -> Bool {
+        do {
+            try await authenticate(reason: reason)
+            return true
+        } catch {
+            // In testing environment, we might not have biometric available
+            // Return false instead of throwing for test compatibility
+            logger.info("Biometric authentication failed or unavailable: \(error)")
+            return false
+        }
+    }
+}

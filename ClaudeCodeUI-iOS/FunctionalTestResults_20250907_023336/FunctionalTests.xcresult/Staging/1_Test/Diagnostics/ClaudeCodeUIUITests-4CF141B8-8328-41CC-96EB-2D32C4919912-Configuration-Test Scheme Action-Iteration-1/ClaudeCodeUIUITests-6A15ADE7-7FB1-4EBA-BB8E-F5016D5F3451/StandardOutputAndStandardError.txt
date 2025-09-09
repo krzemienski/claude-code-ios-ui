@@ -1,0 +1,396 @@
+2025-09-07 02:34:01.908838-0400 ClaudeCodeUIUITests-Runner[35221:1413707] [UIKit App Config] `UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
+2025-09-07 02:34:01.910849-0400 ClaudeCodeUIUITests-Runner[35221:1413707] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2025-09-07 02:34:02.501.
+Test Suite 'ClaudeCodeUIUITests.xctest' started at 2025-09-07 02:34:02.502.
+Test Suite 'FunctionalFlowTests' started at 2025-09-07 02:34:02.502.
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testAccessibilityLabels]' started.
+    t =     0.00s Start Test at 2025-09-07 02:34:02.503
+    t =     0.12s Set Up
+    t =     0.12s     Open com.claudecode.ui
+    t =     0.12s         Launch com.claudecode.ui
+    t =     1.13s             Setting up automation session
+    t =     1.72s             Wait for com.claudecode.ui to idle
+    t =     3.05s     Wait for com.claudecode.ui to become Running Foreground
+    t =     3.05s Checking existence of `"Projects" Button`
+    t =     3.09s Find the "Projects" Button
+    t =     3.10s Get number of matches for: Descendants matching type Cell
+    t =     3.12s Find the Cell (First Match)
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:450: error: -[ClaudeCodeUIUITests.FunctionalFlowTests testAccessibilityLabels] : XCTAssertFalse failed - Project card should have accessibility label
+    t =     3.43s Tear Down
+    t =     3.50s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testAccessibilityLabels]'
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testAccessibilityLabels]' failed (3.730 seconds).
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testBackNavigation]' started.
+    t =     0.00s Start Test at 2025-09-07 02:34:06.232
+    t =     0.02s Set Up
+    t =     0.02s     Open com.claudecode.ui
+    t =     0.02s         Launch com.claudecode.ui
+    t =     0.02s             Terminate com.claudecode.ui:35245
+    t =     1.27s             Setting up automation session
+    t =     1.81s             Wait for com.claudecode.ui to idle
+    t =     3.02s     Wait for com.claudecode.ui to become Running Foreground
+🔙 Testing back navigation...
+    t =     3.02s Checking existence of `Button (First Match)`
+    t =     3.05s Tap Button (First Match)
+    t =     3.05s     Wait for com.claudecode.ui to idle
+    t =     3.05s     Find the Button (First Match)
+    t =     3.06s     Check for interrupting elements affecting "settings" Button
+    t =     3.08s     Synthesize event
+    t =     3.48s     Wait for com.claudecode.ui to idle
+    t =     3.84s Checking existence of `"SessionsView" Other`
+    t =     3.86s Checking existence of `Table (First Match)`
+    t =     3.94s Added attachment named '7_Back_To_Sessions'
+    t =     3.94s Checking existence of `Button (First Match)`
+    t =     3.96s Tap Button (First Match)
+    t =     3.96s     Wait for com.claudecode.ui to idle
+    t =     3.96s     Find the Button (First Match)
+    t =     3.98s     Check for interrupting elements affecting "settings" Button
+    t =     3.99s     Synthesize event
+    t =     4.00s         Scroll element to visible
+    t =     4.00s         Find the "settings" Button
+    t =     4.03s         Computed hit point {-1, -1} after scrolling to visible
+    t =     4.03s         Failed: Failed to scroll to visible (by AX action) Button, {{336.0, 113.8}, {42.6, 40.5}}, error: Error kAXErrorCannotComplete performing AXAction kAXScrollToVisibleAction on element AX element pid: 35298, elementOrHash.elementID: 4344846848.32
+    t =     5.03s     Retrying `Tap Button (First Match)` (attempt #2)
+    t =     5.03s         Wait for com.claudecode.ui to idle
+    t =     5.66s         Find the "settings" Button
+    t =     5.68s         Check for interrupting elements affecting "settings" Button
+    t =     5.69s         Synthesize event
+    t =     5.70s             Scroll element to visible
+    t =     5.70s             Find the "settings" Button
+    t =     5.73s             Computed hit point {-1, -1} after scrolling to visible
+    t =     5.73s             Failed: Failed to scroll to visible (by AX action) Button, {{336.0, 113.8}, {42.6, 40.5}}, error: Error kAXErrorCannotComplete performing AXAction kAXScrollToVisibleAction on element AX element pid: 35298, elementOrHash.elementID: 4344846848.32
+    t =     6.73s     Retrying `Tap Button (First Match)` (attempt #3)
+    t =     6.73s         Wait for com.claudecode.ui to idle
+    t =     6.74s         Find the "settings" Button
+    t =     6.76s         Check for interrupting elements affecting "settings" Button
+    t =     6.77s         Synthesize event
+    t =     6.78s             Scroll element to visible
+    t =     6.78s             Find the "settings" Button
+    t =     6.80s             Computed hit point {-1, -1} after scrolling to visible
+    t =     6.81s             Failed: Failed to scroll to visible (by AX action) Button, {{336.0, 113.8}, {42.6, 40.5}}, error: Error kAXErrorCannotComplete performing AXAction kAXScrollToVisibleAction on element AX element pid: 35298, elementOrHash.elementID: 4344846848.32
+    t =     6.81s Requesting snapshot of accessibility hierarchy for app with pid 35298
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:280: error: -[ClaudeCodeUIUITests.FunctionalFlowTests testBackNavigation] : Failed to failed to scroll to visible (by AX action) Button, {{336.0, 113.8}, {42.6, 40.5}}, error: Error kAXErrorCannotComplete performing AXAction kAXScrollToVisibleAction on element AX element pid: 35298, elementOrHash.elementID: 4344846848.32. (Underlying Error: Error kAXErrorCannotComplete performing AXAction kAXScrollToVisibleAction on element AX element pid: 35298, elementOrHash.elementID: 4344846848.32)
+    t =     6.83s Tear Down
+    t =     6.89s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testBackNavigation]'
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testBackNavigation]' failed (7.107 seconds).
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testCompleteUserFlow]' started.
+    t =     0.00s Start Test at 2025-09-07 02:34:13.339
+    t =     0.02s Set Up
+    t =     0.02s     Open com.claudecode.ui
+    t =     0.02s         Launch com.claudecode.ui
+    t =     0.02s             Terminate com.claudecode.ui:35298
+    t =     1.28s             Setting up automation session
+    t =     1.81s             Wait for com.claudecode.ui to idle
+    t =     3.02s     Wait for com.claudecode.ui to become Running Foreground
+    t =     3.02s Waiting 5.0s for TabBar (First Match) to exist
+    t =     4.06s     Checking `Expect predicate `existsNoRetry == 1` for object TabBar (First Match)`
+    t =     4.06s         Checking existence of `TabBar (First Match)`
+    t =     4.09s Checking existence of `"Projects" Button`
+    t =     4.10s Find the "Projects" Button
+    t =     4.18s Added attachment named '1_Initial_Launch'
+    t =     4.18s Waiting 5.0s for "ProjectsView" Other to exist
+    t =     5.21s     Checking `Expect predicate `existsNoRetry == 1` for object "ProjectsView" Other`
+    t =     5.21s         Checking existence of `"ProjectsView" Other`
+    t =     6.27s Get number of matches for: Descendants matching type Cell
+    t =     7.31s Get number of matches for: Descendants matching type Cell
+    t =     8.25s Get number of matches for: Descendants matching type Cell
+    t =     9.28s Get number of matches for: Descendants matching type Cell
+    t =    10.32s Get number of matches for: Descendants matching type Cell
+    t =    11.27s Get number of matches for: Descendants matching type Cell
+    t =    12.30s Get number of matches for: Descendants matching type Cell
+    t =    13.24s Get number of matches for: Descendants matching type Cell
+    t =    14.28s Get number of matches for: Descendants matching type Cell
+    t =    15.33s Get number of matches for: Descendants matching type Cell
+    t =    16.27s Get number of matches for: Descendants matching type Cell
+    t =    17.30s Get number of matches for: Descendants matching type Cell
+    t =    18.25s Get number of matches for: Descendants matching type Cell
+    t =    19.28s Get number of matches for: Descendants matching type Cell
+    t =    20.32s Get number of matches for: Descendants matching type Cell
+    t =    21.26s Get number of matches for: Descendants matching type Cell
+    t =    22.31s Get number of matches for: Descendants matching type Cell
+    t =    23.24s Get number of matches for: Descendants matching type Cell
+    t =    24.28s Get number of matches for: Descendants matching type Cell
+    t =    25.32s Get number of matches for: Descendants matching type Cell
+    t =    26.26s Get number of matches for: Descendants matching type Cell
+    t =    27.29s Get number of matches for: Descendants matching type Cell
+    t =    28.33s Get number of matches for: Descendants matching type Cell
+    t =    29.27s Get number of matches for: Descendants matching type Cell
+    t =    30.30s Get number of matches for: Descendants matching type Cell
+    t =    31.24s Get number of matches for: Descendants matching type Cell
+    t =    32.28s Get number of matches for: Descendants matching type Cell
+    t =    33.32s Get number of matches for: Descendants matching type Cell
+    t =    34.27s Get number of matches for: Descendants matching type Cell
+    t =    35.24s Get number of matches for: Descendants matching type Cell
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:79: error: -[ClaudeCodeUIUITests.FunctionalFlowTests testCompleteUserFlow] : Asynchronous wait failed: Exceeded timeout of 30 seconds, with unfulfilled expectations: "Expect predicate `count > 0` for object <XCUIElementQuery: 0x6000021042d0>".
+    t =    35.26s Tear Down
+    t =    35.32s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testCompleteUserFlow]'
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testCompleteUserFlow]' failed (35.569 seconds).
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testLaunchPerformance]' started.
+    t =     0.00s Start Test at 2025-09-07 02:34:48.909
+    t =     0.02s Set Up
+    t =     0.02s     Open com.claudecode.ui
+    t =     0.02s         Launch com.claudecode.ui
+    t =     0.02s             Terminate com.claudecode.ui:35557
+    t =     1.28s             Setting up automation session
+    t =     1.83s             Wait for com.claudecode.ui to idle
+    t =     3.04s     Wait for com.claudecode.ui to become Running Foreground
+    t =     3.04s Open com.claudecode.ui
+    t =     3.04s     Launch com.claudecode.ui
+    t =     3.04s         Terminate com.claudecode.ui:36377
+    t =     4.29s         Setting up automation session
+    t =     4.83s         Wait for com.claudecode.ui to idle
+    t =     6.10s Waiting 5.0s for "ProjectsView" Other to exist
+    t =     7.13s     Checking `Expect predicate `existsNoRetry == 1` for object "ProjectsView" Other`
+    t =     7.13s         Checking existence of `"ProjectsView" Other`
+    t =     8.05s Open com.claudecode.ui
+    t =     8.05s     Launch com.claudecode.ui
+    t =     8.05s         Terminate com.claudecode.ui:36506
+    t =     9.29s         Setting up automation session
+    t =     9.83s         Wait for com.claudecode.ui to idle
+    t =    11.04s Waiting 5.0s for "ProjectsView" Other to exist
+    t =    12.07s     Checking `Expect predicate `existsNoRetry == 1` for object "ProjectsView" Other`
+    t =    12.07s         Checking existence of `"ProjectsView" Other`
+    t =    12.67s Open com.claudecode.ui
+    t =    12.67s     Launch com.claudecode.ui
+    t =    12.67s         Terminate com.claudecode.ui:36666
+    t =    13.91s         Setting up automation session
+    t =    14.45s         Wait for com.claudecode.ui to idle
+    t =    15.66s Waiting 5.0s for "ProjectsView" Other to exist
+    t =    16.69s     Checking `Expect predicate `existsNoRetry == 1` for object "ProjectsView" Other`
+    t =    16.69s         Checking existence of `"ProjectsView" Other`
+    t =    17.29s Open com.claudecode.ui
+    t =    17.29s     Launch com.claudecode.ui
+    t =    17.29s         Terminate com.claudecode.ui:36767
+    t =    18.54s         Setting up automation session
+    t =    19.08s         Wait for com.claudecode.ui to idle
+    t =    20.30s Waiting 5.0s for "ProjectsView" Other to exist
+    t =    21.32s     Checking `Expect predicate `existsNoRetry == 1` for object "ProjectsView" Other`
+    t =    21.32s         Checking existence of `"ProjectsView" Other`
+    t =    22.22s Open com.claudecode.ui
+    t =    22.22s     Launch com.claudecode.ui
+    t =    22.22s         Terminate com.claudecode.ui:36879
+    t =    23.48s         Setting up automation session
+    t =    24.01s         Wait for com.claudecode.ui to idle
+    t =    25.22s Waiting 5.0s for "ProjectsView" Other to exist
+    t =    26.24s     Checking `Expect predicate `existsNoRetry == 1` for object "ProjectsView" Other`
+    t =    26.24s         Checking existence of `"ProjectsView" Other`
+    t =    26.90s Open com.claudecode.ui
+    t =    26.90s     Launch com.claudecode.ui
+    t =    26.90s         Terminate com.claudecode.ui:36999
+    t =    28.16s         Setting up automation session
+    t =    28.72s         Wait for com.claudecode.ui to idle
+    t =    29.94s Waiting 5.0s for "ProjectsView" Other to exist
+    t =    30.96s     Checking `Expect predicate `existsNoRetry == 1` for object "ProjectsView" Other`
+    t =    30.96s         Checking existence of `"ProjectsView" Other`
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:377: Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testLaunchPerformance]' measured [Duration (AppLaunch), s] average: 0.759, relative standard deviation: 1.253%, values: [0.754078, 0.752760, 0.755286, 0.753296, 0.777530], performanceMetricID:com.apple.dt.XCTMetric_ApplicationLaunch-AppLaunch.duration, baselineName: "", baselineAverage: , polarity: prefers smaller, maxPercentRegression: 10.000%, maxPercentRelativeStandardDeviation: 10.000%, maxRegression: 0.000, maxStandardDeviation: 0.000
+    t =    31.63s Tear Down
+    t =    31.70s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testLaunchPerformance]'
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testLaunchPerformance]' passed (32.034 seconds).
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testMessageScrolling]' started.
+    t =     0.00s Start Test at 2025-09-07 02:35:20.943
+    t =     0.01s Set Up
+    t =     0.01s     Open com.claudecode.ui
+    t =     0.01s         Launch com.claudecode.ui
+    t =     0.01s             Terminate com.claudecode.ui:37111
+    t =     1.27s             Setting up automation session
+    t =     1.82s             Wait for com.claudecode.ui to idle
+    t =     3.04s     Wait for com.claudecode.ui to become Running Foreground
+📜 Testing scrolling performance...
+    t =     3.04s Checking existence of `CollectionView (First Match)`
+    t =     3.07s Swipe up CollectionView (First Match)
+    t =     3.07s     Wait for com.claudecode.ui to idle
+    t =     3.07s     Find the CollectionView (First Match)
+    t =     3.09s     Check for interrupting elements affecting "projectsCollectionView" CollectionView
+    t =     3.11s     Synthesize event
+    t =     3.50s     Wait for com.claudecode.ui to idle
+    t =     3.71s Swipe up "projectsCollectionView" CollectionView
+    t =     3.71s     Wait for com.claudecode.ui to idle
+    t =     3.71s     Find the "projectsCollectionView" CollectionView
+    t =     3.73s     Check for interrupting elements affecting "projectsCollectionView" CollectionView
+    t =     3.74s     Synthesize event
+    t =     4.14s     Wait for com.claudecode.ui to idle
+    t =     4.42s Added attachment named 'Scroll_Test_2'
+    t =     4.42s Swipe up "projectsCollectionView" CollectionView
+    t =     4.42s     Wait for com.claudecode.ui to idle
+    t =     4.42s     Find the "projectsCollectionView" CollectionView
+    t =     4.44s     Check for interrupting elements affecting "projectsCollectionView" CollectionView
+    t =     4.46s     Synthesize event
+    t =     4.85s     Wait for com.claudecode.ui to idle
+    t =     5.06s Swipe up "projectsCollectionView" CollectionView
+    t =     5.06s     Wait for com.claudecode.ui to idle
+    t =     5.67s     Find the "projectsCollectionView" CollectionView
+    t =     6.69s         Find the "projectsCollectionView" CollectionView (retry 1)
+    t =     7.71s         Find the "projectsCollectionView" CollectionView (retry 2)
+    t =     7.73s Requesting snapshot of accessibility hierarchy for app with pid 37301
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:225: error: -[ClaudeCodeUIUITests.FunctionalFlowTests testMessageScrolling] : Failed to swipe up "projectsCollectionView" CollectionView: No matches found for first query match sequence: `Descendants matching type CollectionView`, given input App element pid: 37301
+    t =     7.75s Tear Down
+    t =     7.82s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testMessageScrolling]'
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testMessageScrolling]' failed (8.032 seconds).
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testNavigationSpeed]' started.
+    t =     0.00s Start Test at 2025-09-07 02:35:28.974
+    t =     0.01s Set Up
+    t =     0.02s     Open com.claudecode.ui
+    t =     0.02s         Launch com.claudecode.ui
+    t =     0.02s             Terminate com.claudecode.ui:37301
+    t =     1.26s             Setting up automation session
+    t =     1.81s             Wait for com.claudecode.ui to idle
+    t =     3.03s     Wait for com.claudecode.ui to become Running Foreground
+    t =     3.28s Get number of matches for: Descendants matching type Cell
+    t =     3.31s Tap Cell (First Match)
+    t =     3.32s     Wait for com.claudecode.ui to idle
+    t =     3.32s     Find the Cell (First Match)
+    t =     3.34s     Check for interrupting elements affecting Cell
+    t =     3.35s     Synthesize event
+    t =     3.36s         Scroll element to visible
+    t =     3.36s         Find the Cell at {{16.0, 168.3}, {177.0, 100.0}}
+    t =     3.39s         Computed hit point {-1, -1} after scrolling to visible
+    t =     3.39s         Failed: Not hittable: Cell, {{16.0, 168.3}, {177.0, 100.0}}
+    t =     4.39s     Retrying `Tap Cell (First Match)` (attempt #2)
+    t =     4.39s         Wait for com.claudecode.ui to idle
+    t =     4.40s         Find the Cell at {{16.0, 168.3}, {177.0, 100.0}}
+    t =     4.42s         Check for interrupting elements affecting Cell
+    t =     4.44s         Synthesize event
+    t =     4.45s             Scroll element to visible
+    t =     4.45s             Find the Cell at {{16.0, 168.3}, {177.0, 100.0}}
+    t =     4.48s             Computed hit point {-1, -1} after scrolling to visible
+    t =     4.48s             Failed: Not hittable: Cell, {{16.0, 168.3}, {177.0, 100.0}}
+    t =     5.49s     Retrying `Tap Cell (First Match)` (attempt #3)
+    t =     5.49s         Wait for com.claudecode.ui to idle
+    t =     5.68s         Find the Cell at {{16.0, 168.3}, {177.0, 100.0}}
+    t =     6.71s             Find the Cell at {{16.0, 168.3}, {177.0, 100.0}} (retry 1)
+    t =     7.73s             Find the Cell at {{16.0, 168.3}, {177.0, 100.0}} (retry 2)
+    t =     7.75s Requesting snapshot of accessibility hierarchy for app with pid 37485
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:392: error: -[ClaudeCodeUIUITests.FunctionalFlowTests testNavigationSpeed] : Failed to no matches found for first query match sequence: `Descendants matching type CollectionView` -> `Descendants matching type Cell`, given input App element pid: 37485
+    t =     7.77s Tear Down
+    t =     7.83s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testNavigationSpeed]'
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testNavigationSpeed]' failed (8.059 seconds).
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testScrollingFrameRate]' started.
+    t =     0.00s Start Test at 2025-09-07 02:35:37.034
+    t =     0.01s Set Up
+    t =     0.02s     Open com.claudecode.ui
+    t =     0.02s         Launch com.claudecode.ui
+    t =     0.02s             Terminate com.claudecode.ui:37485
+    t =     1.28s             Setting up automation session
+    t =     1.82s             Wait for com.claudecode.ui to idle
+    t =     3.03s     Wait for com.claudecode.ui to become Running Foreground
+    t =     3.03s Get number of matches for: Descendants matching type Cell
+    t =     3.07s Tap Cell (First Match)
+    t =     3.07s     Wait for com.claudecode.ui to idle
+    t =     3.07s     Find the Cell (First Match)
+    t =     3.09s     Check for interrupting elements affecting Cell
+    t =     3.10s     Synthesize event
+    t =     3.11s         Scroll element to visible
+    t =     3.11s         Find the Cell at {{16.0, 168.3}, {177.0, 100.0}}
+    t =     3.14s         Computed hit point {-1, -1} after scrolling to visible
+    t =     3.14s         Failed: Not hittable: Cell, {{16.0, 168.3}, {177.0, 100.0}}
+    t =     4.14s     Retrying `Tap Cell (First Match)` (attempt #2)
+    t =     4.14s         Wait for com.claudecode.ui to idle
+    t =     4.15s         Find the Cell at {{16.0, 168.3}, {177.0, 100.0}}
+    t =     4.17s         Check for interrupting elements affecting Cell
+    t =     4.18s         Synthesize event
+    t =     4.19s             Scroll element to visible
+    t =     4.19s             Find the Cell at {{16.0, 168.3}, {177.0, 100.0}}
+    t =     4.21s             Computed hit point {-1, -1} after scrolling to visible
+    t =     4.21s             Failed: Not hittable: Cell, {{16.0, 168.3}, {177.0, 100.0}}
+    t =     5.22s     Retrying `Tap Cell (First Match)` (attempt #3)
+    t =     5.22s         Wait for com.claudecode.ui to idle
+    t =     5.71s         Find the Cell at {{16.0, 168.3}, {177.0, 100.0}}
+    t =     6.73s             Find the Cell at {{16.0, 168.3}, {177.0, 100.0}} (retry 1)
+    t =     7.76s             Find the Cell at {{16.0, 168.3}, {177.0, 100.0}} (retry 2)
+    t =     7.78s Requesting snapshot of accessibility hierarchy for app with pid 38174
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:413: error: -[ClaudeCodeUIUITests.FunctionalFlowTests testScrollingFrameRate] : Failed to no matches found for first query match sequence: `Descendants matching type CollectionView` -> `Descendants matching type Cell`, given input App element pid: 38174
+    t =     7.79s Tear Down
+    t =     7.86s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testScrollingFrameRate]'
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testScrollingFrameRate]' failed (8.074 seconds).
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testSendMessage]' started.
+    t =     0.00s Start Test at 2025-09-07 02:35:45.110
+    t =     0.02s Set Up
+    t =     0.02s     Open com.claudecode.ui
+    t =     0.02s         Launch com.claudecode.ui
+    t =     0.02s             Terminate com.claudecode.ui:38174
+    t =     1.27s             Setting up automation session
+    t =     1.81s             Wait for com.claudecode.ui to idle
+    t =     3.02s     Wait for com.claudecode.ui to become Running Foreground
+📝 Testing message sending...
+    t =     3.02s Checking existence of `"chatInputTextView" TextView`
+    t =     3.06s Waiting 5.0s for TextView (First Match) to exist
+    t =     4.08s     Checking `Expect predicate `existsNoRetry == 1` for object TextView (First Match)`
+    t =     4.08s         Checking existence of `TextView (First Match)`
+    t =     4.12s         Capturing element debug description
+    t =     5.16s     Checking `Expect predicate `existsNoRetry == 1` for object TextView (First Match)`
+    t =     5.16s         Checking existence of `TextView (First Match)`
+    t =     5.17s         Capturing element debug description
+    t =     6.09s     Checking `Expect predicate `existsNoRetry == 1` for object TextView (First Match)`
+    t =     6.09s         Checking existence of `TextView (First Match)`
+    t =     6.11s         Capturing element debug description
+    t =     7.14s     Checking `Expect predicate `existsNoRetry == 1` for object TextView (First Match)`
+    t =     7.14s         Checking existence of `TextView (First Match)`
+    t =     7.16s         Capturing element debug description
+    t =     8.06s     Checking `Expect predicate `existsNoRetry == 1` for object TextView (First Match)`
+    t =     8.06s         Checking existence of `TextView (First Match)`
+    t =     8.08s         Capturing element debug description
+    t =     8.08s     Checking existence of `TextView (First Match)`
+    t =     8.10s Collecting debug information to assist test failure triage
+    t =     8.10s     Requesting snapshot of accessibility hierarchy for app with pid 38451
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:163: error: -[ClaudeCodeUIUITests.FunctionalFlowTests testSendMessage] : XCTAssertTrue failed - Chat input should exist
+    t =     8.11s Tear Down
+    t =     8.17s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testSendMessage]'
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testSendMessage]' failed (8.401 seconds).
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testTabBarNavigation]' started.
+    t =     0.00s Start Test at 2025-09-07 02:35:53.511
+    t =     0.02s Set Up
+    t =     0.02s     Open com.claudecode.ui
+    t =     0.02s         Launch com.claudecode.ui
+    t =     0.02s             Terminate com.claudecode.ui:38451
+    t =     1.27s             Setting up automation session
+    t =     1.81s             Wait for com.claudecode.ui to idle
+    t =     3.01s     Wait for com.claudecode.ui to become Running Foreground
+📱 Testing tab bar navigation...
+    t =     3.01s Checking existence of `TabBar (First Match)`
+    t =     3.03s Checking existence of `"Projects" Button`
+    t =     3.05s Tap "Projects" Button
+    t =     3.05s     Wait for com.claudecode.ui to idle
+    t =     3.05s     Find the "Projects" Button
+    t =     3.06s     Check for interrupting elements affecting "Projects" Button
+    t =     3.08s     Synthesize event
+    t =     3.36s     Wait for com.claudecode.ui to idle
+    t =     3.97s Find the "Projects" Button
+    t =     4.06s Added attachment named 'Tab_Projects'
+✅ Projects tab navigation successful
+    t =     4.06s Checking existence of `"Terminal" Button`
+    t =     4.07s Tap "Terminal" Button
+    t =     4.07s     Wait for com.claudecode.ui to idle
+    t =     4.07s     Find the "Terminal" Button
+    t =     4.08s     Check for interrupting elements affecting "Terminal" Button
+    t =     4.10s     Synthesize event
+    t =     4.38s     Wait for com.claudecode.ui to idle
+    t =    12.23s Unable to monitor animations
+    t =    12.73s Find the "Terminal" Button
+    t =    13.74s     Find the "Terminal" Button (retry 1)
+    t =    14.97s     Find the "Terminal" Button (retry 2)
+    t =    14.97s     Collecting debug information to assist test failure triage
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:313: error: -[ClaudeCodeUIUITests.FunctionalFlowTests testTabBarNavigation] : Failed to get matching snapshot: Lost connection to the application (pid 38582). (Underlying Error: Couldn’t communicate with a helper application. Try your operation again. If that fails, quit and relaunch the application and try again. The connection to service created from an endpoint was invalidated: failed to check-in, peer may have been unloaded: mach_error=10000003.)
+    t =    14.98s Tear Down
+    t =    15.10s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testTabBarNavigation]'
+    t =    15.14s     Checking for crash reports corresponding to unexpected termination of com.claudecode.ui
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testTabBarNavigation]' failed (35.148 seconds).
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testVoiceOverNavigation]' started.
+    t =     0.00s Start Test at 2025-09-07 02:36:28.660
+    t =     0.02s Set Up
+    t =     0.02s         Open com.claudecode.ui
+    t =     0.02s             Launch com.claudecode.ui
+    t =     0.25s                 Setting up automation session
+    t =     0.79s                 Wait for com.claudecode.ui to idle
+    t =     2.00s         Wait for com.claudecode.ui to become Running Foreground
+    t =     2.00s     Get number of matches for: Descendants matching type Cell
+    t =     2.04s     Find the Cell (First Match)
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/ClaudeCodeUIUITests/FunctionalFlowTests.swift:463: error: -[ClaudeCodeUIUITests.FunctionalFlowTests testVoiceOverNavigation] : XCTAssertTrue failed - Project card should be hittable
+    t =     2.09s Tear Down
+    t =     2.17s     Added attachment named 'Test_Completion_-[FunctionalFlowTests testVoiceOverNavigation]'
+Test Case '-[ClaudeCodeUIUITests.FunctionalFlowTests testVoiceOverNavigation]' failed (2.385 seconds).
+Test Suite 'FunctionalFlowTests' failed at 2025-09-07 02:36:31.045.
+	 Executed 10 tests, with 9 failures (0 unexpected) in 148.540 (148.544) seconds
+Test Suite 'ClaudeCodeUIUITests.xctest' failed at 2025-09-07 02:36:31.046.
+	 Executed 10 tests, with 9 failures (0 unexpected) in 148.540 (148.544) seconds
+Test Suite 'Selected tests' failed at 2025-09-07 02:36:31.046.
+	 Executed 10 tests, with 9 failures (0 unexpected) in 148.540 (148.545) seconds

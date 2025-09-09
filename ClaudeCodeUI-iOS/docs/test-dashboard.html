@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClaudeCode iOS Test Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        
+        .dashboard {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+            border-color: #6366f1;
+        }
+        
+        .metric-label {
+            color: #94a3b8;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        
+        .metric-value {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .metric-change {
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .success { color: #10b981; }
+        .danger { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+        
+        .trend-up { color: #10b981; }
+        .trend-down { color: #ef4444; }
+        .trend-stable { color: #94a3b8; }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 25px;
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #f1f5f9;
+        }
+        
+        .test-results {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .test-table th {
+            background: #0f172a;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #94a3b8;
+            border-bottom: 2px solid #334155;
+        }
+        
+        .test-table td {
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .test-table tr:hover {
+            background: #334155;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .status-badge.passed {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+        
+        .status-badge.failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+        
+        .status-badge.running {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+        
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10b981;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #10b981;
+        }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .timeline {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            padding: 15px 0;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+        
+        .timeline-time {
+            color: #64748b;
+            min-width: 100px;
+            font-size: 0.9em;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .timeline-description {
+            color: #94a3b8;
+            font-size: 0.9em;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+            font-size: 0.9em;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>📊 ClaudeCode iOS Test Dashboard</h1>
+            <div class="subtitle">
+                Real-time test monitoring and analytics
+                <span class="live-indicator">
+                    <span class="live-dot"></span>
+                    Live
+                </span>
+            </div>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Total Tests</div>
+                <div class="metric-value info" id="totalTests">1,247</div>
+                <div class="metric-change trend-up">
+                    ↑ 12% from last run
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Pass Rate</div>
+                <div class="metric-value success" id="passRate">94.3%</div>
+                <div class="metric-change trend-up">
+                    ↑ 2.1% improvement
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Failed Tests</div>
+                <div class="metric-value danger" id="failedTests">71</div>
+                <div class="metric-change trend-down">
+                    ↓ 15 fewer failures
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Test Duration</div>
+                <div class="metric-value warning" id="duration">12m 34s</div>
+                <div class="metric-change trend-stable">
+                    → Similar to average
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Code Coverage</div>
+                <div class="metric-value success" id="coverage">86.5%</div>
+                <div class="metric-change trend-up">
+                    ↑ 3.2% increase
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Performance Score</div>
+                <div class="metric-value info" id="performance">92/100</div>
+                <div class="metric-change trend-stable">
+                    → Meets baseline
+                </div>
+            </div>
+        </div>
+        
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3 class="chart-title">Test Execution Trend</h3>
+                <canvas id="trendChart"></canvas>
+            </div>
+            
+            <div class="chart-card">
+                <h3 class="chart-title">Test Distribution</h3>
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="test-results">
+            <h3 class="chart-title">Recent Test Runs</h3>
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>Test Suite</th>
+                        <th>Status</th>
+                        <th>Tests</th>
+                        <th>Pass Rate</th>
+                        <th>Duration</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="testResults">
+                    <tr>
+                        <td>Unit Tests</td>
+                        <td><span class="status-badge passed">PASSED</span></td>
+                        <td>523</td>
+                        <td class="success">100%</td>
+                        <td>2m 15s</td>
+                        <td>10:45 AM</td>
+                    </tr>
+                    <tr>
+                        <td>Integration Tests</td>
+                        <td><span class="status-badge passed">PASSED</span></td>
+                        <td>287</td>
+                        <td class="success">98.6%</td>
+                        <td>5m 22s</td>
+                        <td>10:43 AM</td>
+                    </tr>
+                    <tr>
+                        <td>UI Tests</td>
+                        <td><span class="status-badge running">RUNNING</span></td>
+                        <td>156</td>
+                        <td class="warning">-</td>
+                        <td>3m 12s</td>
+                        <td>10:40 AM</td>
+                    </tr>
+                    <tr>
+                        <td>Performance Tests</td>
+                        <td><span class="status-badge failed">FAILED</span></td>
+                        <td>45</td>
+                        <td class="danger">84.4%</td>
+                        <td>8m 45s</td>
+                        <td>10:32 AM</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="timeline">
+            <h3 class="chart-title">Activity Timeline</h3>
+            <div class="timeline-item">
+                <div class="timeline-time">10:45 AM</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">✅ Unit Tests Completed</div>
+                    <div class="timeline-description">All 523 tests passed successfully</div>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">10:43 AM</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">✅ Integration Tests Completed</div>
+                    <div class="timeline-description">4 tests failed, investigating WebSocket timeouts</div>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">10:40 AM</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">🔄 UI Tests Started</div>
+                    <div class="timeline-description">Running on iPhone 15 Pro simulator</div>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">10:32 AM</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">❌ Performance Tests Failed</div>
+                    <div class="timeline-description">Memory usage exceeded threshold in stress test</div>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">10:30 AM</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">🚀 Test Suite Initiated</div>
+                    <div class="timeline-description">Started by GitHub Actions on main branch</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" onclick="refreshDashboard()">🔄 Refresh</button>
+            <button class="control-btn" onclick="runTests()">▶️ Run Tests</button>
+            <button class="control-btn" onclick="exportReport()">📥 Export Report</button>
+        </div>
+        
+        <div class="footer">
+            <p>ClaudeCode iOS Test Infrastructure © 2025 | Last updated: <span id="lastUpdate">Just now</span></p>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize charts
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        const trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Passed',
+                    data: [1150, 1180, 1165, 1190, 1176, 1195, 1176],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.3
+                }, {
+                    label: 'Failed',
+                    data: [85, 82, 78, 73, 71, 68, 71],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#94a3b8' }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: { color: '#64748b' },
+                        grid: { color: '#334155' }
+                    },
+                    x: {
+                        ticks: { color: '#64748b' },
+                        grid: { color: '#334155' }
+                    }
+                }
+            }
+        });
+        
+        const distCtx = document.getElementById('distributionChart').getContext('2d');
+        const distChart = new Chart(distCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Unit', 'Integration', 'UI', 'Performance'],
+                datasets: [{
+                    data: [523, 287, 156, 45],
+                    backgroundColor: [
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(147, 51, 234, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+        
+        // Dashboard functions
+        function refreshDashboard() {
+            console.log('Refreshing dashboard...');
+            // Simulate data refresh
+            animateValue('totalTests', 1247, 1263, 1000);
+            animateValue('passRate', 94.3, 95.1, 1000);
+            document.getElementById('lastUpdate').textContent = 'Just now';
+        }
+        
+        function runTests() {
+            console.log('Starting test suite...');
+            alert('Test suite initiated. Check the timeline for progress.');
+        }
+        
+        function exportReport() {
+            console.log('Exporting report...');
+            alert('Report exported to TestResults/report.html');
+        }
+        
+        function animateValue(id, start, end, duration) {
+            const element = document.getElementById(id);
+            const range = end - start;
+            const increment = range / (duration / 10);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    element.textContent = id === 'passRate' ? `${end.toFixed(1)}%` : Math.round(end).toLocaleString();
+                    clearInterval(timer);
+                } else {
+                    element.textContent = id === 'passRate' ? `${current.toFixed(1)}%` : Math.round(current).toLocaleString();
+                }
+            }, 10);
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(refreshDashboard, 30000);
+        
+        // Update last update time
+        setInterval(() => {
+            const lastUpdate = document.getElementById('lastUpdate');
+            const current = lastUpdate.textContent;
+            if (current === 'Just now') {
+                lastUpdate.textContent = '30 seconds ago';
+            } else if (current === '30 seconds ago') {
+                lastUpdate.textContent = '1 minute ago';
+            } else {
+                const minutes = parseInt(current) + 1;
+                lastUpdate.textContent = `${minutes} minutes ago`;
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
