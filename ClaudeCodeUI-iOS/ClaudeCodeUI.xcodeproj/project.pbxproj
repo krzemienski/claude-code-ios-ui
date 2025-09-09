@@ -114,6 +114,7 @@
 		85A38C07B513D8F11708334E /* ShellWebSocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1718B25E6951DE4FE0EE85A1 /* ShellWebSocketManager.swift */; };
 		86E6023C54DB891C1A42ED15 /* UIAccessibilityEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A4CF310362D7303CB6A899 /* UIAccessibilityEnhancer.swift */; };
 		8785751A296B4D4A52792F65 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDEB1111739245C39EC3CC5C /* AppDelegate.swift */; };
+		89F923C9E2D2F112A0E3DABA /* ClaudeAPIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD843152C6181274A934F921 /* ClaudeAPIManager.swift */; };
 		8B5E8BAD24606C817CB94866 /* TerminalOutputParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4CF97F306F6551124B8AA6 /* TerminalOutputParser.swift */; };
 		8CA0D21C6213285D3DFD982B /* GradientBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = D383D84FBB56D58C69B16D89 /* GradientBlock.swift */; };
 		8CA2623983305323B8A8BF37 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E353CA50B6C13A7B98F30D1 /* SettingsViewModel.swift */; };
@@ -430,6 +431,7 @@
 		AAA3ECC3EDF2612158567EF2 /* MessageAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageAnimator.swift; sourceTree = "<group>"; };
 		AB5F07341A48630B97DDA357 /* RefreshableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshableScrollView.swift; sourceTree = "<group>"; };
 		AC63FF7CD53F24B636F76D9C /* LoadingStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingStateManager.swift; sourceTree = "<group>"; };
+		AD843152C6181274A934F921 /* ClaudeAPIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIManager.swift; sourceTree = "<group>"; };
 		AE89687C0E01E5ADF0566642 /* AppTourManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTourManager.swift; sourceTree = "<group>"; };
 		B04CFB5231BFA0B1F54FC8E5 /* PerformanceOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceOptimizer.swift; sourceTree = "<group>"; };
 		B1A583BAB1BEFF8C60C909F7 /* WebSocketAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSocketAdapter.swift; sourceTree = "<group>"; };
@@ -637,6 +639,7 @@
 			children = (
 				2D2058BFE8030DC6D264D6FB /* AliveMainFlowUITests.swift */,
 				B29A798B07F2AB17FFE7CD0B /* APIClient.swift */,
+				AD843152C6181274A934F921 /* ClaudeAPIManager.swift */,
 				398794CA0DF4C2F52826ADEC /* MajorFlowsUITests.swift */,
 				1718B25E6951DE4FE0EE85A1 /* ShellWebSocketManager.swift */,
 				06BF53FB949CAB6F914015DD /* StarscreamWebSocketManager.swift */,
@@ -1544,6 +1547,7 @@
 				2E2A1E264290688A3FC4AD5A /* ViewControllers.swift in Sources */,
 				BE1793D51594EE7247B607E3 /* APIClient.swift in Sources */,
 				655AA1D569A985F557631D3A /* AliveMainFlowUITests.swift in Sources */,
+				89F923C9E2D2F112A0E3DABA /* ClaudeAPIManager.swift in Sources */,
 				8DE44E0F9F1C6721154B4913 /* MajorFlowsUITests.swift in Sources */,
 				85A38C07B513D8F11708334E /* ShellWebSocketManager.swift in Sources */,
 				DC0D926DC4C09D0FEA58D5E0 /* StarscreamWebSocketManager.swift in Sources */,

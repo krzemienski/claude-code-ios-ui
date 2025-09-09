@@ -99,8 +99,8 @@ public class ProjectsViewController: BaseViewController {
         // Setup refresh control with custom cyberpunk styling
         setupRefreshControl()
         collectionView.refreshControl = refreshControl
-        // Use "projectList" for UI testing compatibility
-        collectionView.accessibilityIdentifier = "projectList"
+        // Use "projectsTableView" for UI testing compatibility with Phase 3 tests
+        collectionView.accessibilityIdentifier = "projectsTableView"
         
         print("🎯 [ProjectsViewController] collectionView.accessibilityIdentifier = \(collectionView.accessibilityIdentifier ?? "nil")")
         print("🎯 [ProjectsViewController] collectionView.frame = \(collectionView.frame)")
@@ -1025,7 +1025,9 @@ extension ProjectsViewController: UICollectionViewDataSource {
             // Project cell
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ProjectCollectionViewCell.identifier, for: indexPath) as! ProjectCollectionViewCell
             let project = projects[indexPath.item]
-            cell.configure(with: project)
+            // Phase 3 tests expect "firstProjectCell" identifier for the first project
+            let isFirstCell = (indexPath.item == 0)
+            cell.configure(with: project, isFirstCell: isFirstCell)
             return cell
         }
     }
@@ -1174,10 +1176,15 @@ class ProjectCollectionViewCell: UICollectionViewCell {
         ])
     }
     
-    func configure(with project: Project) {
+    func configure(with project: Project, isFirstCell: Bool = false) {
         projectCard.configure(with: project)
         // Add accessibility identifiers for UI testing
-        accessibilityIdentifier = "project_\(project.id)"
+        // Phase 3 tests expect "firstProjectCell" for the first project
+        if isFirstCell {
+            accessibilityIdentifier = "firstProjectCell"
+        } else {
+            accessibilityIdentifier = "project_\(project.id)"
+        }
         accessibilityLabel = project.displayName ?? project.name
         accessibilityTraits = .button
         isAccessibilityElement = true
