@@ -1,43 +1,242 @@
-2025-09-09 13:34:01.986 xcodebuild[45830:1547000] Writing error result bundle to /var/folders/x9/t9mpdpkn4wn6mj59k7b48l9w0000gn/T/ResultBundle_2025-09-09_13-34-0001.xcresult
-xcodebuild: error: Unable to find a device matching the provided destination specifier:
-		{ platform:iOS Simulator, OS:18.0, name:iPhone 16 Pro Max }
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
+{ platform:iOS Simulator, arch:x86_64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
+{ platform:iOS Simulator, arch:x86_64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
+/* com.apple.actool.notices */
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Resources/Assets.xcassets: warning: Accent color ‘AccentColor’ is not present in any asset catalogs.
+/* com.apple.actool.compilation-results */
+/Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/assetcatalog_generated_info.plist_thinned
 
-	The requested device could not be found because no available devices matched the request.
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Analytics/AnalyticsIntegration.swift:21:51: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            return objc_getAssociatedObject(self, &AssociatedKeys.analyticsScreenName) as? String
+                                                  ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Analytics/AnalyticsIntegration.swift:24:44: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            objc_setAssociatedObject(self, &AssociatedKeys.analyticsScreenName, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Analytics/AnalyticsIntegration.swift:31:51: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            return objc_getAssociatedObject(self, &AssociatedKeys.analyticsScreenStartTime) as? Date
+                                                  ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Analytics/AnalyticsIntegration.swift:34:44: warning: forming 'UnsafeRawPointer' to an inout variable of type String exposes the internal representation rather than the string contents.
+            objc_setAssociatedObject(self, &AssociatedKeys.analyticsScreenStartTime, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Components/SkeletonView.swift:211:13: warning: immutable value 'i' was never used; consider replacing with '_' or removing it
+        for i in 0..<count {
+            ^
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Components/SkeletonView.swift:322:13: warning: initialization of immutable value 'rows' was never used; consider replacing with assignment to '_' or removing it
+        let rows = (count + columns - 1) / columns
+        ~~~~^~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/MemoryLeakDetector.swift:207:13: warning: initialization of immutable value 'notificationCenter' was never used; consider replacing with assignment to '_' or removing it
+        let notificationCenter = NotificationCenter.default
+        ~~~~^~~~~~~~~~~~~~~~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/MemoryLeakDetector.swift:284:51: warning: conditional cast from 'Any' to 'AnyObject' always succeeds
+                    if let delegate = child.value as? AnyObject {
+                                                  ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/MetricsCollector.swift:235:50: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+            if let window = UIApplication.shared.windows.first,
+                                                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/MetricsCollector.swift:274:30: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        UIApplication.shared.windows.first?.addGestureRecognizer(tapGesture)
+                             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceMonitor.swift:169:17: warning: initialization of immutable value 'expectedDuration' was never used; consider replacing with assignment to '_' or removing it
+            let expectedDuration = displayLink.targetTimestamp - displayLink.timestamp
+            ~~~~^~~~~~~~~~~~~~~~
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceMonitor.swift:329:50: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+            if let window = UIApplication.shared.windows.first,
+                                                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceMonitor.swift:337:13: warning: initialization of immutable value 'mirror' was never used; consider replacing with assignment to '_' or removing it
+        let mirror = Mirror(reflecting: viewController)
+        ~~~~^~~~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceOptimizer.swift:132:50: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+            if let window = UIApplication.shared.windows.first {
+                                                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Performance/PerformanceOptimizer.swift:486:46: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        if let window = UIApplication.shared.windows.first {
+                                             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/AuthenticationMigration.swift:42:13: warning: initialization of variable 'migrationSuccess' was never used; consider replacing with assignment to '_' or removing it
+        var migrationSuccess = true
+        ~~~~^~~~~~~~~~~~~~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/BiometricAuthManager.swift:75:9: warning: switch must be exhaustive
+        switch context.biometryType {
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/BiometricAuthManager.swift:75:9: note: add missing case: '.opticID'
+        switch context.biometryType {
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/BiometricAuthManager.swift:193:9: warning: switch must be exhaustive
+        switch context.biometryType {
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Security/BiometricAuthManager.swift:193:9: note: add missing case: '.opticID'
+        switch context.biometryType {
+        ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/MessageCells.swift:103:21: warning: 'contentEdgeInsets' was deprecated in iOS 15.0: This property is ignored when using UIButtonConfiguration
+        retryButton.contentEdgeInsets = UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12)
+                    ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ViewModels/ChatViewModel.swift:117:72: warning: non-sendable result type '[Message]' cannot be sent from nonisolated context in call to instance method 'loadMessages(for:)'; this is an error in the Swift 6 language mode
+            let localMessages = await MessagePersistenceService.shared.loadMessages(for: session.id)
+                                                                       ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ViewModels/ChatViewModel.swift:131:58: warning: non-sendable result type '[Message]' cannot be sent from actor-isolated context in call to instance method 'fetchSessionMessages(projectName:sessionId:limit:offset:)'; this is an error in the Swift 6 language mode
+                let remoteMessages = try await apiClient.fetchSessionMessages(
+                                                         ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+Failed frontend command:
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -c -filelist /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/sources-1 -primary-file /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Effects/GlowEffects.swift -primary-file /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Theme/CyberpunkTheme.swift -primary-file /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Analytics/AnalyticsDashboardViewController.swift -primary-file /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/AppTour/AppTourManager.swift -primary-file /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/AuthenticationViewController.swift -primary-file /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Authentication/LoginViewController.swift -primary-file /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatAnimationManager.swift -primary-file /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift -primary-file /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewControllerOptimized.swift -supplementary-output-file-map /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/supplementaryOutputs-8 -target arm64-apple-ios17.0-simulator -Xllvm -aarch64-use-tbi -enable-objc-interop -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -I /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Products/Debug-iphonesimulator -F /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Products/Debug-iphonesimulator -no-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=4 -module-cache-path /Users/nick/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -swift-version 5 -enforce-exclusivity\=checked -Onone -D DEBUG -D DEBUG -serialize-debugging-options -const-gather-protocols-file /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/ClaudeCodeUI_const_extract_protocols.json -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /Users/nick/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift -enable-anonymous-context-mangled-names -file-compilation-dir /Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS -Xcc -ivfsstatcache -Xcc /Users/nick/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-d5fc8ad4295d2ef488fb7d0f804ce0c4.sdkstatcache -Xcc -I/Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/swift-overrides.hmap -Xcc -iquote -Xcc /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/ClaudeCodeUI-generated-files.hmap -Xcc -I/Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/ClaudeCodeUI-own-target-headers.hmap -Xcc -I/Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/ClaudeCodeUI-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI-999caa73579fb9c5bba3d40b298c9b5d-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/ClaudeCodeUI-project-headers.hmap -Xcc -I/Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/DerivedSources-normal/arm64 -Xcc -I/Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/DerivedSources/arm64 -Xcc -I/Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/DerivedSources -Xcc -DDEBUG\=1 -module-name ClaudeCodeUI -frontend-parseable-output -disable-clang-spi -target-sdk-version 18.5 -target-sdk-name iphonesimulator18.5 -external-plugin-path /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server -external-plugin-path /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/local/lib/swift/host/plugins\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server -in-process-plugin-server-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/lib/swift/host/plugins -o /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/GlowEffects.o -o /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/CyberpunkTheme.o -o /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/AnalyticsDashboardViewController.o -o /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/AppTourManager.o -o /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/AuthenticationViewController.o -o /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/LoginViewController.o -o /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/ChatAnimationManager.o -o /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/ChatViewController.o -o /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Build/Intermediates.noindex/ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/ChatViewControllerOptimized.o -index-unit-output-path /ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/GlowEffects.o -index-unit-output-path /ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/CyberpunkTheme.o -index-unit-output-path /ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/AnalyticsDashboardViewController.o -index-unit-output-path /ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/AppTourManager.o -index-unit-output-path /ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/AuthenticationViewController.o -index-unit-output-path /ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/LoginViewController.o -index-unit-output-path /ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/ChatAnimationManager.o -index-unit-output-path /ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/ChatViewController.o -index-unit-output-path /ClaudeCodeUI.build/Debug-iphonesimulator/ClaudeCodeUI.build/Objects-normal/arm64/ChatViewControllerOptimized.o -index-store-path /Users/nick/Library/Developer/Xcode/DerivedData/ClaudeCodeUI-elwydscnimydtjgrbhpwgmphpnmd/Index.noindex/DataStore -index-system-modules
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:286:14: warning: capture of 'self' in a closure that outlives deinit; this is an error in the Swift 6 language mode
+        Task { @MainActor in
+             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:564:64: warning: non-sendable result type '[Message]' cannot be sent from actor-isolated context in call to instance method 'fetchSessionMessages(projectName:sessionId:limit:offset:)'; this is an error in the Swift 6 language mode
+                let olderMessages = try await APIClient.shared.fetchSessionMessages(
+                                                               ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:799:77: warning: non-sendable result type '[Message]' cannot be sent from nonisolated context in call to instance method 'loadMessages(for:)'; this is an error in the Swift 6 language mode
+                let cachedMessages = await MessagePersistenceService.shared.loadMessages(for: sessionId)
+                                                                            ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:825:66: warning: non-sendable result type '[Message]' cannot be sent from actor-isolated context in call to instance method 'fetchSessionMessages(projectName:sessionId:limit:offset:)'; this is an error in the Swift 6 language mode
+                let backendMessages = try await APIClient.shared.fetchSessionMessages(
+                                                                 ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:1290:20: warning: value 'cell' was defined but never used; consider replacing with boolean test
+            if let cell = self?.tableView.cellForRow(at: indexPath) {
+               ~~~~^~~~~~~
+               (                                                   ) != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:1784:63: error: argument passed to call that takes no arguments
+                message.metadata = MessageMetadata(type: type.rawValue)
+                                                  ~~~~~~~~~~~~^~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:1808:59: error: argument passed to call that takes no arguments
+                msg.metadata = MessageMetadata(type: type.rawValue)
+                                              ~~~~~~~~~~~~^~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2247:17: warning: initialization of immutable value 'structured' was never used; consider replacing with assignment to '_' or removing it
+            let structured = streamingHandler.extractStructuredContent(from: message.content)
+            ~~~~^~~~~~~~~~
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2284:17: warning: initialization of immutable value 'structured' was never used; consider replacing with assignment to '_' or removing it
+            let structured = streamingHandler.extractStructuredContent(from: content)
+            ~~~~^~~~~~~~~~
+            _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2440:24: warning: value 'cell' was defined but never used; consider replacing with boolean test
+                if let cell = self?.tableView.cellForRow(at: indexPath) {
+                   ~~~~^~~~~~~
+                   (                                                   ) != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2733:34: error: cannot find 'streamingMessage' in scope
+                if let message = streamingMessage {
+                                 ^~~~~~~~~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2902:28: warning: expression implicitly coerced from 'String?' to 'Any'
+            "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2902:36: note: provide a default value to avoid this warning
+            "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2902:36: note: force-unwrap the value to avoid this warning
+            "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Features/Chat/ChatViewController.swift:2902:36: note: explicitly cast to 'Any' with 'as Any' to silence this warning
+            "projectPath": project.fullPath,  // ✅ FIXED: At top level, not nested
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/AuthenticationManager.swift:277:16: warning: value 'token' was defined but never used; consider replacing with boolean test
+        if let token = token {
+           ~~~~^~~~~~~~
+                             != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:151:48: warning: non-sendable result type 'Settings' cannot be sent from main actor-isolated context in call to instance method 'fetchSettings()'; this is an error in the Swift 6 language mode
+        let settings = try await dataContainer.fetchSettings()
+                                               ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Settings.swift:14:13: note: class 'Settings' does not conform to the 'Sendable' protocol
+final class Settings {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:217:44: warning: non-sendable result type '[Project]' cannot be sent from actor-isolated context in call to instance method 'fetchProjects()'; this is an error in the Swift 6 language mode
+        let projects = try await apiClient.fetchProjects()
+                                           ^
+Swift.Array:1:23: note: generic struct 'Array' does not conform to the 'Sendable' protocol
+@frozen public struct Array<Element> : _DestructorSafeContainer {
+                      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:233:43: warning: non-sendable result type 'Project' cannot be sent from actor-isolated context in call to instance method 'createProject(name:path:)'; this is an error in the Swift 6 language mode
+        let project = try await apiClient.createProject(name: name, path: path)
+                                          ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:15:13: note: class 'Project' does not conform to the 'Sendable' protocol
+final class Project: Codable {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:266:51: warning: non-sendable result type 'Project?' cannot be sent from main actor-isolated context in call to instance method 'fetchProject(byId:)'; this is an error in the Swift 6 language mode
+           let project = try? await dataContainer.fetchProject(byId: id) {
+                                                  ^
+Swift.Optional:1:21: note: generic enum 'Optional' does not conform to the 'Sendable' protocol
+@frozen public enum Optional<Wrapped> : ~Copyable where Wrapped : ~Copyable {
+                    ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:283:13: warning: initialization of immutable value 'chatMessage' was never used; consider replacing with assignment to '_' or removing it
+        let chatMessage = Message(
+        ~~~~^~~~~~~~~~~
+        _
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:304:42: warning: non-sendable result type 'Message' cannot be sent from main actor-isolated context in call to instance method 'createMessage(for:role:content:)'; this is an error in the Swift 6 language mode
+            _ = try? await dataContainer.createMessage(for: session, role: .user, content: message)
+                                         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Models/Message.swift:63:13: note: class 'Message' does not conform to the 'Sendable' protocol
+final class Message {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/DIContainer.swift:318:47: warning: non-sendable result type 'Session' cannot be sent from main actor-isolated context in call to instance method 'createSession(for:)'; this is an error in the Swift 6 language mode
+        let session = try await dataContainer.createSession(for: project)
+                                              ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Models/Session.swift:21:13: note: class 'Session' does not conform to the 'Sendable' protocol
+final class Session {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/MessagePersistenceService.swift:78:20: warning: value 'error' was defined but never used; consider replacing with boolean test
+            if let error = error {
+               ~~~~^~~~~~~~
+                                 != nil
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/OfflineManager.swift:297:40: warning: non-sendable result type 'Project' cannot be sent from actor-isolated context in call to instance method 'createProject(name:path:)'; this is an error in the Swift 6 language mode
+        _ = try await APIClient.shared.createProject(name: project.name, path: project.path)
+                                       ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Data/Models/Project.swift:15:13: note: class 'Project' does not conform to the 'Sendable' protocol
+final class Project: Codable {
+            ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/OfflineManager.swift:386:17: warning: capture of 'self' with non-sendable type 'OfflineSyncManager?' in a '@Sendable' closure
+                self?.performSync()
+                ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/OfflineManager.swift:365:7: note: class 'OfflineSyncManager' does not conform to the 'Sendable' protocol
+class OfflineSyncManager {
+      ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Services/PushNotificationManager.swift:297:34: warning: 'applicationIconBadgeNumber' was deprecated in iOS 17.0: Use -[UNUserNotificationCenter setBadgeCount:withCompletionHandler:] instead.
+            UIApplication.shared.applicationIconBadgeNumber = count
+                                 ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:58:44: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        for window in UIApplication.shared.windows {
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:79:27: warning: cast from 'UIView' to unrelated type 'UINavigationController' always fails
+        if let nav = view as? UINavigationController {
+                     ~~~~ ^   ~~~~~~~~~~~~~~~~~~~~~~
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:94:44: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        for window in UIApplication.shared.windows {
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:201:44: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        for window in UIApplication.shared.windows {
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Testing/UITestingRuntimePatch.swift:225:44: warning: 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead
+        for window in UIApplication.shared.windows {
+                                           ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Utils/HapticFeedback.swift:327:14: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+            .onChange(of: trigger) { _ in
+             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Core/Utils/HapticFeedback.swift:351:14: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+            .onChange(of: configuration.isPressed) { pressed in
+             ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Components/AnimatedComponents.swift:250:10: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
+        .onChange(of: progress) { newValue in
+         ^
+/Users/nick/Documents/claude-code-ios-ui/ClaudeCodeUI-iOS/Design/Components/ConnectionStatusView.swift:124:19: warning: value 'navigationController' was defined but never used; consider replacing with boolean test
+        guard let navigationController = viewController.navigationController else { return }
+              ~~~~^~~~~~~~~~~~~~~~~~~~~~~
+                                                                             != nil
+note: Using codesigning identity override: 
+** BUILD FAILED **
 
-	Available destinations for the "ClaudeCodeUI" scheme:
-		{ platform:macOS, arch:arm64, variant:Designed for [iPad,iPhone], id:00006041-001C488414FA801C, name:My Mac }
-		{ platform:iOS, id:dvtdevice-DVTiPhonePlaceholder-iphoneos:placeholder, name:Any iOS Device }
-		{ platform:iOS Simulator, id:dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder, name:Any iOS Simulator Device }
-		{ platform:iOS Simulator, arch:arm64, id:C3421E11-FB62-4839-B3D2-6C27D1F7CBF2, OS:18.6, name:iPad (A16) }
-		{ platform:iOS Simulator, arch:x86_64, id:C3421E11-FB62-4839-B3D2-6C27D1F7CBF2, OS:18.6, name:iPad (A16) }
-		{ platform:iOS Simulator, arch:arm64, id:B2FD1ECB-96B8-438F-A4DA-F09D0797A6CE, OS:26.0, name:iPad (A16) }
-		{ platform:iOS Simulator, arch:arm64, id:2123E95C-C99C-4D85-9253-F328A7419578, OS:18.6, name:iPad Air 11-inch (M3) }
-		{ platform:iOS Simulator, arch:x86_64, id:2123E95C-C99C-4D85-9253-F328A7419578, OS:18.6, name:iPad Air 11-inch (M3) }
-		{ platform:iOS Simulator, arch:arm64, id:AD9D6EA2-A953-453F-B87E-97D7B72E5CC1, OS:26.0, name:iPad Air 11-inch (M3) }
-		{ platform:iOS Simulator, arch:arm64, id:8593AC52-ACEF-492C-8727-22111A33EAAE, OS:18.6, name:iPad Air 13-inch (M3) }
-		{ platform:iOS Simulator, arch:x86_64, id:8593AC52-ACEF-492C-8727-22111A33EAAE, OS:18.6, name:iPad Air 13-inch (M3) }
-		{ platform:iOS Simulator, arch:arm64, id:D64EB13D-922E-4108-839E-1B43CEE34B17, OS:26.0, name:iPad Air 13-inch (M3) }
-		{ platform:iOS Simulator, arch:arm64, id:1251F653-88C9-4F61-BA61-7F084881A12B, OS:18.6, name:iPad Pro 11-inch (M4) }
-		{ platform:iOS Simulator, arch:x86_64, id:1251F653-88C9-4F61-BA61-7F084881A12B, OS:18.6, name:iPad Pro 11-inch (M4) }
-		{ platform:iOS Simulator, arch:arm64, id:4C4621BB-EB8A-4D5D-BCEB-A96FFABD69A6, OS:26.0, name:iPad Pro 11-inch (M4) }
-		{ platform:iOS Simulator, arch:arm64, id:265C1F9B-5495-4ADC-957C-123FA879C5DE, OS:18.6, name:iPad Pro 13-inch (M4) }
-		{ platform:iOS Simulator, arch:x86_64, id:265C1F9B-5495-4ADC-957C-123FA879C5DE, OS:18.6, name:iPad Pro 13-inch (M4) }
-		{ platform:iOS Simulator, arch:arm64, id:D3991F23-9FBD-4FC6-84D0-569C7E03DF7C, OS:26.0, name:iPad Pro 13-inch (M4) }
-		{ platform:iOS Simulator, arch:arm64, id:C282E0E2-74C3-4051-83B6-F821C8AC5936, OS:18.6, name:iPad mini (A17 Pro) }
-		{ platform:iOS Simulator, arch:x86_64, id:C282E0E2-74C3-4051-83B6-F821C8AC5936, OS:18.6, name:iPad mini (A17 Pro) }
-		{ platform:iOS Simulator, arch:arm64, id:9FAF4DBF-6452-4530-A46A-33A56390FBFF, OS:26.0, name:iPad mini (A17 Pro) }
-		{ platform:iOS Simulator, arch:arm64, id:FC9EF093-D6CA-4F8E-980B-DFACBA43EE6D, OS:18.6, name:iPhone 16 }
-		{ platform:iOS Simulator, arch:x86_64, id:FC9EF093-D6CA-4F8E-980B-DFACBA43EE6D, OS:18.6, name:iPhone 16 }
-		{ platform:iOS Simulator, arch:arm64, id:777C6078-A084-41B6-932C-7652699D4599, OS:26.0, name:iPhone 16 }
-		{ platform:iOS Simulator, arch:arm64, id:530476AB-ABA5-454D-B196-3E69B34CD243, OS:18.6, name:iPhone 16 Plus }
-		{ platform:iOS Simulator, arch:x86_64, id:530476AB-ABA5-454D-B196-3E69B34CD243, OS:18.6, name:iPhone 16 Plus }
-		{ platform:iOS Simulator, arch:arm64, id:69C0AA8A-E6F9-454A-8057-F4E11A9B971C, OS:26.0, name:iPhone 16 Plus }
-		{ platform:iOS Simulator, arch:arm64, id:BECB3FA0-518E-4F80-8B8E-7E10C16F3B36, OS:18.6, name:iPhone 16 Pro }
-		{ platform:iOS Simulator, arch:x86_64, id:BECB3FA0-518E-4F80-8B8E-7E10C16F3B36, OS:18.6, name:iPhone 16 Pro }
-		{ platform:iOS Simulator, arch:arm64, id:058A3C12-3207-436C-96D4-A92F1D5697DF, OS:26.0, name:iPhone 16 Pro }
-		{ platform:iOS Simulator, arch:arm64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
-		{ platform:iOS Simulator, arch:x86_64, id:50523130-57AA-48B0-ABD0-4D59CE455F14, OS:18.6, name:iPhone 16 Pro Max }
-		{ platform:iOS Simulator, arch:arm64, id:77DBA322-9C12-4D6D-B8F9-79173AE2EE9B, OS:26.0, name:iPhone 16 Pro Max }
-		{ platform:iOS Simulator, arch:arm64, id:BD6357B5-275B-4721-B590-5BD02DA78F81, OS:18.6, name:iPhone 16e }
-		{ platform:iOS Simulator, arch:x86_64, id:BD6357B5-275B-4721-B590-5BD02DA78F81, OS:18.6, name:iPhone 16e }
-		{ platform:iOS Simulator, arch:arm64, id:C4CDCA75-6A73-4DC1-8C42-B8E3E5B9EB4F, OS:26.0, name:iPhone 16e }

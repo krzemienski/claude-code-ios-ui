@@ -78,7 +78,8 @@ public class SessionListViewController: BaseViewController {
             action: #selector(createNewSession)
         )
         navigationItem.rightBarButtonItem?.tintColor = CyberpunkTheme.primaryCyan
-        navigationItem.rightBarButtonItem?.accessibilityIdentifier = "addSessionButton"
+        // Phase 3 tests expect "newSessionButton" identifier
+        navigationItem.rightBarButtonItem?.accessibilityIdentifier = "newSessionButton"
         
         // Setup search controller
         searchController.searchResultsUpdater = self
@@ -120,6 +121,9 @@ public class SessionListViewController: BaseViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(SessionTableViewCell.self, forCellReuseIdentifier: "SessionCell")
+        
+        // Phase 3 tests expect "sessionsTableView" identifier
+        tableView.accessibilityIdentifier = "sessionsTableView"
         
         // Setup refresh control with custom cyberpunk styling
         setupRefreshControl()
